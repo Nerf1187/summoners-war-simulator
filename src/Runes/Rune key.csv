@@ -1,0 +1,21 @@
+1,Energy,2,Hp+15%,done,tested
+2,Fatal,4,Atk+35%,done,tested
+3,Blade,2,Crit rate+12%,done,tested
+4,Swift,4,Atk spd+25%,done,tested
+5,Focus,2,Accuracy+20%,done,tested
+6,Guard,2,Def+15%,done,tested
+7,Endure,2,Resistance+20%,done,tested
+8,Shield,2,Allies gain shield for 3 turns (15% of Hp),done,tested
+9,Revenge,2,Counterattack+15%,done,tested
+10,Will,2,Immunity +1 turn (per set effect),done,tested
+11,Nemesis,2,Atk bar +4% (for every 7% Hp lost),done,tested
+12,Vampire,4,Life steal +35%,done,tested
+13,Destroy,2,Destroy 30% of damage dealt (up to 4% target's max Hp),done,tested
+14,Despair,4,Stun rate +25%,done,
+15,Violent,4,Extra turn +22%,done,tested
+16,Rage,4,Crit dmg +40%,done,tested
+17,Fight,2,Ally atk +8%,done,tested
+18,Determination,2,Ally def +8%,done,tested
+19,Enhance,2,Ally Hp +8%,done,tested
+20,Accuracy,2,Ally Accuracy +10%,done,tested
+21,Tolerance,2,Ally Resistance +10%,done,tested

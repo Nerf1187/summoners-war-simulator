@@ -1,0 +1,18 @@
+0,Glancing Hit Chance up,+50%,Increases the chance of landing a glancing hit,done
+1,Dec Atk,-50%,Decreases attack by 50%,done
+2,Dec Def,-70%,Decreases defense by 70%,done
+3,Dec Atk Spd,-30%,Decreases Attack Speed by 30%,done
+4,Block Beneficial Effects,,Target can not receive harmful effects,done
+5,Bomb,,Explodes when the remaining turns reaches 0 and deals damage that ignores defense and stuns the target for 1 turn.,done
+6,Provoke,,Target is forced to attack the caster with their 1st ability,done
+7,Sleep,,Target is slept and their turn is skipped. Effect is removed if target takes damage or is attacked,done
+8,Continuous Dmg,-5% of Max health,Target takes damage equivalent to 5% of their max HP on their turn (Ignores Defense),done
+9,Freeze,,Target is frozen and their turn is skipped,done
+10,Stun,,Target is stunned and their turn is skipped,done
+11,Unrecoverable,,Target can not be healed,done
+12,Silence,,Target can not use abilities with cooldowns,done
+13,Brand,+25% dmg taken,Target takes 25% more damage,done
+14,Oblivion,,Target can not use passive skills,done but must be implemented for each passive ability
+15,Dec Atk Bar,Ability Specific,null,done
+16,Remove Beneficial Effect,,null,done
+17,Strip,Remove all buffs,null,

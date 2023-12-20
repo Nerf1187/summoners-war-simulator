@@ -1,0 +1,21 @@
+0,Atk up,+50%,Increases attack by 50%,done
+1,Def up,+70%,Increases defense by 70%,done
+2,Crit Rate up,+30%,Increases Critical Rate by 30%,done
+3,Crit Resist Rate up,+50%,Decreases the chance of being attacked with a critical hit by 50%,done
+4,Atk Spd up,+30%,Increases Attack Speed by 30%,done
+5,Recovery,+15% of max health,Increases HP by 15% of target's max HP,done
+6,Counter,,Counterattacks attacker using first ability with 70% of target's attack power,done
+7,Immunity,,Target will not receive any harmful effects,done
+8,Invincibility,,Target will not receive any damage,done
+9,Reflect,30% of dmg,30% of incoming damage is reflected to attacker,done
+10,Shield,Ability specific,Absorbs a fixed amount of damage,done
+11,Endure,,Target's HP will not fall beneath 1,done
+12,Defend,,The caster will receive half of the damage dealt on the target while reducing the damage on the target to 0 and counterattacks the enemy,done
+13,Soul Protection,30% of max health on revive,Target will revive with 30% of max HP when defeated,done
+15,Threat,,The enemy can only attack the target with Threat. Target receives 15% less damage. The duration is only reduced when target is attacked,done
+16,Increase Atk Bar,Ability specific,null,done
+17,Cleanse,,null,done
+18,Steal buff,,null,done
+19,Vampire,+20% of damage dealt,Recovers HP by 20% of damage dealt,done
+14,Rune shield,15% of monster with rune's max health,null,done
+20,Remove Debuff,,null,done
