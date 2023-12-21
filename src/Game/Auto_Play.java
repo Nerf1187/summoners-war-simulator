@@ -4,7 +4,6 @@ import Abilities.*;
 import Monsters.*;
 import Stats.Buffs.*;
 import Stats.Debuffs.*;
-import java.time.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 
@@ -26,9 +25,6 @@ public class Auto_Play extends Thread
     private static final HashMap<Team, ArrayList<Integer>> teamStats = new HashMap<>();
     private static final ArrayList<Team> bestTeams = new ArrayList<>();
     private static int numOfCompletedSimulations = 0;
-    private static Instant start;
-    
-    //TODO: Add stopwatch to get estimated time remaining
     private static final StopWatch stopWatch = new StopWatch(false);
     
     /**
@@ -747,7 +743,6 @@ public class Auto_Play extends Thread
         Team winner;
         
         System.out.println("Simulations started");
-        start = Instant.now();
         stopWatch.play();
         for (int i = 0; i < allPossibleTeams.size(); i++)
         {

@@ -7,7 +7,7 @@ import java.time.*;
  */
 public class StopWatch
 {
-    private Instant start, end;
+    private Instant start;
     private long elapsedMilliseconds = 0;
     private boolean paused = true;
     
@@ -52,7 +52,7 @@ public class StopWatch
         {
             return false;
         }
-        end = Instant.now();
+        Instant end = Instant.now();
         elapsedMilliseconds += Duration.between(start, end).toMillis();
         paused = true;
         return true;
