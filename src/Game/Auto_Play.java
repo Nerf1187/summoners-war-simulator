@@ -29,7 +29,7 @@ public class Auto_Play extends Thread
     private static Instant start;
     
     //TODO: Add stopwatch to get estimated time remaining
-    //private static Stopwatch stopWatch;
+    private static final StopWatch stopWatch = new StopWatch(false);
     
     /**
      * Runs the Auto_Play class
@@ -40,11 +40,9 @@ public class Auto_Play extends Thread
         Monster.setGame(game);
         Monster.setDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            Instant end = Instant.now();
-            long timeElapsed = Duration.between(start, end).toMillis();
-            
             System.out.println("\n\nTotal number of simulations ran: " + numOfCompletedSimulations);
-            System.out.println("Time elapsed: \t" + toReadableTime(timeElapsed));
+            stopWatch.pause();
+            System.out.println("Time elapsed: \t" + toReadableTime(stopWatch.getElapsedTime()));
             System.out.println("Final standings:");
             for (Team team : bestTeams)
             {
@@ -117,11 +115,9 @@ public class Auto_Play extends Thread
             }
             
             //Print game and find who is next
-            //System.out.println("\n\nTURN NUMBER: " + turnNumber + "\n GAME NUMBER: " + (count + 1) + "\n" + game + "\n\n");
             highestAtkBar = game.getTeamWithHighestAtkBar();
             other = game.getOtherTeam();
             Monster next = highestAtkBar.MonsterWithHighestFullAtkBar();
-            //System.out.println(next);
             
             //Activate before turn passives
             game.activateBeforeTurnPassives(next);
@@ -134,11 +130,7 @@ public class Auto_Play extends Thread
                 next.kill();
             }
             
-            //Print next mon
-            //System.out.println("NEXT: " + next.shortToString(true) + "\n\n");
-            
             //Check if stunned
-            
             if (stunned)
             {
                 stunned = false;
@@ -167,7 +159,6 @@ public class Auto_Play extends Thread
             Provoke p = next.getProvoke();
             if (p != null)
             {
-                //System.out.println(ConsoleColors.YELLOW + "Provoked!" + ConsoleColors.RESET);
                 Monster caster = p.getCaster();
                 next.nextTurn(caster, 1);
                 continue;
@@ -178,14 +169,11 @@ public class Auto_Play extends Thread
             
             //Get abilityNum and print
             int abilityNum = chooseAbilityNum(next, next.getAbilities(), true);
-            //System.out.println("AbilityNum: " + (abilityNum + 1));
             
             //Get target and print
             chooseTargetAndApplyNextTurn(next, abilityNum, (next.getAbility(abilityNum).targetsEnemy() ? other : highestAtkBar), true);
-            //System.out.println("TARGET: " + targetMon.shortToString(true) + "\n\n");
             
             //Apply nextTurn()
-            //Main.applyNextTurn(next, targetMon, abilityNum + 1);
             for (Monster mon : other.getMonsters())
             {
                 if (mon.isDead() && !deadMons.containsKey(mon))
@@ -760,6 +748,7 @@ public class Auto_Play extends Thread
         
         System.out.println("Simulations started");
         start = Instant.now();
+        stopWatch.play();
         for (int i = 0; i < allPossibleTeams.size(); i++)
         {
             winner = allPossibleTeams.get(i);
@@ -769,6 +758,7 @@ public class Auto_Play extends Thread
                 int numOfSimsLeft = totalNumOfSims(allPossibleTeams.size()) - numOfCompletedSimulations;
                 if (pause)
                 {
+                    stopWatch.pause();
                     System.out.println("Current standings:");
                     for (Team team : bestTeams)
                     {
@@ -779,6 +769,10 @@ public class Auto_Play extends Thread
                         System.out.println("number of wins: " + teamStats.get(team).get(0) + "\tNumber of losses: " + teamStats.get(team).get(1));
                     }
                     System.out.println("Number of simulations left: " + Monster.numWithCommas(numOfSimsLeft));
+                    long millisecondsPerSim = stopWatch.getElapsedTime() / numOfCompletedSimulations;
+                    long timeRemaining = millisecondsPerSim * numOfSimsLeft;
+                    System.out.println("Elapsed time: " + toReadableTime(stopWatch.getElapsedTime()));
+                    System.out.println("Estimated time remaining: " + toReadableTime(timeRemaining));
                     System.out.println("Press enter to continue or type \"inspect\" to inspect a specific team");
                     String response = scan.nextLine();
                     if (response.equalsIgnoreCase("inspect"))
@@ -798,6 +792,7 @@ public class Auto_Play extends Thread
                     
                     pause = false;
                     System.out.println("Running");
+                    stopWatch.play();
                 }
                 numOfCompletedSimulations++;
                 System.gc();
