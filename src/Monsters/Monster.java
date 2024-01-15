@@ -22,6 +22,7 @@ public class Monster
     //Contains the name and element of every monster
     public static HashMap<String, String> monsterNamesDatabase = new HashMap<>();
     
+    private static final int MAX_ATK_BAR_VALUE = 1_000;
     private static boolean print = true;
     public static final int FIRE = 0, WATER = 1, WIND = 2, LIGHT = 3, DARK = 4, ALL = 5;
     private String name;
@@ -140,13 +141,6 @@ public class Monster
     public void setAbilities(ArrayList<Ability> abilities)
     {
         this.abilities = abilities;
-        if (numOfSets(Rune.DESPAIR) == 1)
-        {
-            for (Ability ability : abilities)
-            {
-                ability.addDebuff(new Debuff(Debuff.STUN, 1, 0), 25);
-            }
-        }
     }
     
     /**
@@ -965,6 +959,7 @@ public class Monster
             }
             crit = true;
         }
+        
         //Glancing
         else if (new Random().nextInt(101) <= (30 + extraGlancingRate - critChanceChange + abilityGlancingRateChange))
         {
@@ -989,7 +984,7 @@ public class Monster
      */
     public double calculateBaseDmgReduction()
     {
-        return (1000 / (1140 + 3.5 * (def + extraDef - lessDef)));
+        return (1_000 / (1_140 + 3.5 * (def + extraDef - lessDef)));
     }
     
     /**
@@ -1036,7 +1031,7 @@ public class Monster
      */
     public boolean hasFullAtkBar()
     {
-        return atkBar >= 1000;
+        return atkBar >= MAX_ATK_BAR_VALUE;
     }
     
     /**
@@ -1055,6 +1050,16 @@ public class Monster
     public void increaseAtkBar(int num)
     {
         atkBar += num;
+    }
+    
+    /**
+     * Increases the attack bar by a given amount
+     *
+     * @param num The percent to increase the attack bar
+     */
+    public void increaseAtkBarByPercent(int num)
+    {
+        atkBar += (int) Math.ceil(MAX_ATK_BAR_VALUE * (num / 100.0));
     }
     
     /**
@@ -1359,6 +1364,7 @@ public class Monster
         {
             System.out.println("\n");
         }
+        
         //Make sure booleans do not conflict with each other
         if (Game.canCounter() && isCounter)
         {
@@ -1484,12 +1490,11 @@ public class Monster
         crit = false;
         glancing = false;
         
-        //Vampire
-        if (containsBuff(new Buff(Buff.VAMPIRE, 1)) && !containsDebuff(new Debuff(Debuff.UNRECOVERABLE, 1, 0)))
+        //Vampire Buff
+        if (containsBuff(Buff.VAMPIRE) && !containsDebuff(Debuff.UNRECOVERABLE))
         {
             setCurrentHp((int) (currentHp + (0.2 * finalDmg)));
         }
-        
         
         //Apply buffs to self if Monster does not have beneficial effect block debuff and attack was not glancing
         if (!containsDebuff(new Debuff(Debuff.BLOCK_BENEFICIAL_EFFECTS, 1, 0)) && !glancing)
@@ -1510,7 +1515,7 @@ public class Monster
         }
         else if (glancing)
         {
-            increasedChance = -1_000;
+            increasedChance = Integer.MIN_VALUE;
         }
         ArrayList<Debuff> debuffs = ability.getDebuffs();
         ArrayList<Integer> debuffsChance = ability.getDebuffsChance();
@@ -1521,6 +1526,11 @@ public class Monster
         if (print)
         {
             System.out.println("\n");
+        }
+        
+        if (numOfSets(Rune.SEAL) > 2 && !containsDebuff(Debuff.SEAL))
+        {
+            target.addAppliedDebuff(Debuff.SEAL, 15 * numOfSets(Rune.SEAL), 1, this);
         }
         
         //Decrease Atk Bar
@@ -1534,32 +1544,7 @@ public class Monster
         //Buff steal
         if (containsBuff(new Buff(Buff.BUFF_STEAL, 1)))
         {
-            int resRate = new Random().nextInt(101);
-            if (resRate <= Math.max(15, Math.min(resistance, 100) - Math.min(accuracy, 100)))
-            {
-                if (print)
-                {
-                    System.out.println("Resisted!");
-                }
-                else
-                {
-                    Buff stolen = target.removeRandomBuff();
-                    if (stolen.getBuffNum() == Buff.DEFEND)
-                    {
-                        stolen = new Buff(Buff.NULL, 1);
-                    }
-                    
-                    if (!stolen.equals(new Buff(Buff.NULL, 1)))
-                    {
-                        addAppliedBuff(stolen.getBuffNum(), stolen.getNumTurns() + 1, this);
-                    }
-                    else
-                    {
-                        target.atkBar = Math.max(0, target.atkBar - 500);
-                        atkBar += 500;
-                    }
-                }
-            }
+            stealBuff(target);
         }
         
         //Remove beneficial effect
@@ -1597,13 +1582,13 @@ public class Monster
         }
         
         //Vampire Rune
-        if (!containsDebuff(new Debuff(Debuff.UNRECOVERABLE, 1, 0)))
+        if (!containsDebuff(Debuff.UNRECOVERABLE) && !containsDebuff(Debuff.SEAL))
         {
-            setCurrentHp((int) (currentHp + (finalDmg * 0.35 * numOfSets(Rune.VAMPIRE))));
+            setCurrentHp((int) Math.ceil((currentHp + (finalDmg * 0.35 * numOfSets(Rune.VAMPIRE)))));
         }
         
         //Destroy Rune
-        if (numOfSets(Rune.DESTROY) > 0)
+        if (numOfSets(Rune.DESTROY) > 0 && !containsDebuff(Debuff.SEAL))
         {
             int percentToDestroy = 0;
             for (int i = 0; i < numOfSets(Rune.DESTROY); i++)
@@ -1619,12 +1604,18 @@ public class Monster
         }
         
         //Nemesis Rune
-        if (target.numOfSets(Rune.NEMESIS) > 0)
+        if (target.numOfSets(Rune.NEMESIS) > 0 && !target.containsDebuff(Debuff.SEAL))
         {
             if (finalDmg >= 0.07 * target.maxHp)
             {
                 target.atkBar += 10 * (4 * target.numOfSets(Rune.NEMESIS));
             }
+        }
+        
+        //Despair Rune
+        if (numOfSets(Rune.DESPAIR) > 0 && !containsDebuff(Debuff.SEAL))
+        {
+            target.addAppliedDebuff(Debuff.STUN, 25, 1, this);
         }
         
         if (count < ability.getNumOfActivations())
@@ -1635,6 +1626,40 @@ public class Monster
         if (isCounter)
         {
             afterTurnProtocol(target, true, true);
+        }
+    }
+    
+    protected void stealBuff(Monster target)
+    {
+        stealBuff(target, target.removeRandomBuff());
+    }
+    
+    protected void stealBuff(Monster target, Buff stolen)
+    {
+        int resRate = new Random().nextInt(101);
+        if (resRate <= Math.max(15, Math.min(resistance, 100) - Math.min(accuracy, 100)))
+        {
+            if (print)
+            {
+                System.out.println("Resisted!");
+            }
+            else
+            {
+                if (stolen.getBuffNum() == Buff.DEFEND)
+                {
+                    stolen = new Buff(Buff.NULL, 1);
+                }
+                
+                if (!stolen.equals(new Buff(Buff.NULL, 1)))
+                {
+                    addAppliedBuff(stolen.getBuffNum(), stolen.getNumTurns() + 1, this);
+                }
+                else
+                {
+                    target.atkBar = Math.max(0, target.atkBar - 500);
+                    atkBar += 500;
+                }
+            }
         }
     }
     
@@ -1854,7 +1879,7 @@ public class Monster
         dmgDealtThisTurn = 0;
         
         //Violent Rune
-        if (numOfSets(Rune.VIOLENT) > 0 && Game.canCounter())
+        if (numOfSets(Rune.VIOLENT) > 0 && Game.canCounter() && !containsDebuff(Debuff.SEAL))
         {
             Game.setCanCounter(false);
             int random = new Random().nextInt(101);
@@ -2438,7 +2463,7 @@ public class Monster
         }
         
         //Revenge Rune
-        if (numOfSets(Rune.REVENGE) > 0 && Game.canCounter() && !isStunned() && !isStunned())
+        if (numOfSets(Rune.REVENGE) > 0 && Game.canCounter() && !isStunned() && !isStunned() && !containsDebuff(Debuff.SEAL))
         {
             Game.setCanCounter(false);
             int random = new Random().nextInt(101);
@@ -2724,6 +2749,16 @@ public class Monster
      */
     public static String numWithCommas(int num)
     {
+        return numWithCommas((long) num);
+    }
+    
+    /**
+     * Puts commas into a number in the standard convention (ex. 1,000; 10,000,000)
+     * @param num The number to style
+     * @return The number with commas (as a String)
+     */
+    public static String numWithCommas(long num)
+    {
         String s = num + "";
         int count = s.length() - 1;
         String newString = "";
@@ -2806,11 +2841,7 @@ public class Monster
      */
     public int numOfSets(int type)
     {
-        
-        if (countNumOfEffectRunes(type) >= 4 && (type == Rune.FATAL || type == Rune.SWIFT || type == Rune.VAMPIRE || type == Rune.DESPAIR ||
-                type == Rune.VIOLENT ||
-                type == Rune.RAGE))
-        
+        if (countNumOfEffectRunes(type) >= 4 && (type == Rune.FATAL || type == Rune.SWIFT || type == Rune.VAMPIRE || type == Rune.DESPAIR || type == Rune.VIOLENT || type == Rune.RAGE))
         {
             return 1;
         }
@@ -3074,9 +3105,9 @@ public class Monster
     public static void inspect()
     {
         String inputInspect;
-        System.out.println("Which monster do you want to inspect?");
         do
         {
+            System.out.println("Which monster do you want to inspect?");
             inputInspect = scan.nextLine();
         }
         while (!stringIsMonsterName(inputInspect));
@@ -3208,5 +3239,237 @@ public class Monster
         }
         read.close();
         Main.sort(monsterNamesDatabase);
+    }
+    
+    /**
+     * @return An ArrayList containing an instance of every Monster
+     */
+    public static ArrayList<Monster> getMonstersFromDatabase()
+    {
+        ArrayList<Monster> allMons = new ArrayList<>();
+        
+        for (String name : Monster.monsterNamesDatabase.keySet())
+        {
+            String element = Monster.monsterNamesDatabase.get(name);
+            name = name.replaceAll(" ", "_");
+            try
+            {
+                Class<?> c = Class.forName("Monsters." + element + "." + name);
+                allMons.add((Monster) c.getDeclaredConstructor().newInstance());
+            }
+            catch (Throwable e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        
+        return allMons;
+    }
+    
+    /**
+     * A recursive algorithm to choose the best ability for the Monster to use. Chooses support Ability if there is a Monster on the same Team with low
+     * health or the Ability applies multiple buffs.
+     *
+     * @param next          The Monster to choose the Ability from
+     * @param highestAtkBar The Team with the Monster whose turn it is
+     * @param abilities     The set of abilities that can be chosen
+     * @param firstCall     True if this call is the first time it is called (from outside the method)
+     * @return the ability's number on the monster
+     */
+    public static int chooseAbilityNum(Monster next, Team highestAtkBar, ArrayList<Ability> abilities, boolean firstCall)
+    {
+        if (firstCall)
+        {
+            ArrayList<Integer> viableNums = next.getViableAbilityNumbers();
+            ArrayList<Ability> modifiedAbilities = new ArrayList<>();
+            for (int i = 0; i < abilities.size(); i++)
+            {
+                if (viableNums.contains(i) && abilities.get(i).getTurnsRemaining() <= 0 && !(abilities.get(i) instanceof Passive))
+                {
+                    modifiedAbilities.add(abilities.get(i));
+                }
+            }
+            return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+        }
+        int numOfLowHealthTeammates = 0;
+        boolean teammateWithLowHealth = false;
+        boolean multipleTeammatesWithLowHealth;
+        //Check for low health teammates
+        for (Monster mon : highestAtkBar.getMonsters())
+        {
+            if (mon.equals(next))
+            {
+                continue;
+            }
+            if (mon.getHpRatio() <= 50.0)
+            {
+                numOfLowHealthTeammates++;
+                teammateWithLowHealth = true;
+            }
+        }
+        multipleTeammatesWithLowHealth = numOfLowHealthTeammates >= 2;
+        
+        //Choose a team support ability
+        if (teammateWithLowHealth && next.hasTeamSupportAbility())
+        {
+            ArrayList<Heal_Ability> supportAbilities = new ArrayList<>();
+            for (Ability ability : abilities)
+            {
+                if (ability instanceof Heal_Ability && next.getTeamSupportAbilities().contains((Heal_Ability) ability))
+                {
+                    supportAbilities.add((Heal_Ability) ability);
+                }
+            }
+            Collections.reverse(supportAbilities);
+            for (int i = supportAbilities.size() - 1; i >= 0; i--)
+            {
+                Heal_Ability ability = supportAbilities.get(i);
+                if (ability.getTurnsRemaining() > 0)
+                {
+                    supportAbilities.remove(ability);
+                    continue;
+                }
+                if (ability.targetsMultipleMonsters() && !multipleTeammatesWithLowHealth && supportAbilities.size() > 1)
+                {
+                    supportAbilities.remove(ability);
+                }
+            }
+            Collections.reverse(supportAbilities);
+            if (!supportAbilities.isEmpty())
+            {
+                Ability a = supportAbilities.get(supportAbilities.size() - 1);
+                if (!next.abilityIsValid(a))
+                {
+                    ArrayList<Ability> modifiedAbilities = new ArrayList<>();
+                    for (Ability ab : supportAbilities)
+                    {
+                        if (!ab.equals(a))
+                        {
+                            modifiedAbilities.add(ab);
+                        }
+                    }
+                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                }
+                return next.getAbilities().indexOf(a) + 1;
+            }
+        }
+        
+        //Choose a self-support ability
+        if (next.hasSelfSupportAbility())
+        {
+            ArrayList<Ability> selfAbilities = new ArrayList<>();
+            for (Ability value : abilities)
+            {
+                if (next.getSelfSupportAbilities().contains(value))
+                {
+                    selfAbilities.add(value);
+                }
+            }
+            for (int i = selfAbilities.size() - 1; i >= 0; i--)
+            {
+                Ability ability = selfAbilities.get(i);
+                if (ability.getTurnsRemaining() > 0 || ability instanceof Passive)
+                {
+                    selfAbilities.remove(ability);
+                }
+            }
+            
+            if (!selfAbilities.isEmpty())
+            {
+                Ability a = selfAbilities.get(selfAbilities.size() - 1);
+                if (!next.abilityIsValid(a))
+                {
+                    ArrayList<Ability> modifiedAbilities = new ArrayList<>();
+                    for (Ability ab : selfAbilities)
+                    {
+                        if (!ab.equals(a))
+                        {
+                            modifiedAbilities.add(ab);
+                        }
+                    }
+                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                }
+                return next.getAbilities().indexOf(a) + 1;
+            }
+        }
+        
+        //Choose heal ability with multiple buffs
+        if (next.hasSupportAbilityWithMultipleBuffs())
+        {
+            ArrayList<Ability> supportAbilities = new ArrayList<>();
+            for (Ability value : abilities)
+            {
+                if (next.getSupportAbilitiesWithMultipleBuffs().contains(value))
+                {
+                    supportAbilities.add(value);
+                }
+            }
+            
+            for (int i = supportAbilities.size() - 1; i >= 0; i--)
+            {
+                Ability ability = supportAbilities.get(i);
+                if (ability.getTurnsRemaining() > 0 || ability instanceof Passive)
+                {
+                    supportAbilities.remove(ability);
+                }
+            }
+            
+            if (!supportAbilities.isEmpty())
+            {
+                Ability a = supportAbilities.get(supportAbilities.size() - 1);
+                if (!next.abilityIsValid(a))
+                {
+                    ArrayList<Ability> modifiedAbilities = new ArrayList<>();
+                    for (Ability ab : supportAbilities)
+                    {
+                        if (!ab.equals(a))
+                        {
+                            modifiedAbilities.add(ab);
+                        }
+                    }
+                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                }
+                return next.getAbilities().indexOf(a) + 1;
+            }
+        }
+        
+        //Choose attack ability
+        ArrayList<Ability> otherAbilities = new ArrayList<>();
+        for (Ability value : abilities)
+        {
+            if (next.getAttackAbilities().contains(value))
+            {
+                otherAbilities.add(value);
+            }
+        }
+        for (int i = otherAbilities.size() - 1; i >= 0; i--)
+        {
+            Ability ability = otherAbilities.get(i);
+            if (ability.getTurnsRemaining() > 0 || ability instanceof Heal_Ability || ability instanceof Passive)
+            {
+                otherAbilities.remove(ability);
+            }
+        }
+        
+        if (!otherAbilities.isEmpty())
+        {
+            Ability a = otherAbilities.get(otherAbilities.size() - 1);
+            if (!next.abilityIsValid(a))
+            {
+                ArrayList<Ability> modifiedAbilities = new ArrayList<>();
+                for (Ability ab : otherAbilities)
+                {
+                    if (!ab.equals(a))
+                    {
+                        modifiedAbilities.add(ab);
+                    }
+                }
+                return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+            }
+            return next.getAbilities().indexOf(a) + 1;
+        }
+        
+        //Base case, returns the Monsters basic ability
+        return 1;
     }
 }

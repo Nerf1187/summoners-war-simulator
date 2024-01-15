@@ -13,8 +13,7 @@ public class Debuff extends Stat
 {
     public static final int GLANCING_HIT_UP = 0, DEC_ATK = 1, DEC_DEF = 2, DEC_ATK_SPD = 3, BLOCK_BENEFICIAL_EFFECTS = 4, BOMB = 5, PROVOKE = 6, SLEEP = 7;
     public final static int CONTINUOUS_DMG = 8, FREEZE = 9, STUN = 10, UNRECOVERABLE = 11, SILENCE = 12, BRAND = 13, OBLIVION = 14, DEC_ATK_BAR = 15,
-            REMOVE_BENEFICIAL_EFFECT = 16;
-    public final static int STRIP = 17;
+            REMOVE_BENEFICIAL_EFFECT = 16, STRIP = 17, SEAL = 18;
     private final boolean goesThroughImmunity;
     int debuffNum;
     private Monster caster = null;
@@ -85,6 +84,8 @@ public class Debuff extends Stat
             case 14 -> debuff = "Oblivion";
             case 15 -> debuff = "Dec atk bar";
             case 16 -> debuff = "Remove Beneficial Effect";
+            case 17 -> debuff = "Strip";
+            case 18 -> debuff = "Seal";
         }
         return debuff;
     }

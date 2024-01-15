@@ -26,6 +26,7 @@ public class CreateRuneFile extends JFrame
     private JLabel runeTypeLabel;
     private JComboBox<String> runeTypes;
     private JLabel currentRuneNumLabel;
+    private JButton quitButton;
     private String mainAttribute, runeType;
     private final ArrayList<String> subAttributes = new ArrayList<>();
     private static FileWriter fw = null;
@@ -194,6 +195,9 @@ public class CreateRuneFile extends JFrame
                 amountTextField.requestFocusInWindow();
             }
         });
+        quitButton.addActionListener(e -> {
+            System.exit(0);
+        });
         
         attributes.addFocusListener(new FocusAdapter()
         {
@@ -351,6 +355,12 @@ public class CreateRuneFile extends JFrame
             catch (NumberFormatException e)
             {
                 System.err.println(e);
+                System.exit(1);
+            }
+            if ((monName + runeSetNum).equals("tempFile") || (monName + runeSetNum).equals("oldTempFile"))
+            {
+                new Message("Please choose a different Monster name", true);
+                System.err.println("Please choose a different Monster name");
                 System.exit(1);
             }
             try

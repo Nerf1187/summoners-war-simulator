@@ -11,12 +11,10 @@ import java.util.*;
  */
 public class Rune
 {
-    public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC =
-            11;
-    public static final int ENERGY = 1, FATAL = 2, BLADE = 3, SWIFT = 4, FOCUS = 5, GUARD = 6, ENDURE = 7, SHIELD = 8, REVENGE = 9, WILL = 10, NEMESIS =
-            11;
-    public static final int VAMPIRE = 12, DESTROY = 13, DESPAIR = 14, VIOLENT = 15, RAGE = 16, FIGHT = 17, DETERMINATION = 18, ENHANCE = 19, ACCURACY =
-            20, TOLERANCE = 21;
+    public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC = 11;
+    public static final int ENERGY = 1, FATAL = 2, BLADE = 3, SWIFT = 4, FOCUS = 5, GUARD = 6, ENDURE = 7, SHIELD = 8, REVENGE = 9, WILL = 10, NEMESIS = 11;
+    public static final int VAMPIRE = 12, DESTROY = 13, DESPAIR = 14, VIOLENT = 15, RAGE = 16, FIGHT = 17, DETERMINATION = 18, ENHANCE = 19, ACCURACY = 20,
+            TOLERANCE = 21, SEAL = 24;
     public static final int ELEMENTARTIFACT = 22, TYPEARTIFACT = 23;
     private final int type;
     private MainAttribute mainAttribute;
@@ -38,7 +36,7 @@ public class Rune
     {
         if (type > TYPEARTIFACT || place > 8)
         {
-            throw new IndexOutOfBoundsException("Type must be less than 24 and place must be less than 9");
+            throw new IndexOutOfBoundsException("Type must be less than 25 and place must be less than 9");
         }
         if (type == ELEMENTARTIFACT && place != 7)
         {
@@ -213,8 +211,8 @@ public class Rune
     
     /**
      * Sets the main attribute for the rune. This method should not be called outside of rune editing classes
+     * @param newAttribute The new attribute for the Rune
      */
-    
     public void setMainAttribute(MainAttribute newAttribute)
     {
         mainAttribute = newAttribute;

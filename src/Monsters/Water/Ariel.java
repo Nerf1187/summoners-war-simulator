@@ -93,7 +93,7 @@ public class Ariel extends Monster
                         m.addAppliedBuff(Buff.RECOVERY, 3, this);
                     }
                 }
-                m.increaseAtkBar(200);
+                m.increaseAtkBarByPercent(20);
             }
         }
         super.afterTurnProtocol(target, abilityNum == 1);

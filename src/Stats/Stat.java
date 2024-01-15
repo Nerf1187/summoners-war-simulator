@@ -137,12 +137,22 @@ public class Stat
             String debuffDescription;
             while (readBuffs.hasNextLine() || readDebuffs.hasNextLine())
             {
-                
+                //Get next buff to print
                 String[] buff = readBuffs.nextLine().split(",");
+                for (int i = 0; i < buff.length; i++)
+                {
+                    buff[i] = buff[i].replaceAll(";", ",");
+                }
                 
                 try
                 {
+                    //Get next debuff to print
                     String[] debuff = readDebuffs.nextLine().split(",");
+                    for (int i = 0; i < debuff.length; i++)
+                    {
+                        debuff[i] = debuff[i].replaceAll(";", ",");
+                    }
+                    //Get each part of the buff and debuff
                     buffName = buff[1];
                     int buffNameHolder = buffName.length();
                     buffDescription = buff[3];
@@ -150,11 +160,13 @@ public class Stat
                     debuffDescription = debuff[3];
                     int lastLineBreak = 0;
                     
+                    //Print something else if there is no description
                     if (debuffDescription.equals("null"))
                     {
                         throw new NoSuchElementException();
                     }
                     
+                    //Print part of the buff description on the next line if it is too long
                     if (buffDescription.length() > 95)
                     {
                         String s = "";
@@ -185,6 +197,7 @@ public class Stat
                                 ConsoleColors.YELLOW, debuffDescription, ConsoleColors.CYAN, s, buffDescription.substring(lastLineBreak),
                                 ConsoleColors.RESET);
                     }
+                    //Print the stat descriptions normally
                     else
                     {
                         System.out.printf("%s%s:%s %s%s%s%s:%s %s%s%n%n", ConsoleColors.BLUE, buffName, ConsoleColors.CYAN, buffDescription,

@@ -32,8 +32,8 @@ public class Message extends JFrame
         }
         mainLabel.setText(message);
         add(panel);
-        setLocationRelativeTo(null);
         setSize(250, 150);
+        setLocationRelativeTo(null);
         setVisible(true);
         
         okButton.addActionListener(e -> dispose());

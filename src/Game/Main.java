@@ -1,5 +1,6 @@
 package Game;
 
+import Monsters.Dark.*;
 import Monsters.Fire.*;
 import Monsters.Light.*;
 import Monsters.*;
@@ -51,6 +52,8 @@ public class Main
         Game game = new Game(team1, team2);
         
         //Play game
+        
+        mons1.get(1).setCurrentHp(100);
         while (!game.endGame())
         {
             //Increment attack bars until at least one is full
@@ -361,17 +364,17 @@ public class Main
         String test;
         if (!Monster.monsterNamesDatabase.isEmpty())
         {
-            System.out.println("Preset teams?");
+            System.out.println("Preset teams? (Type \"y\" for yes)");
             test = scan.nextLine();
         }
         else
         {
             test = "y";
         }
-        if (test.equals("y"))
+        if (test.equalsIgnoreCase("y"))
         {
             mons1.add(new Riley());
-            mons1.add(new Chloe());
+            mons1.add(new Woonsa());
             mons1.add(new Kaki());
             mons1.add(new Dominic());
             

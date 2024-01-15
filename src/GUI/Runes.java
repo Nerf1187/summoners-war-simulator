@@ -21,6 +21,8 @@ public class Runes extends JFrame
     private JButton deleteButton;
     private JLabel mainLabel;
     private JPanel panel;
+    private JButton viewButton;
+    private JButton duplicateButton;
     private static String fileName;
     
     /**
@@ -30,7 +32,7 @@ public class Runes extends JFrame
     {
         add(panel);
         setTitle("Action");
-        setSize(250, 200);
+        setSize(450, 200);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
@@ -52,7 +54,15 @@ public class Runes extends JFrame
                         break;
                     }
                     case 'd':
+                    {
                         deleteButton.doClick();
+                        break;
+                    }
+                    case 'r':
+                    {
+                        duplicateButton.doClick();
+                        break;
+                    }
                 }
             }
         });
@@ -83,14 +93,25 @@ public class Runes extends JFrame
                 System.err.println("Error, cannot find file");
                 System.exit(1);
             }
-            if (new File("src/Runes/Monster_Runes/" + fileName).delete())
+            DeleteRuneFile.run(fileName);
+        });
+        viewButton.addActionListener(e -> {
+            dispose();
+            if (!validFileName(fileName, 'v'))
             {
-                new Message("Success", false);
+                System.err.println("Error, cannot find file");
+                System.exit(1);
             }
-            else
+            ViewRunes.run(fileName);
+        });
+        duplicateButton.addActionListener(e -> {
+            dispose();
+            if (!validFileName(fileName, 'r'))
             {
-                new Message("Error", true);
+                System.err.println("Error, cannot find file");
+                System.exit(1);
             }
+            DuplicateRuneFile.run(fileName);
         });
     }
     
@@ -130,9 +151,15 @@ public class Runes extends JFrame
         return monName + runeSetNum + ".csv";
     }
     
-    private boolean validFileName(String fileName, char action)
+    /**
+     * Tests whether a given String is a valid file name
+     * @param fileName The text to check
+     * @param action The requested action from the user
+     * @return True if the text is a valid file name in the Runes/Monster_Runes directory, false otherwise
+     */
+    public static boolean validFileName(String fileName, char action)
     {
-        if (action != 'c' && action != 'e' && action != 'd')
+        if (action != 'c' && action != 'e' && action != 'd' && action != 'v' && action != 'r')
         {
             System.err.println("Error, cannot distinguish action \"" + action + "\"");
             return false;

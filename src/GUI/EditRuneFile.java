@@ -198,6 +198,15 @@ public class EditRuneFile extends JFrame
         return false;
     }
     
+    /**
+     * Edits the chosen line in the chosen rune file. It does this by writing to a temporary file, saving the original to a different name,
+     * changing the new file's name to the requested name, and deletes the original file.
+     *
+     * @param fileName The name of the file to edit. Should end in ".csv"
+     * @param lineNum The line number to edit
+     * @param newRune The new Rune to replace the old one with
+     * @return True if and only if the file was successfully edited
+     */
     private boolean editFile(String fileName, int lineNum, Rune newRune)
     {
         File newFile = null;
@@ -222,8 +231,27 @@ public class EditRuneFile extends JFrame
             }
             newFileWriter.close();
             read.close();
-            oldFile.delete();
-            return newFile.renameTo(oldFile);
+            if (oldFile.renameTo(new File("src/Runes/Monster_Runes/oldTempFile.csv")))
+            {
+                if (newFile.renameTo(new File("src/Runes/Monster_Runes/" + fileName)))
+                {
+                    /*Delete the original file  ****DO NOT REMOVE**** */
+                    File temp = new File("src/Runes/Monster_Runes/oldTempFile.csv");
+                    temp.delete();
+                    
+                    return true;
+                }
+                else
+                {
+                    oldFile.renameTo(new File("src/Runes/Monster_Runes/" + fileName));
+                    return false;
+                }
+            }
+            else
+            {
+                newFile.delete();
+                return false;
+            }
         }
         catch (Exception e)
         {

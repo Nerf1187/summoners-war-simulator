@@ -10,7 +10,7 @@ All code is written by me unless stated otherwise
 Read "How to run.txt" for a description of each runnable class
 
 
-There are currently 21 monsters implemented (found in Monsters/Monster database.csv). Feel free to make more if you know how and want to. 
+There are currently 22 monsters implemented (found in Monsters/Monster database.csv). Feel free to make more if you know how and want to. 
 If you do, read "How to create a new Monster.txt" for instructions. All characters should be accurate as of December 10, 2023.
 Each Monster has at least one rune set already but feel free to make your own.
 

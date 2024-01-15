@@ -24,8 +24,8 @@ public class Auto_Play extends Thread
     private static Team highestAtkBar = new Team("", new ArrayList<>()), other = new Team("", new ArrayList<>());
     private static final HashMap<Team, ArrayList<Integer>> teamStats = new HashMap<>();
     private static final ArrayList<Team> bestTeams = new ArrayList<>();
-    private static int numOfCompletedSimulations = 0;
-    private static final StopWatch stopWatch = new StopWatch(false);
+    private static long numOfCompletedSimulations = 0;
+    private static final StopWatch totalRunningTime = new StopWatch(false), battleTime = new StopWatch(false);
     
     /**
      * Runs the Auto_Play class
@@ -37,8 +37,10 @@ public class Auto_Play extends Thread
         Monster.setDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\n\nTotal number of simulations ran: " + numOfCompletedSimulations);
-            stopWatch.pause();
-            System.out.println("Time elapsed: \t" + toReadableTime(stopWatch.getElapsedTime()));
+            totalRunningTime.pause();
+            updateBestTeams();
+            System.out.println("Total time elapsed: \t" + toReadableTime(totalRunningTime.getElapsedTime()));
+            System.out.println("Time elapsed during battle: " + toReadableTime(battleTime.getElapsedTime()));
             System.out.println("Final standings:");
             for (Team team : bestTeams)
             {
@@ -83,7 +85,6 @@ public class Auto_Play extends Thread
             }
         }
     }
-    
     
     /**
      * Runs a simulated battle with the provided teams
@@ -709,23 +710,7 @@ public class Auto_Play extends Thread
      */
     public static void allPossibleTeams()
     {
-        ArrayList<Monster> allMons = new ArrayList<>();
-        
-        for (String name : Monster.monsterNamesDatabase.keySet())
-        {
-            String element = Monster.monsterNamesDatabase.get(name);
-            name = name.replaceAll(" ", "_");
-            try
-            {
-                Class<?> c = Class.forName("Monsters." + element + "." + name);
-                allMons.add((Monster) c.getDeclaredConstructor().newInstance());
-            }
-            catch (Throwable e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        
+        ArrayList<Monster> allMons = Monster.getMonstersFromDatabase();
         ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = generateCombinations(allMons, 4);
         ArrayList<Team> allPossibleTeams = new ArrayList<>();
         int count = 0;
@@ -743,17 +728,17 @@ public class Auto_Play extends Thread
         Team winner;
         
         System.out.println("Simulations started");
-        stopWatch.play();
+        totalRunningTime.play();
         for (int i = 0; i < allPossibleTeams.size(); i++)
         {
             winner = allPossibleTeams.get(i);
             for (int j = i + 1; j < allPossibleTeams.size(); j++)
             {
-                
-                int numOfSimsLeft = totalNumOfSims(allPossibleTeams.size()) - numOfCompletedSimulations;
                 if (pause)
                 {
-                    stopWatch.pause();
+                    totalRunningTime.pause();
+                    updateBestTeams();
+                    long numOfSimsLeft = totalNumOfSims(allPossibleTeams.size()) - numOfCompletedSimulations;
                     System.out.println("Current standings:");
                     for (Team team : bestTeams)
                     {
@@ -761,12 +746,13 @@ public class Auto_Play extends Thread
                         {
                             System.out.printf("%s\t\t", mon.getName(true, false));
                         }
-                        System.out.println("number of wins: " + teamStats.get(team).get(0) + "\tNumber of losses: " + teamStats.get(team).get(1));
+                        System.out.println("number of wins: " + Monster.numWithCommas(teamStats.get(team).get(0)) + "\tNumber of losses: " + Monster.numWithCommas(teamStats.get(team).get(1)));
                     }
                     System.out.println("Number of simulations left: " + Monster.numWithCommas(numOfSimsLeft));
-                    long millisecondsPerSim = stopWatch.getElapsedTime() / numOfCompletedSimulations;
-                    long timeRemaining = millisecondsPerSim * numOfSimsLeft;
-                    System.out.println("Elapsed time: " + toReadableTime(stopWatch.getElapsedTime()));
+                    long nanosecondsPerSim = totalRunningTime.getElapsedTime() / numOfCompletedSimulations;
+                    long timeRemaining = nanosecondsPerSim * numOfSimsLeft;
+                    System.out.println("Total elapsed time: " + toReadableTime(totalRunningTime.getElapsedTime()));
+                    System.out.println("Time elapsed during battle: " + toReadableTime(battleTime.getElapsedTime()));
                     System.out.println("Estimated time remaining: " + toReadableTime(timeRemaining));
                     System.out.println("Press enter to continue or type \"inspect\" to inspect a specific team");
                     String response = scan.nextLine();
@@ -787,101 +773,39 @@ public class Auto_Play extends Thread
                     
                     pause = false;
                     System.out.println("Running");
-                    stopWatch.play();
+                    totalRunningTime.play();
                 }
                 numOfCompletedSimulations++;
-                System.gc();
                 Team contender = allPossibleTeams.get(j);
                 
-                //Reset team
-                ArrayList<Monster> monsters = winner.getMonsters();
-                for (int k = 0; k < monsters.size(); k++)
-                {
-                    try
-                    {
-                        monsters.set(k, monsters.get(k).getClass().getDeclaredConstructor().newInstance());
-                    }
-                    catch (Throwable e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-                ArrayList<Monster> monsters1 = contender.getMonsters();
-                for (int k = 0; k < monsters1.size(); k++)
-                {
-                    try
-                    {
-                        monsters1.set(k, monsters1.get(k).getClass().getDeclaredConstructor().newInstance());
-                    }
-                    catch (Throwable e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
+                //Reset teams
+                resetTeam(winner.getMonsters());
+                resetTeam(contender.getMonsters());
                 Main.setRuneEffectsAndNames(winner, contender);
+                battleTime.play();
                 battle(winner, contender, 0);
+                battleTime.pause();
                 Team loser = contender;
                 if (!game.getWinningTeam().getName().equals("Temp"))
                 {
                     Team temp = winner;
                     winner = game.getWinningTeam();
-                    if (winner.equals(temp))
-                    {
-                        loser = contender;
-                    }
-                    else
+                    if (!winner.equals(temp))
                     {
                         loser = temp;
                     }
                 }
                 
+                //Update teamStats
                 Team finalWinner = winner;
-                teamStats.forEach((key, value) -> {
-                    if (key.equals(finalWinner))
-                    {
-                        ArrayList<Integer> temp = new ArrayList<>(teamStats.get(key));
-                        temp.set(0, temp.get(0) + 1);
-                        teamStats.put(key, temp);
-                    }
-                });
+                ArrayList<Integer> temp = new ArrayList<>(teamStats.get(finalWinner));
+                temp.set(0, temp.get(0) + 1);
+                teamStats.put(finalWinner, temp);
                 
                 Team finalLoser = loser;
-                teamStats.forEach((key, value) -> {
-                    if (key.equals(finalLoser))
-                    {
-                        ArrayList<Integer> temp = new ArrayList<>(teamStats.get(key));
-                        temp.set(1, temp.get(1) + 1);
-                        teamStats.put(key, temp);
-                    }
-                });
-                
-                AtomicInteger highest = new AtomicInteger(0);
-                AtomicInteger second = new AtomicInteger(0);
-                AtomicInteger third = new AtomicInteger(0);
-                AtomicInteger fourth = new AtomicInteger(0);
-                
-                teamStats.forEach((key, value) -> {
-                    if (value.get(0) > highest.get())
-                    {
-                        highest.set(value.get(0));
-                        bestTeams.set(0, key);
-                    }
-                    else if (value.get(0) > second.get())
-                    {
-                        second.set(value.get(0));
-                        bestTeams.set(1, key);
-                    }
-                    else if (value.get(0) > third.get())
-                    {
-                        third.set(value.get(0));
-                        bestTeams.set(2, key);
-                    }
-                    else if (value.get(0) > fourth.get())
-                    {
-                        fourth.set(value.get(0));
-                        bestTeams.set(3, key);
-                    }
-                });
+                temp = new ArrayList<>(teamStats.get(finalLoser));
+                temp.set(1, temp.get(1) + 1);
+                teamStats.put(finalLoser, temp);
             }
         }
     }
@@ -956,7 +880,7 @@ public class Auto_Play extends Thread
     /**
      * Asks for four Monsters from the user and finds the Team that has all four.
      *
-     * @param pickedMons The Monsters already picked. The first call should pass a new ArrayList.
+     * @param pickedMons The Monsters already picked. The first call should pass an empty ArrayList.
      * @return The Team from {@link Auto_Play#teamStats} which contains the four Monsters provided.
      */
     public static Team findTeamFromMonsters(ArrayList<Monster> pickedMons)
@@ -1014,17 +938,17 @@ public class Auto_Play extends Thread
         }
     }
     
-    private static String toReadableTime(long milliseconds)
+    private static String toReadableTime(long nanoseconds)
     {
         int seconds = 0;
         int minutes = 0;
         int hours = 0;
         int days = 0;
         
-        while (milliseconds >= 1_000)
+        while (nanoseconds >= 1e9)
         {
             seconds++;
-            milliseconds -= 1_000;
+            nanoseconds -= (long) 1e9;
             
             if (seconds >= 60)
             {
@@ -1042,7 +966,66 @@ public class Auto_Play extends Thread
                 days++;
             }
         }
+        String returnString = "";
+        if (days > 0)
+        {
+            returnString += days + " days, ";
+        }
+        if (hours > 0)
+        {
+            returnString += hours + " hours, ";
+        }
+        if (minutes > 0)
+        {
+            returnString += minutes + " minutes, ";
+        }
+        return returnString + seconds + "." + nanoseconds + " seconds";
+        //return String.format("%d days, %d hours, %d minutes, %d.%d seconds", days, hours, minutes, seconds, nanoseconds);
+    }
+    
+    private static void resetTeam(ArrayList<Monster> team)
+    {
+        for (int i = 0; i < team.size(); i++)
+        {
+            try
+            {
+                team.set(i, team.get(i).getClass().getDeclaredConstructor().newInstance());
+            }
+            catch (Throwable e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    
+    private static void updateBestTeams()
+    {
+        AtomicInteger highest = new AtomicInteger(0);
+        AtomicInteger second = new AtomicInteger(0);
+        AtomicInteger third = new AtomicInteger(0);
+        AtomicInteger fourth = new AtomicInteger(0);
         
-        return String.format("%d days, %d hours, %d minutes, %d.%d seconds", days, hours, minutes, seconds, milliseconds);
+        teamStats.forEach((key, value) -> {
+            if (value.get(0) > highest.get())
+            {
+                highest.set(value.get(0));
+                bestTeams.set(0, key);
+            }
+            else if (value.get(0) > second.get())
+            {
+                second.set(value.get(0));
+                bestTeams.set(1, key);
+            }
+            else if (value.get(0) > third.get())
+            {
+                third.set(value.get(0));
+                bestTeams.set(2, key);
+            }
+            else if (value.get(0) > fourth.get())
+            {
+                fourth.set(value.get(0));
+                bestTeams.set(3, key);
+            }
+        });
     }
 }

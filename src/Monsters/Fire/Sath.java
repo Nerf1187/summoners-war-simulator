@@ -65,7 +65,7 @@ public class Sath extends Monster
         {
             if (target.containsDebuff(Debuff.CONTINUOUS_DMG))
             {
-                setAbilityGlancingRateChange(-10_000);
+                setAbilityGlancingRateChange(Integer.MIN_VALUE);
             }
         }
         

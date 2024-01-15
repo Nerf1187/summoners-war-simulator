@@ -33,26 +33,19 @@ public class Aegir extends Monster
         
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0, Debuff.CONTINUOUS_DMG, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(50, 50);
-        abilities.add(new Attack_Ability("Penalty (1)", 3.8 * 1.3, 0, 1, "Attacks the enemy with an axe to inflict 2 continuous " +
-                "damage effects with a 50% chance", ability1Debuffs, ability1DebuffChances, 0, false, false));
+        abilities.add(new Attack_Ability("Penalty (1)", 3.8 * 1.3, 0, 1, "Attacks the enemy with an axe to inflict 2 continuous " + "damage effects with a 50% chance", ability1Debuffs, ability1DebuffChances, 0, false, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.BRAND, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Wrathful Attack (2)", 6.2 * 1.25, 0, 1, "Attacks an enemy with a wrathful axe, leaving " +
-                "a Branding Effect for 2 turns, and increasing your Attack Bar by 50%. The target with the Branding effect will receive 25% increased " +
-                "damage.", ability2Debuffs,
+        abilities.add(new Attack_Ability("Wrathful Attack (2)", 6.2 * 1.25, 0, 1,
+                "Attacks an enemy with a wrathful axe, leaving " + "a Branding Effect for 2 turns, and increasing your Attack Bar by 50%. The target with the Branding effect will " + "receive 25% increased " + "damage.", ability2Debuffs,
                 ability2DebuffChances, 2, false, false));
         
         ArrayList<Buff> ability3Buffs = abilityBuffs(Buff.BUFF_STEAL, 0);
         ArrayList<Integer> ability3BuffsChances = abilityChances(75);
-        abilities.add(new Attack_Ability("Confiscate (3)", 4 * 1.25, 0, 2, "Attacks the enemy 2 times, with each strike having " +
-                "a 75% chance to steal 1 beneficial effect from the enemy. Absorbs the Attack Bar by 50% each if you attack the enemy with no beneficial" +
-                " effects. Goes under " +
-                "[Berserk] state for 3 turns afterwards. Under Berserk state, the MAX HP is decreased by 30%, damage dealt to enemies is decreased by " +
-                "30%, damage dealt to enemies " +
-                "is increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", ability3Buffs,
-                ability3BuffsChances, 3,
-                false, false, 0));
+        abilities.add(new Attack_Ability("Confiscate (3)", 4 * 1.25, 0, 2, "Attacks the enemy 2 times, with each strike having " + "a 75% chance to steal 1 beneficial effect from the enemy. Absorbs the Attack Bar by 50% each if you attack the " +
+                "enemy with no beneficial" + " effects. Goes under " + "[Berserk] state for 3 turns afterwards. Under Berserk state, the MAX HP is decreased by 30%, damage dealt to enemies is decreased by " + "30%, damage dealt to enemies " + "is "
+                + "increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", ability3Buffs, ability3BuffsChances, 3, false, false, 0));
         
         abilities.add(new Leader_Skill(Stat.HP, 0.33, ALL));
         
@@ -73,7 +66,7 @@ public class Aegir extends Monster
         }
         if (abilityNum == 2)
         {
-            increaseAtkBar(500);
+            increaseAtkBarByPercent(50);
         }
         if (abilityNum == 3)
         {

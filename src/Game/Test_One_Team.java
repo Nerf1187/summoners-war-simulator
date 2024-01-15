@@ -25,21 +25,7 @@ public class Test_One_Team
     {
         Monster.setPrint(false);
         Team mainTeam = setTeam();
-        ArrayList<Monster> allMons = new ArrayList<>();
-        for (String name : Monster.monsterNamesDatabase.keySet())
-        {
-            String element = Monster.monsterNamesDatabase.get(name);
-            name = name.replaceAll(" ", "_");
-            try
-            {
-                Class<?> c = Class.forName("Monsters." + element + "." + name);
-                allMons.add((Monster) c.getDeclaredConstructor().newInstance());
-            }
-            catch (Throwable e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
+        ArrayList<Monster> allMons = Monster.getMonstersFromDatabase();
         ArrayList<ArrayList<Monster>> allTeams = generateCombinations(allMons, 4);
         for (ArrayList<Monster> enemyMons : allTeams)
         {

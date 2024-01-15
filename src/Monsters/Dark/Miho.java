@@ -77,7 +77,7 @@ public class Miho extends Monster
         //@Passive
         if (gotCritThisTurn && !containsDebuff(Debuff.OBLIVION) && Game.canCounter())
         {
-            increaseAtkBar(400);
+            increaseAtkBarByPercent(40);
             setCritRate(10_000);
             addAppliedBuff(Buff.COUNTER, 0, this);
         }

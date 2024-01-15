@@ -8,7 +8,7 @@ import java.time.*;
 public class StopWatch
 {
     private Instant start;
-    private long elapsedMilliseconds = 0;
+    private long elapsedNanoseconds = 0;
     private boolean paused = true;
     
     /**
@@ -53,7 +53,7 @@ public class StopWatch
             return false;
         }
         Instant end = Instant.now();
-        elapsedMilliseconds += Duration.between(start, end).toMillis();
+        elapsedNanoseconds += Duration.between(start, end).toNanos();
         paused = true;
         return true;
     }
@@ -63,6 +63,6 @@ public class StopWatch
      */
     public long getElapsedTime()
     {
-        return elapsedMilliseconds;
+        return elapsedNanoseconds;
     }
 }

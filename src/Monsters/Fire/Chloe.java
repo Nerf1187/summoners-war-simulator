@@ -30,7 +30,6 @@ public class Chloe extends Monster
     
     private void setAbilities()
     {
-        
         abilities.add(new Attack_Ability("Absorb Mana (1)", 1.35 * (1.8 + (0.12 * getMaxHp()) / getAtk()), 0.5, 1, "Attacks the " +
                 "enemy and recovers the HP by 50% of the damage dealt. This attack will deal more damage according to your MAX HP.", 0, false,
                 false));
@@ -45,9 +44,7 @@ public class Chloe extends Monster
         abilities.add(new Heal_Ability("Fanatic (3)", 0, 1, "All allies are invincible for 1 turn and gain Immunity for 3 turns.",
                 ability3Buffs, ability3BuffChances, 5, true));
         
-        
         abilities.add(new Leader_Skill(Stat.SPD, 0.2, ALL));
-        
         
         super.setAbilities(abilities);
     }
