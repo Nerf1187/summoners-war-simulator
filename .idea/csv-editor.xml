@@ -24,20 +24,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Runes\Monster_Runes\Aegir2.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Runes\Monster_Runes\Aegir3.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\src\Runes\Monster_Runes\Ariel1.csv">
           <value>
             <Attribute>
@@ -178,20 +164,6 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Runes\Monster_Runes\Temp1.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Runes\Monster_Runes\Temp2.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="\src\Runes\Monster_Runes\Trevor1.csv">
           <value>
             <Attribute>
@@ -214,20 +186,6 @@
           </value>
         </entry>
         <entry key="\src\Runes\Monster_Runes\Xiao_Ling1.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Runes\Monster_Runes\oldTempFile.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Runes\Monster_Runes\tempFile.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

@@ -200,8 +200,7 @@ public class Main
         if (Monster.isPrint())
         {
             System.out.println(ConsoleColors.RED_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "BOOM!" + ConsoleColors.RESET + " Bomb exploded! You " +
-                    "took " +
-                    (target.getMaxHp() * 0.4) + " damage! You have " + Math.max(target.getCurrentHp(), 0) + " health left!");
+                    "took " + (target.getMaxHp() * 0.4) + " damage! You have " + Math.max(target.getCurrentHp(), 0) + " health left!");
         }
         
         printStunEffect();

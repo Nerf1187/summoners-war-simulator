@@ -1,0 +1,1 @@
+* Fixed a bug that would crash the program if a Monster took Continuous Damage or Bomb damage while asleep

@@ -1444,13 +1444,13 @@ public class Monster
         
         
         //Remove sleep if needed
-        ArrayList<Debuff> TargetDebuffsList = target.appliedDebuffs;
-        for (int i = TargetDebuffsList.size() - 1; i >= 0; i--)
+        ArrayList<Debuff> targetDebuffsList = target.appliedDebuffs;
+        for (int i = targetDebuffsList.size() - 1; i >= 0; i--)
         {
-            Debuff debuff = TargetDebuffsList.get(i);
+            Debuff debuff = targetDebuffsList.get(i);
             if (debuff.getDebuffNum() == Debuff.SLEEP)
             {
-                appliedDebuffs.remove(i);
+                targetDebuffsList.remove(i);
             }
         }
         

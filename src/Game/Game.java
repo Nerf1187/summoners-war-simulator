@@ -210,6 +210,7 @@ public class Game
      */
     public void applyStats(Monster next)
     {
+        boolean dmgTaken = false;
         //Apply debuffs before turn
         for (Debuff debuff : next.getAppliedDebuffs())
         {
@@ -227,7 +228,7 @@ public class Game
                             next.setDead(true);
                         }
                         Main.stunned = true;
-                        next.removeDebuff(Debuff.SLEEP);
+                        dmgTaken = true;
                     }
                 }
                 //Sleep
@@ -240,7 +241,7 @@ public class Game
                 case Debuff.CONTINUOUS_DMG ->
                 {
                     next.setCurrentHp((int) (next.getCurrentHp() - next.getMaxHp() * (continuousDmgAmount())));
-                    next.removeDebuff(Debuff.SLEEP);
+                    dmgTaken = true;
                     if (Monster.isPrint())
                     {
                         System.out.println("DOT Applied, you took " + (int) (next.getMaxHp() * (continuousDmgAmount())));
@@ -259,6 +260,11 @@ public class Game
                     Main.stunned = true;
                 }
             }
+        }
+        
+        if (dmgTaken)
+        {
+            next.removeDebuff(Debuff.SLEEP);
         }
         
         //Apply buffs before turn
