@@ -85,7 +85,7 @@ public class Aegir extends Monster
             }
         }
         
-        if (hasBerserk && !containsDebuff(new Debuff(Debuff.UNRECOVERABLE, 1, 0)))
+        if (hasBerserk && !containsDebuff(Debuff.UNRECOVERABLE))
         {
             setCurrentHp(Math.max(getMaxHp(), (int) (getCurrentHp() + getDmgDealtThisTurn() * 0.1)));
         }

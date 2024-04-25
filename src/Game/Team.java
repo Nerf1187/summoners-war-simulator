@@ -16,6 +16,8 @@ public class Team
 {
     private final String name;
     private final ArrayList<Monster> monsters;
+    private int wins = 0;
+    private int losses = 0;
     
     /**
      * Creates a new Team object
@@ -351,11 +353,11 @@ public class Team
     {
         if (index < 0)
         {
-            return monsters.get(0);
+            return monsters.getFirst();
         }
         if (index >= monsters.size())
         {
-            return monsters.get(monsters.size() - 1);
+            return monsters.getLast();
         }
         return monsters.get(index);
     }
@@ -491,7 +493,7 @@ public class Team
         {
             if (!list.equals(line1))
             {
-                list.set(list.size() - 1, "       " + list.get(list.size() - 1));
+                list.set(list.size() - 1, "       " + list.getLast());
             }
         }
         
@@ -510,7 +512,7 @@ public class Team
         String s = "";
         for (int i = 0; i < lines.get(0).size(); i++)
         {
-            s += lines.get(0).get(i);
+            s += lines.getFirst().get(i);
         }
         
         s += "\n";
@@ -752,6 +754,18 @@ public class Team
      */
     public Monster getRandomMon()
     {
+        boolean allDead = true;
+        for (Monster monster : monsters)
+        {
+            if (!monster.isDead())
+            {
+                allDead = false;
+            }
+        }
+        if (allDead)
+        {
+            return null;
+        }
         Monster returnMon;
         do
         {
@@ -862,5 +876,35 @@ public class Team
             }
         }
         return false;
+    }
+    
+    public int getWins()
+    {
+        return wins;
+    }
+    
+    public void setWins(int wins)
+    {
+        this.wins = wins;
+    }
+    
+    public void incWins()
+    {
+        wins++;
+    }
+    
+    public int getLosses()
+    {
+        return losses;
+    }
+    
+    public void setLosses(int losses)
+    {
+        this.losses = losses;
+    }
+    
+    public void incLosses()
+    {
+        losses++;
     }
 }

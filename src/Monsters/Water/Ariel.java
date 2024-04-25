@@ -41,8 +41,8 @@ public class Ariel extends Monster
         
         ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.DEF_UP, 2);
         ArrayList<Integer> ability2BuffChances = abilityChances(100);
-        abilities.add(new Heal_Ability("Archangel's Blessing (2)", 0.5, 1, "Recovers an ally's HP by 50% and increases the " +
-                "Defense for 2 turns.", ability2Buffs, ability2BuffChances, 3, false));
+        abilities.add(new Heal_Ability("Archangel's Blessing (2)", 0.35, 1, "Recovers an ally's HP by 35% and increases the " +
+                "Defense for 2 turns.", ability2Buffs, ability2BuffChances, 2, false));
         
         abilities.add(new Heal_Ability("Holy Water (3)", 0.5 * 1.2, 1, "Removes all harmful effects granted on all allies and " +
                 "recovers their HP by 50% each. In addition, increases the Attack Bar of all allies by 20% each and recovers 15% HP each turn for 3 " +

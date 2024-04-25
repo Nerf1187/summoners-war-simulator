@@ -18,24 +18,32 @@ public class ViewRunes extends JFrame
     private JTextPane textArea;
     private JButton exitButton;
     private JTable table;
+    private JButton toEditButton;
     
     private static ArrayList<String[]> tableValues;
+    private int selectedRow = -1;
     
     /**
      * Creates the GUI
      */
-    private ViewRunes()
+    private ViewRunes(String fileName)
     {
         add(panel);
-        setTitle("View");
-        setSize(800, 400);
+        setTitle("View " + fileName);
+        setSize(900, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         
         
+        exitButton.addActionListener(_ -> System.exit(0));
         
-        exitButton.addActionListener(e -> System.exit(0));
+        toEditButton.addActionListener(_ -> {
+            dispose();
+            EditRuneFile.run(fileName, selectedRow);
+        });
+        
+        table.getSelectionModel().addListSelectionListener(_ -> selectedRow = table.getSelectedRow());
     }
     
     /**
@@ -50,11 +58,13 @@ public class ViewRunes extends JFrame
         int i = 0;
         for (Rune rune : runes)
         {
-            rowValues.add(new String[3]);
+            rowValues.add(new String[4]);
+            //Place
+            rowValues.get(i)[0] = i + 1 + "";
             //Type
-            rowValues.get(i)[0] = (Rune.numToType(rune.getType()));
+            rowValues.get(i)[1] = (Rune.numToType(rune.getType()));
             //Main attribute
-            rowValues.get(i)[1] = (rune.getMainAttribute().toString());
+            rowValues.get(i)[2] = (rune.getMainAttribute().toString());
             //Sub attributes
             String tempText = "";
             String bufferText = ",            ";
@@ -70,11 +80,11 @@ public class ViewRunes extends JFrame
             {
                 tempText = "None";
             }
-            rowValues.get(i)[2] = (tempText);
+            rowValues.get(i)[3] = (tempText);
             i++;
         }
         tableValues = rowValues;
-        new ViewRunes();
+        new ViewRunes(fileName);
     }
     
     /**
@@ -82,8 +92,8 @@ public class ViewRunes extends JFrame
      */
     private void createUIComponents()
     {
-        String[] columnNames = {"Type", "Main Attribute", "Sub Attributes"};
-        String[][] temp = new String[tableValues.size()][3];
+        String[] columnNames = {"Place", "Type", "Main Attribute", "Sub Attributes"};
+        String[][] temp = new String[tableValues.size()][4];
         for (int i = 0; i < tableValues.size(); i++)
         {
             temp[i] = tableValues.get(i);
@@ -91,11 +101,13 @@ public class ViewRunes extends JFrame
         
         table = new JTable(temp, columnNames);
         TableColumnModel tc = table.getColumnModel();
-        tc.getColumn(0).setPreferredWidth(125);
-        tc.getColumn(0).setMaxWidth(125);
-        tc.getColumn(1).setPreferredWidth(100);
-        tc.getColumn(1).setMaxWidth(100);
-        tc.getColumn(2).setPreferredWidth(500);
+        tc.getColumn(0).setPreferredWidth(75);
+        tc.getColumn(0).setMaxWidth(75);
+        tc.getColumn(1).setPreferredWidth(125);
+        tc.getColumn(1).setMaxWidth(125);
+        tc.getColumn(2).setPreferredWidth(100);
+        tc.getColumn(2).setMaxWidth(100);
+        tc.getColumn(3).setPreferredWidth(500);
         table.setRowHeight(30);
     }
 }

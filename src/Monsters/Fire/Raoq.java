@@ -58,7 +58,7 @@ public class Raoq extends Monster
         {
             do
             {
-                attack(target, abilities.get(0));
+                attack(target, abilities.getFirst());
             }
             while (new Random().nextInt(101) < 30);
         }
@@ -69,7 +69,7 @@ public class Raoq extends Monster
             Monster attackingMon1 = null;
             do
             {
-                if (friendlyTeam.numOfAliveMons() == 1)
+                if (friendlyTeam.numOfAliveMons() <= 1)
                 {
                     break;
                 }
@@ -80,13 +80,13 @@ public class Raoq extends Monster
             Monster attackingMon2 = null;
             do
             {
-                if (attackingMon1 == null || friendlyTeam.numOfAliveMons() == 2)
+                if (attackingMon1 == null || friendlyTeam.numOfAliveMons() <= 2)
                 {
                     break;
                 }
                 attackingMon2 = friendlyTeam.getRandomMon();
             }
-            while (attackingMon2 instanceof Raoq || attackingMon2.equals(attackingMon1) && (attackingMon1 != null && friendlyTeam.numOfAliveMons() > 2));
+            while (attackingMon2 instanceof Raoq || attackingMon2.equals(attackingMon1) && friendlyTeam.numOfAliveMons() > 2);
             
             if (attackingMon1 != null)
             {

@@ -83,13 +83,14 @@ public class Miho extends Monster
         }
     }
     
-    public void afterHitProtocol(Monster attacker)
+    public void targetAfterHitProtocol(Monster attacker)
     {
         //@Passive
         gotCritThisTurn = wasCrit() || gotCritThisTurn;
         if (wasCrit() && !containsDebuff(Debuff.OBLIVION) && getCurrentHp() <= 0)
         {
             setCurrentHp(1);
+            setDead(false);
         }
     }
 }

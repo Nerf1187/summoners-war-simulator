@@ -21,20 +21,22 @@ public class Test_One_Team
      * Runs this program
      */
     
-    public static void main(String[] args)
+    void main()
     {
         Monster.setPrint(false);
         Team mainTeam = setTeam();
+        System.out.println("Battling...");
         ArrayList<Monster> allMons = Monster.getMonstersFromDatabase();
         ArrayList<ArrayList<Monster>> allTeams = generateCombinations(allMons, 4);
         for (ArrayList<Monster> enemyMons : allTeams)
         {
             Team enemyTeam = new Team("Team 2", enemyMons);
-            mainTeam.reset();
+            Auto_Play.resetTeam(mainTeam.getMonsters());
+            Auto_Play.resetTeam(enemyTeam.getMonsters());
             Main.setRuneEffectsAndNames(mainTeam, enemyTeam);
-            Team winningTeam = Auto_Play.battle(mainTeam, enemyTeam, 0);
+            Game g = Auto_Play.battle(mainTeam, enemyTeam, 0);
             numOfBattles++;
-            if (winningTeam != null && winningTeam == mainTeam)
+            if (g.getWinningTeam().getName().equals("Team 1"))
             {
                 mainTeamWins++;
             }

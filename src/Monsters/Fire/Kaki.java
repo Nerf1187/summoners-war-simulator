@@ -62,7 +62,7 @@ public class Kaki extends Monster
         int atk = getAtk();
         
         //@Passive
-        if (!containsDebuff(new Debuff(Debuff.OBLIVION, 1, 0)))
+        if (!containsDebuff(Debuff.OBLIVION))
         {
             setCritRate(-9999);
             setAtk(atk + (int) (getDef() * 0.2));

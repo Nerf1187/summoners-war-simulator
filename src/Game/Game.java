@@ -270,7 +270,7 @@ public class Game
         //Apply buffs before turn
         for (Buff buff : next.getAppliedBuffs())
         {
-            if (buff.getBuffNum() == Buff.RECOVERY && !next.containsDebuff(new Debuff(Debuff.UNRECOVERABLE, 1, 0)))
+            if (buff.getBuffNum() == Buff.RECOVERY && !next.containsDebuff(Debuff.UNRECOVERABLE))
             {
                 next.setCurrentHp(Math.min(next.getMaxHp(), (int) (next.getCurrentHp() + next.getMaxHp() * 0.15)));
                 if (Monster.isPrint())

@@ -8,8 +8,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 
-import static GUI.CreateRuneFile.addAllAttributes;
-import static GUI.CreateRuneFile.stringIsInt;
+import static GUI.CreateRuneFile.*;
 
 /**
  * Allows the user to easily edit their rune set.
@@ -29,24 +28,31 @@ public class EditRuneFile extends JFrame
     private JButton confirm;
     private JLabel newAttributeLabel;
     private JButton doneButton;
+    private JButton toViewButton;
+    private JButton replaceButton;
     private ArrayList<Rune> runes;
+    
+    
+    private boolean changeType = false;
     
     /**
      * Creates the GUI to edit the rune file
      *
-     * @param fileName the name of the file to edit
+     * @param fileName     The name of the file to edit
+     * @param selectedRune The default rune to be selected
      */
-    public EditRuneFile(String fileName)
+    public EditRuneFile(String fileName, int selectedRune)
     {
         runes = MonsterRunes.getRunesFromFile(fileName, new Monster());
         for (int i = 0; i < runes.size(); i++)
         {
             runeSelector.addItem(i + 1);
         }
+        runeSelector.setSelectedIndex(selectedRune);
         addAllAttributes(newAttributeSelector);
         
         add(panel);
-        setTitle("Edit");
+        setTitle("Edit " + fileName);
         setSize(500, 500);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -56,11 +62,12 @@ public class EditRuneFile extends JFrame
         {
             public void focusLost(FocusEvent e)
             {
+                //Filter list to only show attributes the specific rune has
                 addAllAttributes(attributeSelector);
                 Rune toEdit = runes.get(runeSelector.getSelectedIndex());
                 for (int i = attributeSelector.getItemCount() - 1; i >= 0; i--)
                 {
-                    int attributeToCheck = Rune.stringToNum(attributeSelector.getItemAt(i).toString());
+                    int attributeToCheck = Rune.stringToNum(attributeSelector.getItemAt(i));
                     if (toEdit.getMainAttribute().getNum() == attributeToCheck)
                     {
                         continue;
@@ -80,6 +87,8 @@ public class EditRuneFile extends JFrame
                     }
                     attributeSelector.removeItemAt(i);
                 }
+                //Show Rune type
+                attributeSelector.addItem(Rune.numToType(toEdit.getType()));
             }
             
             public void focusGained(FocusEvent e)
@@ -92,39 +101,53 @@ public class EditRuneFile extends JFrame
         {
             public void focusGained(FocusEvent e)
             {
-                addAllAttributes(newAttributeSelector);
                 Rune toEdit = runes.get(runeSelector.getSelectedIndex());
-                int attributeToChange = Rune.stringToNum(Objects.requireNonNull(attributeSelector.getSelectedItem()).toString());
-                for (int i = newAttributeSelector.getItemCount() - 1; i >= 0; i--)
+                if (Objects.requireNonNull(attributeSelector.getSelectedItem()).toString().equals(Rune.numToType(toEdit.getType())))
                 {
-                    int attributeToCheck = Rune.stringToNum(newAttributeSelector.getItemAt(i).toString());
-                    if (attributeToCheck == attributeToChange)
+                    newAttributeSelector.removeAllItems();
+                    changeType = true;
+                    addAllTypes(newAttributeSelector);
+                }
+                else
+                {
+                    changeType = false;
+                    addAllAttributes(newAttributeSelector);
+                    int attributeToChange = Rune.stringToNum(Objects.requireNonNull(attributeSelector.getSelectedItem()).toString());
+                    for (int i = newAttributeSelector.getItemCount() - 1; i >= 0; i--)
                     {
-                        continue;
-                    }
-                    if (toEdit.getMainAttribute().getNum() == attributeToCheck)
-                    {
-                        newAttributeSelector.removeItemAt(i);
-                        continue;
-                    }
-                    for (SubAttribute subAttribute : toEdit.getSubAttributes())
-                    {
-                        if (subAttribute.getNum() == attributeToCheck)
+                        int attributeToCheck = Rune.stringToNum(newAttributeSelector.getItemAt(i));
+                        if (attributeToCheck == attributeToChange)
+                        {
+                            continue;
+                        }
+                        if (toEdit.getMainAttribute().getNum() == attributeToCheck)
                         {
                             newAttributeSelector.removeItemAt(i);
+                            continue;
+                        }
+                        for (SubAttribute subAttribute : toEdit.getSubAttributes())
+                        {
+                            if (subAttribute.getNum() == attributeToCheck)
+                            {
+                                newAttributeSelector.removeItemAt(i);
+                            }
                         }
                     }
                 }
             }
         });
         
-        confirm.addActionListener(e -> {
+        confirm.addActionListener(_ -> {
             Rune toEdit = runes.get(runeSelector.getSelectedIndex());
             String attributeToChange = Objects.requireNonNull(attributeSelector.getSelectedItem()).toString();
             String newAttribute = Objects.requireNonNull(newAttributeSelector.getSelectedItem()).toString();
             String newAmount = newAmountTxt.getText();
-            if (stringIsInt(newAmount))
+            if (stringIsInt(newAmount) || changeType)
             {
+                if (newAmount.isEmpty())
+                {
+                    newAmount = "0";
+                }
                 if (!replaceAttribute(toEdit, attributeToChange, newAttribute, Integer.parseInt(newAmount)))
                 {
                     new Message("Error, cannot change attribute", true);
@@ -146,9 +169,14 @@ public class EditRuneFile extends JFrame
             }
         });
         
-        doneButton.addActionListener(e -> {
+        doneButton.addActionListener(_ -> {
             dispose();
             System.exit(0);
+        });
+        
+        toViewButton.addActionListener(_ -> {
+            dispose();
+            ViewRunes.run(fileName);
         });
         
         newAmountTxt.addKeyListener(new KeyAdapter()
@@ -161,22 +189,35 @@ public class EditRuneFile extends JFrame
                 }
             }
         });
+        
+        replaceButton.addActionListener(_ -> CreateRuneFile.run(new String[]{fileName}, true, runeSelector.getSelectedIndex() + 1));
     }
     
     /**
      * Starts the GUI
      *
-     * @param fileName The name of the file to edit
+     * @param fileName    The name of the file to edit
+     * @param selectedRune The default rune to be selected
      */
-    public static void run(String fileName)
+    public static void run(String fileName, int selectedRune)
     {
-        new EditRuneFile(fileName);
+        if (selectedRune == -1)
+        {
+            selectedRune = 0;
+        }
+        new EditRuneFile(fileName, selectedRune);
     }
     
     private boolean replaceAttribute(Rune rune, String oldAttributeName, String newAttributeName, int newAttributeAmount)
     {
         int oldAttributeNum = Rune.stringToNum(oldAttributeName);
         int newAttributeNum = Rune.stringToNum(newAttributeName);
+        
+        if (changeType)
+        {
+            rune.setType(newAttributeNum);
+            return true;
+        }
         
         if (rune.getMainAttribute().getNum() == oldAttributeNum)
         {
@@ -207,7 +248,7 @@ public class EditRuneFile extends JFrame
      * @param newRune The new Rune to replace the old one with
      * @return True if and only if the file was successfully edited
      */
-    private boolean editFile(String fileName, int lineNum, Rune newRune)
+    public static boolean editFile(String fileName, int lineNum, Rune newRune)
     {
         File newFile = null;
         try

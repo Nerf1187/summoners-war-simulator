@@ -14,8 +14,7 @@ public class Stat
 {
     public static int BERSERK = 0, TOTEM = 1, MAGIC_SPHERE = 2, NULL = -1;
     //Rune sub-stats
-    public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC =
-            11;
+    public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC = 11;
     
     private int numTurns;
     private int otherStatNum = -1;
@@ -73,6 +72,15 @@ public class Stat
     public int getNumTurns()
     {
         return numTurns;
+    }
+    
+    /**
+     * Sets the number of turns remaining to a given value
+     * @param numTurns The new number of turns remaining
+     */
+    public void setNumTurns(int numTurns)
+    {
+        this.numTurns = numTurns;
     }
     
     /**

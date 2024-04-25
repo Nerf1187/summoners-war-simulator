@@ -56,7 +56,7 @@ public class Feng_Yan extends Monster
     
     public boolean nextTurn(Monster target, int abilityNum)
     {
-        abilities.get(0).setDmgMultiplier(1.25 * (1.3 + (1.6 * getDef() * 1.35)) / getAtk());
+        abilities.getFirst().setDmgMultiplier(1.25 * (1.3 + (1.6 * getDef() * 1.35)) / getAtk());
         
         if (abilityNum == 2 && abilityIsValid(2))
         {

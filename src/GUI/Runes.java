@@ -67,7 +67,7 @@ public class Runes extends JFrame
             }
         });
         
-        createButton.addActionListener(e -> {
+        createButton.addActionListener(_ -> {
             dispose();
             if (!validFileName(fileName, 'c'))
             {
@@ -75,18 +75,18 @@ public class Runes extends JFrame
                 System.exit(1);
             }
             String[] temp = {fileName};
-            CreateRuneFile.run(temp);
+            CreateRuneFile.run(temp, false, 1);
         });
-        editButton.addActionListener(e -> {
+        editButton.addActionListener(_ -> {
             dispose();
             if (!validFileName(fileName, 'e'))
             {
                 System.err.println("Error, cannot find file");
                 System.exit(1);
             }
-            EditRuneFile.run(fileName);
+            EditRuneFile.run(fileName, 0);
         });
-        deleteButton.addActionListener(e -> {
+        deleteButton.addActionListener(_ -> {
             dispose();
             if (!validFileName(fileName, 'd'))
             {
@@ -95,7 +95,7 @@ public class Runes extends JFrame
             }
             DeleteRuneFile.run(fileName);
         });
-        viewButton.addActionListener(e -> {
+        viewButton.addActionListener(_ -> {
             dispose();
             if (!validFileName(fileName, 'v'))
             {
@@ -104,7 +104,7 @@ public class Runes extends JFrame
             }
             ViewRunes.run(fileName);
         });
-        duplicateButton.addActionListener(e -> {
+        duplicateButton.addActionListener(_ -> {
             dispose();
             if (!validFileName(fileName, 'r'))
             {

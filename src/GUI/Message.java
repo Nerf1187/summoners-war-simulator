@@ -36,6 +36,6 @@ public class Message extends JFrame
         setLocationRelativeTo(null);
         setVisible(true);
         
-        okButton.addActionListener(e -> dispose());
+        okButton.addActionListener(_ -> dispose());
     }
 }

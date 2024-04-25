@@ -16,7 +16,7 @@ public class Rune
     public static final int VAMPIRE = 12, DESTROY = 13, DESPAIR = 14, VIOLENT = 15, RAGE = 16, FIGHT = 17, DETERMINATION = 18, ENHANCE = 19, ACCURACY = 20,
             TOLERANCE = 21, SEAL = 24;
     public static final int ELEMENTARTIFACT = 22, TYPEARTIFACT = 23;
-    private final int type;
+    private int type;
     private MainAttribute mainAttribute;
     private final ArrayList<SubAttribute> subAttributes;
     private final Monster monster;
@@ -34,9 +34,9 @@ public class Rune
      */
     public Rune(int type, MainAttribute mainAttribute, int place, ArrayList<SubAttribute> subAttributes, Monster monster)
     {
-        if (type > TYPEARTIFACT || place > 8)
+        if (type > SEAL || type < 1 || place > 8 || place < 1)
         {
-            throw new IndexOutOfBoundsException("Type must be less than 25 and place must be less than 9");
+            throw new IndexOutOfBoundsException("Type must be between 1 and 24 inclusive and place must be between 1 and 8 inclusive");
         }
         if (type == ELEMENTARTIFACT && place != 7)
         {
@@ -120,6 +120,22 @@ public class Rune
     public int getType()
     {
         return type;
+    }
+    
+    /**
+     * Sets the rune type to a new value
+     *
+     * @param type The new value
+     * @return True if the input was valid and the type was successfully set, false otherwise
+     */
+    public boolean setType(int type)
+    {
+        if (type < 1 || type > SEAL)
+        {
+            return false;
+        }
+        this.type = type;
+        return true;
     }
     
     /**

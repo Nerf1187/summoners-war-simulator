@@ -2,7 +2,6 @@ package Game;
 
 import Monsters.Dark.*;
 import Monsters.Fire.*;
-import Monsters.Light.*;
 import Monsters.*;
 import Monsters.Water.*;
 import Monsters.Wind.*;
@@ -30,7 +29,7 @@ public class Main
     /**
      * Runs this program
      */
-    public static void main(String[] args)
+    void main()
     {
         Monster.setDatabase();
         //Create team ArrayLists
@@ -52,8 +51,6 @@ public class Main
         Game game = new Game(team1, team2);
         
         //Play game
-        
-        mons1.get(1).setCurrentHp(100);
         while (!game.endGame())
         {
             //Increment attack bars until at least one is full
@@ -373,14 +370,14 @@ public class Main
         if (test.equalsIgnoreCase("y"))
         {
             mons1.add(new Riley());
-            mons1.add(new Woonsa());
+            mons1.add(new Rasheed());
             mons1.add(new Kaki());
             mons1.add(new Dominic());
             
             mons2.add(new Ariel());
             mons2.add(new Aegir());
             mons2.add(new Riley());
-            mons2.add(new Xiao_Ling());
+            mons2.add(new Rasheed());
         }
         
         //4v4
@@ -440,11 +437,6 @@ public class Main
                         }
                     }
                     while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, mons2));
-                    //Get class
-                    if (!addMonToTeam(mons2, inputMon))
-                    {
-                        continue;
-                    }
                 }
             }
             

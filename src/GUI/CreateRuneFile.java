@@ -2,6 +2,7 @@ package GUI;
 
 import javax.swing.*;
 import Monsters.*;
+import Runes.Monster_Runes.*;
 import Runes.*;
 import java.awt.event.*;
 import java.io.*;
@@ -34,10 +35,12 @@ public class CreateRuneFile extends JFrame
     /**
      * Creates the GUI and implements the keyboard shortcuts
      *
-     * @param runeNum current rune number
+     * @param runeNum    current rune number
+     * @param singleRune True if the GUI should create one rune then stop, false otherwise
+     * @param fileName   The name of the file to write to
      * @throws IndexOutOfBoundsException if runeNum is out of range
      */
-    public CreateRuneFile(int runeNum)
+    public CreateRuneFile(int runeNum, boolean singleRune, String fileName)
     {
         currentRuneNumLabel.setText("Current rune number: " + runeNum);
         if (runeNum < 1 || runeNum > 8)
@@ -49,17 +52,9 @@ public class CreateRuneFile extends JFrame
         
         runeTypes.removeItem(0);
         
-        Scanner read = new Scanner(Objects.requireNonNull(Rune.class.getResourceAsStream("Rune key.csv")));
-        while (read.hasNextLine())
-        {
-            String[] line = read.nextLine().split(",");
-            runeTypes.addItem(line[1]);
-        }
+        addAllTypes(runeTypes);
         
         runeTypes.setFocusTraversalKeysEnabled(false);
-        
-        runeTypes.addItem("ElementArtifact");
-        runeTypes.addItem("TypeArtifact");
         
         add(panel);
         setTitle("Select main attribute");
@@ -133,15 +128,14 @@ public class CreateRuneFile extends JFrame
             }
         });
         
-        addAttribute.addActionListener(e -> {
+        addAttribute.addActionListener(_ -> {
             if (!amountTextField.getText().isBlank())
             {
                 if (stringIsInt(amountTextField.getText()))
                 {
                     if (mainAttribute == null)
                     {
-                        mainAttribute =
-                                "Rune." + Objects.requireNonNull(attributes.getSelectedItem()).toString().toUpperCase() + ", " + amountTextField.getText();
+                        mainAttribute = "Rune." + Objects.requireNonNull(attributes.getSelectedItem()).toString().toUpperCase() + ", " + amountTextField.getText();
                         mainAttributeLabel.setText("Add sub attributes, press \"done\" when done.");
                         setTitle("Select sub attributes");
                     }
@@ -166,7 +160,7 @@ public class CreateRuneFile extends JFrame
                 amountTextField.requestFocusInWindow();
             }
         });
-        submit.addActionListener(e -> {
+        submit.addActionListener(_ -> {
             if (mainAttribute != null)
             {
                 String subs = "";
@@ -178,16 +172,46 @@ public class CreateRuneFile extends JFrame
                 {
                     subs = subs.substring(0, subs.length() - 2);
                 }
-                writeRuneToFile(fw, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
-                        Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
+                if (!singleRune)
+                {
+                    writeRuneToFile(fw, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
+                            Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
+                }
                 dispose();
+                if (singleRune)
+                {
+                    try
+                    {
+                        File f = new File("src/Runes/Monster_Runes/temp.csv");
+                        FileWriter writer = new FileWriter(f);
+                        writeRuneToFile(writer, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
+                                Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
+                        writer.close();
+                        
+                        Rune newRune = MonsterRunes.getRunesFromFile("temp.csv", new Monster()).getFirst();
+                        f.delete();
+                        if (EditRuneFile.editFile(fileName, runeNum, newRune))
+                        {
+                            new Message("Success", false);
+                        }
+                        else
+                        {
+                            new Message("Error", true);
+                        }
+                        return;
+                    }
+                    catch (IOException ex)
+                    {
+                        throw new RuntimeException(ex);
+                    }
+                }
                 if (runeNum == 8)
                 {
                     System.exit(0);
                 }
                 else
                 {
-                    new CreateRuneFile(runeNum + 1);
+                    new CreateRuneFile(runeNum + 1, false, fileName);
                 }
             }
             else
@@ -195,9 +219,7 @@ public class CreateRuneFile extends JFrame
                 amountTextField.requestFocusInWindow();
             }
         });
-        quitButton.addActionListener(e -> {
-            System.exit(0);
-        });
+        quitButton.addActionListener(_ -> System.exit(0));
         
         attributes.addFocusListener(new FocusAdapter()
         {
@@ -335,10 +357,13 @@ public class CreateRuneFile extends JFrame
     /**
      * Instantiates all needed variables and starts the GUI.
      *
-     * @param args Contains the name of the file to write to if there is one, otherwise should be {"0"}
+     * @param args       Contains the name of the file to write to if there is one, otherwise should be {"0"}
+     * @param singleRune True if the GUI will create one rune, false otherwise
+     * @param startPlace The rune place number to start with
      */
-    public static void run(String[] args)
+    public static void run(String[] args, boolean singleRune, int startPlace)
     {
+        String fileName;
         if (args.length > 0 && args[0].equals("0"))
         {
             GetNameAndNum nameAndNum = new GetNameAndNum();
@@ -357,7 +382,8 @@ public class CreateRuneFile extends JFrame
                 System.err.println(e);
                 System.exit(1);
             }
-            if ((monName + runeSetNum).equals("tempFile") || (monName + runeSetNum).equals("oldTempFile"))
+            fileName = monName + runeSetNum;
+            if ((fileName).equals("tempFile") || (fileName).equals("oldTempFile"))
             {
                 new Message("Please choose a different Monster name", true);
                 System.err.println("Please choose a different Monster name");
@@ -365,7 +391,7 @@ public class CreateRuneFile extends JFrame
             }
             try
             {
-                fw = new FileWriter("src/Runes/Monster_Runes/" + monName + runeSetNum + ".csv");
+                fw = new FileWriter("src/Runes/Monster_Runes/" + fileName + ".csv");
             }
             catch (IOException e)
             {
@@ -376,7 +402,11 @@ public class CreateRuneFile extends JFrame
         {
             try
             {
-                fw = new FileWriter("src/Runes/Monster_Runes/" + args[0]);
+                fileName = args[0];
+                if (!singleRune)
+                {
+                    fw = new FileWriter("src/Runes/Monster_Runes/" + args[0]);
+                }
             }
             catch (IOException e)
             {
@@ -394,7 +424,7 @@ public class CreateRuneFile extends JFrame
                 throw new RuntimeException(e);
             }
         }));
-        new CreateRuneFile(1);
+        new CreateRuneFile(startPlace, singleRune, fileName);
     }
     
     /**
@@ -416,6 +446,24 @@ public class CreateRuneFile extends JFrame
         selector.addItem("CritDmg");
         selector.addItem("Res");
         selector.addItem("Acc");
+    }
+    
+    /**
+     * Adds all the rune types to the given JComboBox
+     *
+     * @param selector The JComboBox to add the types to
+     */
+    public static void addAllTypes(JComboBox<String> selector)
+    {
+        Scanner read = new Scanner(Objects.requireNonNull(Rune.class.getResourceAsStream("Rune key.csv")));
+        while (read.hasNextLine())
+        {
+            String[] line = read.nextLine().split(",");
+            selector.addItem(line[1]);
+        }
+        
+        selector.addItem("ElementArtifact");
+        selector.addItem("TypeArtifact");
     }
     
     /**

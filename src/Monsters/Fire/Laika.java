@@ -18,7 +18,7 @@ public class Laika extends Monster
     
     public Laika()
     {
-        super("Laika" + count, FIRE, 11040, 571, 834, 100_0, 15, 50, 15, 0);
+        super("Laika" + count, FIRE, 11_040, 571, 834, 100, 15, 50, 15, 0);
         setRunes(MonsterRunes.getRunesFromFile("Laika1.csv", this));
         setAbilities();
         count++;
@@ -34,17 +34,15 @@ public class Laika extends Monster
     private void setAbilities()
     {
         
-        abilities.add(new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " +
-                "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false, false));
+        abilities.add(new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " + "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
+                false));
         
-        abilities.add(new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1, "Channels burning rage to inflict damage " +
-                "that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false,
-                true));
+        abilities.add(new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1,
+                "Channels burning rage to inflict damage that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false, true));
         
         //@Passive:Creation
-        abilities.add(new Passive("Noble Blood", "Your attacks won't land as Glancing Hits and the inflicted damage of one attack won't exceed 24% of " +
-                "the MAX HP. " +
-                "Additionally, counterattacks the attacker with a 50% chance when you're attacked.", 0));
+        abilities.add(new Passive("Noble Blood",
+                "Your attacks won't land as Glancing Hits and the inflicted damage of one attack won't exceed 24% of the MAX HP. Additionally, counterattacks the attacker with a 50% chance when you're " + "attacked.", 0));
         
         
         abilities.add(new Leader_Skill(Stat.DEF, 0.5, FIRE));
@@ -92,14 +90,13 @@ public class Laika extends Monster
         return true;
     }
     
-    public double dmgIncProtocol(double num)
+    public double dmgReductionProtocol(double num)
     {
-        return Math.min(num, getMaxHp() * 0.24);
+        return Math.min(getMaxHp() * 0.24, num);
     }
     
     public void attacked(Monster attacker)
     {
-        
         int random = new Random().nextInt(101);
         
         //@Passive

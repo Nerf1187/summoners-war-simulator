@@ -35,7 +35,7 @@ public class DuplicateRuneFile extends JFrame
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         
-        submitButton.addActionListener(e -> {
+        submitButton.addActionListener(_ -> {
             String name = nameTextField.getText();
             String num = numberTextField.getText();
             if (name.isEmpty())

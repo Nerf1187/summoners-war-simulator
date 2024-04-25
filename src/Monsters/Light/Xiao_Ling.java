@@ -74,7 +74,7 @@ public class Xiao_Ling extends Monster
         }
         
         //@Passive
-        if (!containsDebuff(new Debuff(Debuff.OBLIVION, 1, 0)))
+        if (!containsDebuff(Debuff.OBLIVION))
         {
             if (target.getHpRatio() <= this.getHpRatio())
             {

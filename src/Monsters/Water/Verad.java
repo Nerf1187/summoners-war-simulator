@@ -60,14 +60,14 @@ public class Verad extends Monster
     
     public boolean nextTurn(Monster target, int abilityNum)
     {
-        boolean isFrozenBeforeAttackByVerad = target.containsDebuff(new Debuff(Debuff.FREEZE, 1, 0)) &&
+        boolean isFrozenBeforeAttackByVerad = target.containsDebuff(Debuff.FREEZE) &&
                 target.getAppliedDebuffs().get(target.getDebuffIndex(new Debuff(Debuff.FREEZE, 1, 0))).getCaster() instanceof Verad;
         boolean b = super.nextTurn(target, abilityNum);
         if (!b)
         {
             return false;
         }
-        boolean isFrozenAfterAttack = target.containsDebuff(new Debuff(Debuff.NULL, 1, 0));
+        boolean isFrozenAfterAttack = target.containsDebuff(Debuff.NULL);
         if (isFrozenAfterAttack)
         {
             target.removeDebuff(Debuff.NULL);
@@ -86,13 +86,13 @@ public class Verad extends Monster
                 {
                     Monster m = other.get(i);
                     
-                    boolean mIsFrozenBeforeAttackByVerad = m.containsDebuff(new Debuff(Debuff.FREEZE, 1, 0)) &&
+                    boolean mIsFrozenBeforeAttackByVerad = m.containsDebuff(Debuff.FREEZE) &&
                             m.getAppliedDebuffs().get(m.getDebuffIndex(new Debuff(Debuff.FREEZE, 1, 0))).getCaster() instanceof Verad;
                     
                     if (!m.equals(target))
                     {
                         attack(m, abilities.get(1), false);
-                        boolean mIsFrozenAfterAttack = m.containsDebuff(new Debuff(Debuff.NULL, 1, 0));
+                        boolean mIsFrozenAfterAttack = m.containsDebuff(Debuff.NULL);
                         if (mIsFrozenAfterAttack)
                         {
                             m.removeDebuff(Debuff.NULL);
@@ -112,13 +112,13 @@ public class Verad extends Monster
                 for (int i = 0; i < other.size(); i++)
                 {
                     Monster m = other.get(i);
-                    boolean mIsFrozenBeforeAttackByVerad = m.containsDebuff(new Debuff(Debuff.FREEZE, 1, 0)) &&
+                    boolean mIsFrozenBeforeAttackByVerad = m.containsDebuff(Debuff.FREEZE) &&
                             m.getAppliedDebuffs().get(m.getDebuffIndex(new Debuff(Debuff.FREEZE, 1, 0))).getCaster() instanceof Verad;
                     
                     if (!m.equals(target))
                     {
                         attack(m, abilities.get(2), false);
-                        boolean mIsFrozenAfterAttack = m.containsDebuff(new Debuff(Debuff.NULL, 1, 0));
+                        boolean mIsFrozenAfterAttack = m.containsDebuff(Debuff.NULL);
                         if (mIsFrozenAfterAttack)
                         {
                             m.removeDebuff(Debuff.NULL);

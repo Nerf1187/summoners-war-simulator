@@ -9,14 +9,10 @@ import Stats.*;
 public class Buff extends Stat
 {
     //Buff numbers
-    
     public static final int ATK_UP = 0, DEF_UP = 1, CRIT_RATE_UP = 2, CRIT_RESIST_UP = 3, ATK_SPD_UP = 4, RECOVERY = 5, COUNTER = 6, IMMUNITY = 7,
-            INVINCIBILITY = 8;
+            INVINCIBILITY = 8, REFLECT = 9, SHIELD = 10, ENDURE = 11, DEFEND = 12, SOUL_PROTECTION = 13, RUNE_SHIELD = 14, THREAT = 15, INCREASE_ATK_BAR = 16, CLEANSE = 17,
+            BUFF_STEAL = 18, VAMPIRE = 19, REMOVE_DEBUFF = 20, EXTEND_BUFF = 21, SHORTEN_DEBUFF = 22;
     
-    public static final int REFLECT = 9, SHIELD = 10, ENDURE = 11, DEFEND = 12, SOUL_PROTECTION = 13, THREAT = 15, INCREASE_ATK_BAR = 16, CLEANSE = 17,
-            BUFF_STEAL = 18;
-    
-    public static final int VAMPIRE = 19, RUNE_SHIELD = 14, REMOVE_DEBUFF = 20;
     private int buffNum;
     
     /**

@@ -10,6 +10,125 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\Game\Results\Mon Apr 01 10-22-52 CDT 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-05-53 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-08-06 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-12-07 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-17-12 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-25-42 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-50-39 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-53-58 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 00-59-18 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 01-02-48 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 01-05-39 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 01-13-33 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Thu Apr 25 15-26-19 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Tue Apr 02 15-34-29 CDT 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Wed Apr 24 22-51-46 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Wed Apr 24 22-55-06 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Game\Results\Wed Apr 24 23-03-55 EET 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\Monsters\Monster database.csv">
           <value>
             <Attribute>
@@ -46,6 +165,13 @@
           </value>
         </entry>
         <entry key="\src\Runes\Monster_Runes\Dominic1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Runes\Monster_Runes\Dominic2.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -94,6 +220,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\Runes\Monster_Runes\Loren1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\Runes\Monster_Runes\Lulu_And_Friends1.csv">
           <value>
             <Attribute>
@@ -130,6 +263,13 @@
           </value>
         </entry>
         <entry key="\src\Runes\Monster_Runes\Raoq1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Runes\Monster_Runes\Rasheed1.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

@@ -30,7 +30,7 @@ public class DeleteRuneFile extends JFrame
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         
-        yesButton.addActionListener(e -> {
+        yesButton.addActionListener(_ -> {
             if (new File("src/Runes/Monster_Runes/" + fileName).delete())
             {
                 new Message("Success", false);
@@ -42,7 +42,7 @@ public class DeleteRuneFile extends JFrame
                 dispose();
             }
         });
-        noButton.addActionListener(e -> {
+        noButton.addActionListener(_ -> {
             new Message("Aborted", false);
             dispose();
         });

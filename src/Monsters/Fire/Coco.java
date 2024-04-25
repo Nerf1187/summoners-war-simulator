@@ -45,15 +45,12 @@ public class Coco extends Monster
         ArrayList<Integer> ability2DebuffChances = abilityChances(80);
         abilities.add(new Attack_Ability("Night Crow (2)", 2.3 * 1.25, 0, 3, "Attacks the enemy 3 times " +
                 "and leaves a Branding effect for 2 turns with a 75% chance each. The cooldown time of [Chaos Magic Circle] will be decreased by 1 turn " +
-                "each " +
-                "whenever you attack the target under harmful effects.", ability2Debuffs, ability2DebuffChances, 3, false, false));
+                "each whenever you attack the target under harmful effects.", ability2Debuffs, ability2DebuffChances, 3, false, false));
         
         abilities.add(new Ability("Chaos Magic Circle (3)", 0, 0, 0, "Summons 5 magic spheres, which " +
                 "each can inflict damage equal to 150% of your Attack Power. If you get attacked from an enemy while you still have magic spheres, uses " +
-                "1 " +
-                "magic sphere to counterattack and increases your Attack Bar by 50%. When you attack on your turn, all remaining spheres will attack the" +
-                " " +
-                "enemy target together.", 5, false, false, false, true, false));
+                "1 magic sphere to counterattack and increases your Attack Bar by 50%. When you attack on your turn, all remaining spheres will attack the" +
+                " enemy target together. Recovers your HP by 10% for every sphere that counterattacks", 5, false, false, false, true, false));
         
         abilities.add(new Leader_Skill(Stat.ATK, 0.44, ALL));
         
@@ -90,6 +87,10 @@ public class Coco extends Monster
         }
         Game.setCanCounter(false);
         attack(attacker, magicSphereAttack, true);
+        if (canHeal())
+        {
+            setCurrentHp((int) Math.ceil((getCurrentHp() + getMaxHp() * 0.1)));
+        }
         numOfMagicSpheres.setNumOfSpecialEffects(numOfMagicSpheres.getNumOfSpecialEffects() - 1);
         super.attacked(attacker);
     }

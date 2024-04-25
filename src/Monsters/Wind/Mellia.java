@@ -70,19 +70,7 @@ public class Mellia extends Monster
                 setAtkBar((int) (getAtkBar() + 150));
             }
             
-            //@Passive
-            if (!containsDebuff(new Debuff(Debuff.OBLIVION, 1, 0)))
-            {
-                if (target.containsDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0)))
-                {
-                    target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                    target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                }
-                else
-                {
-                    target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                }
-            }
+            applyPassive(target);
         }
         if (abilityNum == 2)
         {
@@ -95,23 +83,32 @@ public class Mellia extends Monster
                     attack(m, abilities.get(1), false);
                 }
                 
-                //@Passive
-                if (!containsDebuff(new Debuff(Debuff.OBLIVION, 1, 0)))
-                {
-                    if (target.containsDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0)))
-                    {
-                        target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                        target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                    }
-                    else
-                    {
-                        target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
-                    }
-                }
+                applyPassive(target);
             }
         }
         
         super.afterTurnProtocol((abilityNum == 1) ? target : (game.getOtherTeam().size() > 0) ? game.getOtherTeam() : Auto_Play.getOther(), true);
         return true;
+    }
+    
+    /**
+     * Applies Mellia's passive ability
+     * @param target The target to try and apply the passive to
+     */
+    private void applyPassive(Monster target)
+    {
+        //@Passive
+        if (!containsDebuff(Debuff.OBLIVION))
+        {
+            if (target.containsDebuff(Debuff.CONTINUOUS_DMG))
+            {
+                target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
+                target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
+            }
+            else
+            {
+                target.addAppliedDebuff(new Debuff(Debuff.CONTINUOUS_DMG, 1, 0), 100, this);
+            }
+        }
     }
 }

@@ -59,7 +59,7 @@ public class StopWatch
     }
     
     /**
-     * @return The amount of time that elapsed while the StopWatch was played
+     * @return The amount of time that elapsed while the StopWatch was played (in nanoseconds)
      */
     public long getElapsedTime()
     {
