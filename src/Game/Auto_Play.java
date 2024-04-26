@@ -17,7 +17,6 @@ import static Monsters.Monster.*;
 public class Auto_Play extends Thread
 {
     private static final Scanner scan = new Scanner(System.in);
-    private static int team1Wins = 0, team2Wins = 0;
     private static Game game;
     private static boolean stunned = false, pause = false;
     private static Team highestAtkBar = new Team("", new ArrayList<>()), other = new Team("", new ArrayList<>());
@@ -662,9 +661,10 @@ public class Auto_Play extends Thread
      * Asks for four Monsters from the user and finds the Team that has all four.
      *
      * @param pickedMons The Monsters already picked. The first call should pass an empty ArrayList.
+     * @param teams The teams in use
      * @return The Team from {@link Auto_Play#teamStats} which contains the four Monsters provided.
      */
-    public static Team findTeamFromMonsters(ArrayList<Monster> pickedMons)
+    public static Team findTeamFromMonsters(ArrayList<Monster> pickedMons, ArrayList<Team> teams)
     {
         String inputMon;
         do
@@ -689,19 +689,21 @@ public class Auto_Play extends Thread
         }
         if (pickedMons.size() < 4)
         {
-            return findTeamFromMonsters(pickedMons);
+            return findTeamFromMonsters(pickedMons, teams);
         }
         else
         {
-            ArrayList<Team> allTeams = new ArrayList<>(teamStats);
-            for (int i = 0; i < 4; i++)
+            ArrayList<Team> allTeams = new ArrayList<>(teams);
+            
+            for (int i = allTeams.size() - 1; i >= 0; i--)
             {
-                for (int j = allTeams.size() - 1; j >= 0; j--)
+                Team team = allTeams.get(i);
+                for (int j = 0; j < 4; j++)
                 {
-                    Team currentTeam = allTeams.get(j);
-                    if (!currentTeam.hasInstanceOf(pickedMons.get(i)))
+                    if (!team.hasInstanceOf(pickedMons.get(j)))
                     {
-                        allTeams.remove(currentTeam);
+                        allTeams.remove(team);
+                        break;
                     }
                 }
             }
@@ -710,7 +712,7 @@ public class Auto_Play extends Thread
             {
                 return allTeams.getFirst();
             }
-            catch (IndexOutOfBoundsException e)
+            catch (IndexOutOfBoundsException | NoSuchElementException e)
             {
                 System.out.println("Oops! Team not found.");
                 return null;
@@ -864,7 +866,7 @@ public class Auto_Play extends Thread
             {
                 if (input.equalsIgnoreCase("inspect"))
                 {
-                    Team inspectTeam = findTeamFromMonsters(new ArrayList<>());
+                    Team inspectTeam = findTeamFromMonsters(new ArrayList<>(), teams);
                     if (inspectTeam != null)
                     {
                         for (Monster mon : inspectTeam.getMonsters())

@@ -122,6 +122,7 @@ public class Read_Results extends  JFrame
             
             System.out.println("Done\n");
             Auto_Play.postRunOptions(teams);
+            System.exit(0);
         }
         catch (Exception e)
         {
