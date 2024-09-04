@@ -11,7 +11,13 @@ import java.awt.event.*;
 
 public class GetNameAndNum extends JFrame
 {
+    /**
+     * Textbox for Monster name
+     */
     public JTextField monNameTxt;
+    /**
+     * Textbox for rune set number
+     */
     public JTextField runeSetNumText;
     private JLabel monNameLabel;
     private JLabel runeSetNumLabel;

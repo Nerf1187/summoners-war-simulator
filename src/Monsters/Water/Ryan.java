@@ -36,21 +36,21 @@ public class Ryan extends Monster
         ArrayList<Buff> ability1Buffs = abilityBuffs(Buff.ATK_UP, 3);
         ArrayList<Integer> ability1BuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Combat Knife (1)", 1.35 * 1.9, 0, 2, "Swings a dagger to attack the enemy 2 times and " +
-                "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, 0));
+                "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, 0, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Sharp Strike (2)", 1.3 * 5.6, 0, 1, "Attacks an enemy and inflicts Continuous Damage" +
                 " for 2 turns. This attack will also decrease the enemy's Defense for 2 turns if it lands as a Critical Hit. Instantly gains another " +
                 "turn if the target has 50%" +
-                " or less HP after the attack.", ability2Debuffs, ability2DebuffChances, 3, false, false));
+                " or less HP after the attack.", ability2Debuffs, ability2DebuffChances, 3, false, false, false));
         
         ArrayList<Debuff> ability3Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 1, 0);
         ArrayList<Integer> ability3DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Dagger Dash (3)", 1.25 * 3.2, 0, 3, "Attacks the enemy with an attack that is " +
                 "guaranteed to land as a Critical Hit 3 times, each attack inflicting Continuous Damage for 1 turn. Increases your Attack Bar " +
                 "proportionate to the enemy's lost" +
-                " HP from your attack.", ability3Debuffs, ability3DebuffChances, 3, false, false));
+                " HP from your attack.", ability3Debuffs, ability3DebuffChances, 3, false, false, false));
         
         super.setAbilities(abilities);
     }

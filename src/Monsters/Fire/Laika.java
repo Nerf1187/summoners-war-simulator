@@ -35,10 +35,10 @@ public class Laika extends Monster
     {
         
         abilities.add(new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " + "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
-                false));
+                false, false));
         
         abilities.add(new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1,
-                "Channels burning rage to inflict damage that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false, true));
+                "Channels burning rage to inflict damage that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false, true, false));
         
         //@Passive:Creation
         abilities.add(new Passive("Noble Blood",
@@ -61,7 +61,7 @@ public class Laika extends Monster
             setAbilityGlancingRateChange(-999_999);
         }
         
-        Team friendlyTeam = (game.getNextMonsTeam().size() > 0) ? game.getNextMonsTeam() : Auto_Play.getHighestAtkBar();
+        Team friendlyTeam = game.getNextMonsTeam();
         int numOfAliveMons = 0;
         for (Monster mon : friendlyTeam.getMonsters())
         {
@@ -90,8 +90,12 @@ public class Laika extends Monster
         return true;
     }
     
-    public double dmgReductionProtocol(double num)
+    public double dmgReductionProtocol(double num, boolean self)
     {
+        if (!self)
+        {
+            return num;
+        }
         return Math.min(getMaxHp() * 0.24, num);
     }
     

@@ -32,8 +32,7 @@ public class Team
     }
     
     /**
-     * Increases the attack bar by the default amount for each Monster on the Team. This is the same as calling {@link Monster#increaseAtkBar()} on each
-     * Monster
+     * Increases the attack bar by the default amount for each Monster on the Team. This is the same as calling {@link Monster#increaseAtkBar()} on each Monster
      */
     public void increaseAtkBar()
     {
@@ -128,102 +127,7 @@ public class Team
      */
     public String toString()
     {
-        String s;
-        int count = 0;
-        ArrayList<String> names = new ArrayList<>();
-        ArrayList<Double> hp = new ArrayList<>(), atkBar = new ArrayList<>();
-        ArrayList<ArrayList<Buff>> buffs = new ArrayList<>();
-        ArrayList<ArrayList<Debuff>> debuffs = new ArrayList<>();
-        ArrayList<ArrayList<Stat>> otherEffects = new ArrayList<>();
-        
-        ArrayList<String> firstLineInfo = new ArrayList<>();
-        ArrayList<String> secondLineInfo = new ArrayList<>();
-        ArrayList<String> thirdLineInfo = new ArrayList<>();
-        ArrayList<String> fourthLineInfo = new ArrayList<>();
-        
-        for (Monster mon : monsters)
-        {
-            if (mon.getCurrentHp() <= 0)
-            {
-                names.add(ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + mon.getName(false, true) + ConsoleColors.RESET);
-                hp.add(null);
-                atkBar.add(null);
-                buffs.add(null);
-                debuffs.add(null);
-                otherEffects.add(null);
-            }
-            else
-            {
-                names.add(mon.getName(true, true));
-                hp.add(mon.getHpRatio());
-                String atkBarPercent = mon.getAtkBar() / 10 + "";
-                if (atkBarPercent.length() > 4 && !atkBarPercent.equals("100.0"))
-                {
-                    atkBarPercent = atkBarPercent.substring(0, 4);
-                }
-                atkBar.add(Double.parseDouble(atkBarPercent));
-                buffs.add(mon.getAppliedBuffs());
-                debuffs.add(mon.getAppliedDebuffs());
-                otherEffects.add(mon.getOtherStats());
-            }
-        }
-        
-        
-        for (int i = 0; i < names.size(); i++)
-        {
-            if (!names.get(i).contains(ConsoleColors.BLACK))
-            
-            {
-                firstLineInfo.add(names.get(i) + " (" + ConsoleColors.GREEN + "Hp = " + hp.get(i) + "%" + ConsoleColors.RESET + ", " + ConsoleColors.CYAN + "Attack Bar = " +
-                        atkBar.get(i) + "%" + ConsoleColors.RESET + ")");
-            }
-            
-            else
-            {
-                firstLineInfo.add(names.get(i));
-            }
-        }
-        
-        for (int i = 0; i < names.size(); i++)
-        {
-            if (buffs.get(i) != null)
-            {
-                secondLineInfo.add("Buffs: " + buffs.get(i));
-            }
-            else
-            {
-                secondLineInfo.add("");
-            }
-        }
-        
-        for (int i = 0; i < names.size(); i++)
-        {
-            if (buffs.get(i) != null)
-            {
-                thirdLineInfo.add("Debuffs: " + debuffs.get(i));
-            }
-            else
-            {
-                thirdLineInfo.add("");
-            }
-        }
-        
-        for (int i = 0; i < names.size(); i++)
-        {
-            if (buffs.get(i) != null)
-            {
-                fourthLineInfo.add("Other Effects: " + otherEffects.get(i) + " (" + count + ")");
-            }
-            else
-            {
-                fourthLineInfo.add("");
-            }
-            count++;
-        }
-        
-        s = toStringSpacing(firstLineInfo, secondLineInfo, thirdLineInfo, fourthLineInfo);
-        
-        return s + ConsoleColors.RESET;
+        return print(-1, -1);
     }
     
     /**
@@ -233,20 +137,13 @@ public class Team
      * @param enemyTeam  Whether this Team is the enemy Team or friendly Team
      * @return the formatted String
      */
-    public String printWithElementRelationships(int elementNum, boolean enemyTeam)
+    public String print(int elementNum, int enemyTeam)
     {
-        String s;
-        int count = 0;
         ArrayList<String> names = new ArrayList<>();
         ArrayList<Double> hp = new ArrayList<>(), atkBar = new ArrayList<>();
         ArrayList<ArrayList<Buff>> buffs = new ArrayList<>();
         ArrayList<ArrayList<Debuff>> debuffs = new ArrayList<>();
         ArrayList<ArrayList<Stat>> otherEffects = new ArrayList<>();
-        
-        ArrayList<String> firstLineInfo = new ArrayList<>();
-        ArrayList<String> secondLineInfo = new ArrayList<>();
-        ArrayList<String> thirdLineInfo = new ArrayList<>();
-        ArrayList<String> fourthLineInfo = new ArrayList<>();
         
         for (Monster mon : monsters)
         {
@@ -261,9 +158,14 @@ public class Team
             }
             else
             {
-                
-                names.add(ConsoleColors.BLACK_BOLD + ((enemyTeam) ? elementalRelationship(elementNum, mon.getElement()) : ConsoleColors.GREEN_BACKGROUND) +
-                        mon.getName(false, true) + ConsoleColors.RESET);
+                if (enemyTeam != -1)
+                {
+                    names.add(ConsoleColors.BLACK_BOLD + ((enemyTeam == 1) ? elementalRelationship(elementNum, mon.getElement()) : ConsoleColors.GREEN_BACKGROUND) + mon.getName(false, true) + ConsoleColors.RESET);
+                }
+                else
+                {
+                    names.add(mon.getName(true, true));
+                }
                 
                 hp.add(mon.getHpRatio());
                 String atkBarPercent = mon.getAtkBar() / 10 + "";
@@ -278,14 +180,22 @@ public class Team
             }
         }
         
+        return formatLines(names, hp, atkBar, buffs, debuffs, otherEffects);
+    }
+    
+    private String formatLines(ArrayList<String> names, ArrayList<Double> hp, ArrayList<Double> atkBar, ArrayList<ArrayList<Buff>> buffs, ArrayList<ArrayList<Debuff>> debuffs, ArrayList<ArrayList<Stat>> otherEffects)
+    {
+        String s;
+        ArrayList<String> firstLineInfo = new ArrayList<>();
+        ArrayList<String> secondLineInfo = new ArrayList<>();
+        ArrayList<String> thirdLineInfo = new ArrayList<>();
+        ArrayList<String> fourthLineInfo = new ArrayList<>();
         
         for (int i = 0; i < names.size(); i++)
         {
             if (!names.get(i).contains(ConsoleColors.BLACK))
             {
-                
-                firstLineInfo.add(names.get(i) + " (" + ConsoleColors.GREEN + "Hp = " + hp.get(i) + "%" + ConsoleColors.RESET + ", " + ConsoleColors.CYAN + "Attack Bar = " +
-                        atkBar.get(i) + "%" + ConsoleColors.RESET + ")");
+                firstLineInfo.add(names.get(i) + " (" + ConsoleColors.GREEN + "Hp = " + hp.get(i) + "%" + ConsoleColors.RESET + ", " + ConsoleColors.CYAN + "Attack Bar = " + atkBar.get(i) + "%" + ConsoleColors.RESET + ")");
             }
             else
             {
@@ -317,6 +227,7 @@ public class Team
             }
         }
         
+        int count = 0;
         for (int i = 0; i < names.size(); i++)
         {
             if (buffs.get(i) != null)
@@ -331,7 +242,6 @@ public class Team
         }
         
         s = toStringSpacing(firstLineInfo, secondLineInfo, thirdLineInfo, fourthLineInfo);
-        
         return s + ConsoleColors.RESET;
     }
     
@@ -371,7 +281,7 @@ public class Team
     }
     
     /**
-     * Finds the correct elemental relationship between the given elements
+     * Finds the correct elemental relationship between the given elements. (Assumes Monsters are from different Teams)
      *
      * @param e1 The first element
      * @param e2 the second element
@@ -435,15 +345,15 @@ public class Team
         //Does it 4 times to make sure all lines are formatted properly
         for (int i = 0; i < 4; i++)
         {
-            for (ArrayList<String> list : lines)
+            for (ArrayList<String> line : lines)
             {
-                if (list.equals(longestLine))
+                if (line.equals(longestLine))
                 {
-                    if (!list.equals(line1) && i == 1)
+                    if (!line.equals(line1) && i == 1)
                     {
-                        for (int j = 0; j < list.size() - 1; j++)
+                        for (int j = 0; j < line.size() - 1; j++)
                         {
-                            list.set(j, "       " + list.get(j));
+                            line.set(j, "       " + line.get(j));
                         }
                     }
                     continue;
@@ -451,15 +361,15 @@ public class Team
                 int length = 0;
                 int currentLength = 0;
                 
-                for (int j = 0; j < list.size() - 1; j++)
+                for (int j = 0; j < line.size() - 1; j++)
                 {
                     length += lengthWithoutColors(longestLine.get(j));
                     
-                    currentLength += lengthWithoutColors(list.get(j));
+                    currentLength += lengthWithoutColors(line.get(j));
                     
-                    if (!list.equals(line1) && i == 1)
+                    if (!line.equals(line1) && i == 1)
                     {
-                        list.set(j, "       " + list.get(j));
+                        line.set(j, "       " + line.get(j));
                         currentLength += "       ".length();
                     }
                     
@@ -474,16 +384,15 @@ public class Team
                     while (currentLength < length)
                     {
                         currentLength++;
-                        list.set(j, list.get(j) + " ");
+                        line.set(j, line.get(j) + " ");
                     }
                 }
                 
-                for (int j = 0; j < list.size() - 1; j++)
+                for (int j = 0; j < line.size() - 1; j++)
                 {
-                    
-                    if (!list.get(j).endsWith(" ") && !list.get(j + 1).startsWith(" "))
+                    if (!line.get(j).endsWith(" ") && !line.get(j + 1).startsWith(" "))
                     {
-                        list.set(j, list.get(j) + "     ");
+                        line.set(j, line.get(j) + "     ");
                     }
                 }
             }
@@ -624,8 +533,7 @@ public class Team
         
         if (self)
         {
-            return ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + mon.shortToString(false) + ConsoleColors.PURPLE + " (" + count + ")" +
-                    ConsoleColors.RESET;
+            return ConsoleColors.GREEN_BACKGROUND + ConsoleColors.BLACK_BOLD + mon.shortToString(false) + ConsoleColors.PURPLE + " (" + count + ")" + ConsoleColors.RESET;
         }
         
         return mon.shortToString(true) + ConsoleColors.PURPLE + " (" + count + ")" + ConsoleColors.RESET;
@@ -848,15 +756,7 @@ public class Team
      */
     public int numOfAliveMons()
     {
-        int count = 0;
-        for (Monster mon : monsters)
-        {
-            if (!mon.isDead())
-            {
-                count++;
-            }
-        }
-        return count;
+        return monsters.stream().mapToInt(mon -> !mon.isDead() ? 1 : 0).sum();
     }
     
     /**
@@ -878,33 +778,117 @@ public class Team
         return false;
     }
     
+    /**
+     * Gets the number of wins for the Team
+     *
+     * @return The number of wins for this Team
+     */
     public int getWins()
     {
         return wins;
     }
     
+    /**
+     * Sets the number of wins to given number
+     *
+     * @param wins The new number of wins
+     */
     public void setWins(int wins)
     {
         this.wins = wins;
     }
     
-    public void incWins()
+    /**
+     * Increases the number of wins by one
+     */
+    public void increaseWins()
     {
         wins++;
     }
     
+    /**
+     * Gets the number of losses for the Team
+     *
+     * @return The number of losses for this Team
+     */
     public int getLosses()
     {
         return losses;
     }
     
+    /**
+     * Sets the number of losses for the Team
+     *
+     * @param losses The new number of losses
+     */
     public void setLosses(int losses)
     {
         this.losses = losses;
     }
     
-    public void incLosses()
+    /**
+     * Increases the number of losses by one
+     */
+    public void increaseLosses()
     {
         losses++;
+    }
+    
+    /**
+     * Calculates any damage reduction for the attack
+     *
+     * @param attackedTeam The team containing the Monster being attacked
+     * @param dmg          The initial damage to be dealt
+     * @param target       The Monster being attacked
+     * @return The new damage to be dealt
+     */
+    public double dmgReduction(Team attackedTeam, double dmg, Monster target)
+    {
+        double lowestDmg = dmg;
+        for (Monster m : attackedTeam.getMonsters())
+        {
+            double newDmg = m.dmgReductionProtocol(dmg, m.equals(target));
+            boolean reduce = newDmg != dmg;
+            if (reduce && newDmg < lowestDmg)
+            {
+                lowestDmg = newDmg;
+            }
+        }
+        return lowestDmg;
+    }
+    
+    /**
+     * Counts the number of dead Monsters on the Team
+     *
+     * @return The number of Monsters who are dead
+     */
+    public int numDead()
+    {
+        return monsters.stream().mapToInt(monster -> (monster.isDead()) ? 1 : 0).sum();
+    }
+    
+    /**
+     * Searches through the Monsters on the team and finds the Monster whose HP ratio is the lowest and is alive
+     * @return The Monster with the lowest HP ratio greater than 0.
+     */
+    public Monster getMonsterWithLowestHpRatio()
+    {
+        double lowestRatio = monsters.getFirst().getCurrentHp();
+        ArrayList<Monster> lowestRatioMons = new ArrayList<>();
+        lowestRatioMons.add(monsters.getFirst());
+        for (Monster monster : monsters)
+        {
+            if (monster.getHpRatio() < lowestRatio && !monster.isDead())
+            {
+                lowestRatioMons.clear();
+                lowestRatioMons.add(monster);
+                lowestRatio = monster.getHpRatio();
+            }
+            if (monster.getHpRatio() == lowestRatio)
+            {
+                lowestRatioMons.add(monster);
+            }
+        }
+        return lowestRatioMons.get(new Random().nextInt(lowestRatioMons.size()));
     }
 }

@@ -13,7 +13,7 @@ public class Buff extends Stat
             INVINCIBILITY = 8, REFLECT = 9, SHIELD = 10, ENDURE = 11, DEFEND = 12, SOUL_PROTECTION = 13, RUNE_SHIELD = 14, THREAT = 15, INCREASE_ATK_BAR = 16, CLEANSE = 17,
             BUFF_STEAL = 18, VAMPIRE = 19, REMOVE_DEBUFF = 20, EXTEND_BUFF = 21, SHORTEN_DEBUFF = 22;
     
-    private int buffNum;
+    private final int buffNum;
     
     /**
      * Creates a new Buff

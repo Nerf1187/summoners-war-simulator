@@ -3,7 +3,28 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="\out\production\Summoners War Battle Simulator\Monsters\Monster database.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\out\production\Summoners War Battle Simulator\Stats\Debuffs\Debuff key.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\out\production\Summoners War Battles Tests\Monsters\Monster database.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\out\production\Summoners War Battles Tests\Stats\Debuffs\Debuff key.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -17,77 +38,14 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-05-53 EET 2024.csv">
+        <entry key="\src\Game\Results\Sat Aug 24 02-42-11 PDT 2024.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-08-06 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-12-07 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-17-12 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-25-42 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-50-39 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-53-58 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 00-59-18 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 01-02-48 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 01-05-39 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Thu Apr 25 01-13-33 EET 2024.csv">
+        <entry key="\src\Game\Results\Sat May 04 18-51-41 EEST 2024.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -101,6 +59,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\src\Game\Results\Thu May 23 14-21-07 EEST 2024.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\src\Game\Results\Tue Apr 02 15-34-29 CDT 2024.csv">
           <value>
             <Attribute>
@@ -108,21 +73,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="\src\Game\Results\Wed Apr 24 22-51-46 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Wed Apr 24 22-55-06 EET 2024.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="\src\Game\Results\Wed Apr 24 23-03-55 EET 2024.csv">
+        <entry key="\src\Game\Results\Wed Sep 04 16-43-53 PDT 2024.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -137,6 +88,20 @@
           </value>
         </entry>
         <entry key="\src\Runes\Monster_Runes\Aegir1.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Runes\Monster_Runes\Aegir2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Runes\Monster_Runes\Alice1.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -207,6 +172,13 @@
           </value>
         </entry>
         <entry key="\src\Runes\Monster_Runes\Kaki2.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\src\Runes\Monster_Runes\Kumar1.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

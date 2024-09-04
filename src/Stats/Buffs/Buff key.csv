@@ -1,7 +1,7 @@
 0,Atk up,+50%,Increases attack by 50%,done
 1,Def up,+70%,Increases defense by 70%,done
 2,Crit Rate up,+30%,Increases Critical Rate by 30%,done
-3,Crit Resist Rate up,+50%,Decreases the chance of being attacked with a critical hit by 50%,done
+3,Crit Resist up,+50%,Decreases the chance of being attacked with a critical hit by 50%,done
 4,Atk Spd up,+30%,Increases Attack Speed by 30%,done
 5,Recovery,+15% of max health,Increases HP by 15% of target's max HP,done
 6,Counter,,Counterattacks attacker using first ability with 70% of target's attack power,done
@@ -15,7 +15,7 @@
 15,Threat,,The enemy can only attack the target with Threat. Target receives 15% less damage. The duration is only reduced when target is attacked,done
 16,Increase Atk Bar,Ability specific,null,done
 17,Cleanse,,null,done
-18,Steal buff,,null,done
+18,Buff steal,,null,done
 19,Vampire,+20% of damage dealt,Recovers HP by 20% of damage dealt,done
 14,Rune shield,15% of monster with rune's max health,null,done
 20,Remove Debuff,,null,done

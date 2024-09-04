@@ -10,8 +10,6 @@ import java.util.*;
  */
 public class Heal_Ability extends Ability
 {
-    private final boolean targetsMultipleMonsters;
-    
     /**
      * Constructs a new Heal ability
      *
@@ -31,8 +29,7 @@ public class Heal_Ability extends Ability
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean targetsMultipleMonsters)
     {
         super(name, 0, healingPercent, numOfActivations, description, buffs, buffChances, debuffs, debuffChances, cooldown, false, false, false, false,
-                false, 0);
-        this.targetsMultipleMonsters = targetsMultipleMonsters;
+                false, targetsMultipleMonsters, 0);
     }
     
     /**
@@ -52,8 +49,7 @@ public class Heal_Ability extends Ability
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffsChance, int cooldown, boolean targetsMultipleMonsters)
     {
-        super(name, 0, healingPercent, numOfActivations, description, buffs, buffsChance, cooldown, false, false, false, false, false, 0);
-        this.targetsMultipleMonsters = targetsMultipleMonsters;
+        super(name, 0, healingPercent, numOfActivations, description, buffs, buffsChance, cooldown, false, false, false, false, false, targetsMultipleMonsters, 0);
     }
     
     /**
@@ -69,17 +65,6 @@ public class Heal_Ability extends Ability
     //No buffs or debuffs
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, int cooldown, boolean targetsMultipleMonsters)
     {
-        super(name, 0, healingPercent, numOfActivations, description, cooldown, false, false, false, false, false);
-        this.targetsMultipleMonsters = targetsMultipleMonsters;
-    }
-    
-    /**
-     * Checks if the ability targets multiple Monsters
-     *
-     * @return true if and only if the ability targets more than one Monster
-     */
-    public boolean targetsMultipleMonsters()
-    {
-        return targetsMultipleMonsters;
+        super(name, 0, healingPercent, numOfActivations, description, cooldown, false, false, false, false, false, targetsMultipleMonsters);
     }
 }

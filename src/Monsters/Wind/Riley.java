@@ -8,13 +8,12 @@ import Stats.Buffs.*;
 import Stats.*;
 import java.util.*;
 
-
 public class Riley extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
     
     private static int count = 1;
-    Stat totemCount = new Stat(999_999);
+    Stat totemCount = new Stat(Integer.MAX_VALUE);
     
     
     public Riley()
@@ -38,7 +37,7 @@ public class Riley extends Monster
     {
         
         abilities.add(new Attack_Ability("Totem Magic (1)", 1.2 * 3.9, 0, 1, "Attacks the enemy target and recovers" +
-                " the HP of an ally with the lowest HP ratio by 15%.", 0, false, false));
+                " the HP of an ally with the lowest HP ratio by 15%.", 0, false, false, false));
         
         ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.IMMUNITY, 1);
         ArrayList<Integer> ability2BuffChances = abilityChances(100);
@@ -52,12 +51,7 @@ public class Riley extends Monster
         
         ArrayList<Buff> ability4Buffs = abilityBuffs(Buff.ATK_UP, 2, Buff.IMMUNITY, 1);
         ArrayList<Integer> ability4BuffChances = abilityChances(100, 100);
-        abilities.add(new Heal_Ability("Grassland Tribe Totem (4)", 1.2 * 0.2, 1, "Stacks 1 totem whenever you're attacked " +
-                "by a target during the enemy's turn or use a skill during your turn. Becomes able to use the [Grassland Tribe Totem] skill when you " +
-                "stack 3 totems. Recovers the " +
-                "HP of all allies by 20%, increases the Attack Power for 2 turns and grants Immunity for 1 turn when you use the skill.", ability4Buffs,
-                ability4BuffChances,
-                0, true));
+        abilities.add(new Ability4(ability4Buffs, ability4BuffChances, this));
         
         super.setAbilities(abilities);
     }
@@ -92,65 +86,11 @@ public class Riley extends Monster
         {
             return false;
         }
-        Team team = (game.getNextMonsTeam().size() > 0) ? game.getNextMonsTeam() : Auto_Play.getHighestAtkBar();
+        Team team = game.getNextMonsTeam();
         switch (abilityNum)
         {
-            case 1 ->
-            {
-                double lowestRatio = getHpRatio();
-                ArrayList<Monster> lowestRatioMons = new ArrayList<>();
-                lowestRatioMons.add(this);
-                for (int i = 0; i < team.size(); i++)
-                {
-                    Monster monster = team.get(i);
-                    if (monster.getHpRatio() < lowestRatio && !monster.isDead())
-                    {
-                        lowestRatioMons.clear();
-                        lowestRatioMons.add(monster);
-                        lowestRatio = monster.getHpRatio();
-                    }
-                    if (monster.getHpRatio() == lowestRatio)
-                    {
-                        lowestRatioMons.add(monster);
-                    }
-                }
-                heal(lowestRatioMons.get(new Random().nextInt(lowestRatioMons.size())), new Heal_Ability("", 1.15 * 0.15, 1, "",
-                        0, false));
-            }
-            case 2 ->
-            {
-                for (int i = 0; i < team.size(); i++)
-                {
-                    Monster m = team.get(i);
-                    if (!m.equals(target))
-                    {
-                        heal(m, abilities.get(1));
-                    }
-                }
-            }
-            case 3 ->
-            {
-                for (int i = 0; i < team.size(); i++)
-                {
-                    Monster m = team.get(i);
-                    if (!m.equals(target))
-                    {
-                        heal(m, abilities.get(2));
-                    }
-                }
-            }
-            case 4 ->
-            {
-                for (int i = 0; i < team.size(); i++)
-                {
-                    Monster m = team.get(i);
-                    if (!m.equals(target))
-                    {
-                        heal(m, abilities.get(3));
-                    }
-                }
-                totemCount.setNumOfSpecialEffects(0);
-            }
+            case 1 -> heal(team.getMonsterWithLowestHpRatio(), new Heal_Ability("", 1.15 * 0.15, 1, "", 0, false));
+            case 4 -> totemCount.setNumOfSpecialEffects(-1);
         }
         
         afterTurnProtocol(target, abilityNum == 1);
@@ -160,15 +100,48 @@ public class Riley extends Monster
     public void afterTurnProtocol(Object o, boolean attack)
     {
         super.afterTurnProtocol(o, attack);
-        totemCount.setNumOfSpecialEffects(totemCount.getNumOfSpecialEffects() + 1);
+        totemCount.setNumOfSpecialEffects(Math.min(totemCount.getNumOfSpecialEffects() + 1, 3));
     }
     
     public void attacked(Monster attacker)
     {
-        if (totemCount.getNumOfSpecialEffects() < 3)
-        {
-            totemCount.setNumOfSpecialEffects(totemCount.getNumOfSpecialEffects() + 1);
-        }
+        totemCount.setNumOfSpecialEffects(Math.min(totemCount.getNumOfSpecialEffects() + 1, 3));
         super.attacked(attacker);
+    }
+}
+
+/**
+ * Implements Riley's ability 4
+ */
+class Ability4 extends Heal_Ability
+{
+    /**
+     * The Riley who owns the ability
+     */
+    Riley r;
+    
+    /**
+     * Creates a new ability
+     *
+     * @param buffs       The buffs for the ability
+     * @param buffChances The buff chances for the ability
+     * @param r           The Riley who owns the ability
+     */
+    public Ability4(ArrayList<Buff> buffs, ArrayList<Integer> buffChances, Riley r)
+    {
+        super("Grassland Tribe Totem (4)", 1.2 * 0.2, 1, "Stacks 1 totem whenever you're attacked " +
+                        "by a target during the enemy's turn or use a skill during your turn. Becomes able to use the [Grassland Tribe Totem] skill when you " +
+                        "stack 3 totems. Recovers the HP of all allies by 20%, increases the Attack Power for 2 turns and grants Immunity for 1 turn when you use the skill.", buffs,
+                buffChances, 0, true);
+        this.r = r;
+    }
+    
+    public String toString()
+    {
+        if (!r.abilityIsValid(this))
+        {
+            return name + ": " + ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + description + ConsoleColors.RESET;
+        }
+        return super.toString();
     }
 }

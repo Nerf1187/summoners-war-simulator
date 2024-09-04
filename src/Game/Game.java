@@ -124,7 +124,7 @@ public class Game
     {
         if (!endGame())
         {
-            return new Team("Temp", new ArrayList<>());
+            return new Team("None", new ArrayList<>());
         }
         if (t1.deadTeam())
         {
@@ -134,11 +134,28 @@ public class Game
     }
     
     /**
+     * Finds the team that has no Monsters remaining. Returns an empty Team if both Teams still have Monsters
+     *
+     * @return A blank Team or the Team with no Monsters left
+     */
+    public Team getLosingTeam()
+    {
+        if (!endGame())
+        {
+            return new Team("None", new ArrayList<>());
+        }
+        if (t1.deadTeam())
+        {
+            return t1;
+        }
+        return t2;
+    }
+    
+    /**
      * Formats the Game into a readable String
      *
      * @return the formatted String
      */
-    @Override
     public String toString()
     {
         String s = "";
@@ -347,7 +364,7 @@ public class Game
             //Enemy does not have any Threat buffs and ability targets enemy
             else if (next.getAbility(abilityNum).targetsEnemy())
             {
-                System.out.print(other.printWithElementRelationships(next.getElement(), true) + "\n");
+                System.out.print(other.print(next.getElement(), 1) + "\n");
             }
             //Ability targets self
             else if (next.getAbility(abilityNum).targetsSelf())
@@ -358,7 +375,7 @@ public class Game
             //Ability targets friendly Team
             else
             {
-                System.out.println(teamWithHighestAtkBar.printWithElementRelationships(next.getElement(), false) + "\n");
+                System.out.println(teamWithHighestAtkBar.print(next.getElement(), 0) + "\n");
             }
             try
             {

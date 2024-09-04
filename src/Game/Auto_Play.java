@@ -20,17 +20,17 @@ public class Auto_Play extends Thread
     private static Game game;
     private static boolean stunned = false, pause = false;
     private static Team highestAtkBar = new Team("", new ArrayList<>()), other = new Team("", new ArrayList<>());
-    /*Index 0 is number of wins, index 1 is number of losses*/
     private static ArrayList<Team> teamStats = new ArrayList<>();
     private static final ArrayList<Team> bestTeams = new ArrayList<>();
-    private static ArrayList<Monster> monsToUse = new ArrayList<>();
+    private static final ArrayList<String> monsterKeys = new ArrayList<>();
     private static long numOfCompletedSimulations = 0, totalSims = 0;
+    private static boolean simsCalculationError = false;
     private static final StopWatch totalRunningTime = new StopWatch(false), battleTime = new StopWatch(false);
+    private static boolean whitelisted = false;
     
     /**
      * Runs the Auto_Play class
      */
-    
     public static void main(String[] args)
     {
         Monster.setGame(game);
@@ -48,16 +48,21 @@ public class Auto_Play extends Thread
                 {
                     System.out.printf("%s\t\t", mon.getName(true, false));
                 }
-                System.out.println("number of wins: " + numWithCommas(team.getWins()) + " Number of losses: " + numWithCommas(team.getLosses()));
+                System.out.printf("Number of wins: %s Number of losses: %s\n", numWithCommas(team.getWins()), numWithCommas(team.getLosses()));
             }
             System.out.println("\n\n");
             if (numOfCompletedSimulations >= 500_000 || numOfCompletedSimulations >= totalSims * 0.5 || battleTime.getElapsedTime() >= 3.6e12)
             {
-                exportResults(monsToUse);
+                String fileName = exportResults();
+                
+                if (fileName != null)
+                {
+                    System.out.printf("Results Exported to \"%s\"\n", fileName);
+                }
             }
         }));
         
-        for (int k = 0; k < 4; k++)
+        for (int i = 0; i < 4; i++)
         {
             bestTeams.add(null);
         }
@@ -97,10 +102,9 @@ public class Auto_Play extends Thread
      *
      * @param team1 The first team in the battle
      * @param team2 The second team in the battle
-     * @param count The number of times the battle has been run
      * @return the Game object that was used in the battle
      */
-    public static Game battle(Team team1, Team team2, int count)
+    public static Game battle(Team team1, Team team2)
     {
         //Create game
         game = new Game(team1, team2);
@@ -171,9 +175,14 @@ public class Auto_Play extends Thread
             boolean threat = other.monHasThreat();
             
             //Get abilityNum and print
-            int abilityNum = Monster.chooseAbilityNum(next, game.getTeamWithHighestAtkBar(), next.getAbilities(), true);
+            int abilityNum = next.chooseAbilityNum(next, game.getTeamWithHighestAtkBar(), next.getAbilities(), true);
             
             //Get target and print
+            if (threat && !next.getAbility(abilityNum).targetsEnemy())
+            {
+                Monster target = other.getMonWithThreat();
+                next.nextTurn(target, abilityNum);
+            }
             chooseTargetAndApplyNextTurn(next, abilityNum, (next.getAbility(abilityNum).targetsEnemy() ? other : highestAtkBar), true);
             
             //Apply nextTurn()
@@ -186,12 +195,11 @@ public class Auto_Play extends Thread
             }
             
             turnNumber++;
-            if (turnNumber >= 100)
+            if (turnNumber >= 150)
             {
                 break;
             }
         }
-        
         
         return game;
     }
@@ -231,32 +239,7 @@ public class Auto_Play extends Thread
         if (chosenAbility instanceof Heal_Ability)
         {
             Monster target = friendlyTeam.getLowestHpMon();
-            if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
-            {
-                
-                ArrayList<Monster> modifiedTeam = new ArrayList<>();
-                for (Monster potentialTarget : potentialTargets.getMonsters())
-                {
-                    if (!potentialTarget.equals(target))
-                    {
-                        modifiedTeam.add(potentialTarget);
-                    }
-                }
-                chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
-                return;
-            }
-            if (!next.nextTurn(target, abilityNum))
-            {
-                ArrayList<Monster> modifiedTeam = new ArrayList<>();
-                for (Monster potentialTarget : potentialTargets.getMonsters())
-                {
-                    if (!potentialTarget.equals(target))
-                    {
-                        modifiedTeam.add(potentialTarget);
-                    }
-                }
-                chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
-            }
+            verifyTarget(next, chosenAbility, target, abilityNum, potentialTargets);
             return;
         }
         
@@ -276,32 +259,7 @@ public class Auto_Play extends Thread
         {
             if (!target.isDead() && target.getHpRatio() <= 20.0)
             {
-                if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
-                {
-                    
-                    ArrayList<Monster> modifiedTeam = new ArrayList<>();
-                    for (Monster potentialTarget : potentialTargets.getMonsters())
-                    {
-                        if (!potentialTarget.equals(target))
-                        {
-                            modifiedTeam.add(potentialTarget);
-                        }
-                    }
-                    chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
-                    return;
-                }
-                if (!next.nextTurn(target, abilityNum))
-                {
-                    ArrayList<Monster> modifiedTeam = new ArrayList<>();
-                    for (Monster potentialTarget : potentialTargets.getMonsters())
-                    {
-                        if (!potentialTarget.equals(target))
-                        {
-                            modifiedTeam.add(potentialTarget);
-                        }
-                    }
-                    chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
-                }
+                verifyTarget(next, chosenAbility, target, abilityNum, potentialTargets);
                 return;
             }
             if (target.isDead())
@@ -373,36 +331,46 @@ public class Auto_Play extends Thread
         }
     }
     
+    private static void verifyTarget(Monster next, Ability chosenAbility, Monster target, int abilityNum, Team potentialTargets)
+    {
+        if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
+        {
+            
+            removeInvalidTarget(next, abilityNum, potentialTargets, target);
+            return;
+        }
+        if (!next.nextTurn(target, abilityNum))
+        {
+            removeInvalidTarget(next, abilityNum, potentialTargets, target);
+        }
+    }
+    
     private static boolean getNewTarget(Monster next, int abilityNum, Team potentialTargets, Ability chosenAbility, ArrayList<Monster> allMons)
     {
         Monster target = getBestMonToAttack(allMons);
         if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
         {
-            
-            ArrayList<Monster> modifiedTeam = new ArrayList<>();
-            for (Monster potentialTarget : potentialTargets.getMonsters())
-            {
-                if (!potentialTarget.equals(target))
-                {
-                    modifiedTeam.add(potentialTarget);
-                }
-            }
-            chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
+            removeInvalidTarget(next, abilityNum, potentialTargets, target);
             return false;
         }
         if (!next.nextTurn(target, abilityNum))
         {
-            ArrayList<Monster> modifiedTeam = new ArrayList<>();
-            for (Monster potentialTarget : potentialTargets.getMonsters())
-            {
-                if (!potentialTarget.equals(target))
-                {
-                    modifiedTeam.add(potentialTarget);
-                }
-            }
-            chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
+            removeInvalidTarget(next, abilityNum, potentialTargets, target);
         }
         return true;
+    }
+    
+    private static void removeInvalidTarget(Monster next, int abilityNum, Team potentialTargets, Monster target)
+    {
+        ArrayList<Monster> modifiedTeam = new ArrayList<>();
+        for (Monster potentialTarget : potentialTargets.getMonsters())
+        {
+            if (!potentialTarget.equals(target))
+            {
+                modifiedTeam.add(potentialTarget);
+            }
+        }
+        chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
     }
     
     /**
@@ -478,14 +446,6 @@ public class Auto_Play extends Thread
     }
     
     /**
-     * @return the Team containing the next Monster
-     */
-    public static Team getHighestAtkBar()
-    {
-        return highestAtkBar;
-    }
-    
-    /**
      * @return the Game object currently in use
      */
     public static Game getGame()
@@ -499,18 +459,20 @@ public class Auto_Play extends Thread
      */
     public static void allPossibleTeams()
     {
-        ArrayList<Monster> allMons = filterMonsters(Monster.getMonstersFromDatabase());
-        monsToUse = allMons;
+        ArrayList<Monster> allMons = filterMonsters(Monster.getMonstersFromDatabase(), true);
+        for (Monster allMon : allMons)
+        {
+            monsterKeys.add(allMon.getName(false, false));
+        }
         ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = generateCombinations(allMons, 4);
         ArrayList<Team> allPossibleTeams = new ArrayList<>();
         for (ArrayList<Monster> list : allPossibleTeamMonsters)
         {
-            allPossibleTeams.add(new Team("Team", list));
+            allPossibleTeams.add(new Team("temp", list));
         }
-        Collections.shuffle(allPossibleTeams);
-        totalSims = totalNumOfSims(allPossibleTeams.size());
+        Collections.shuffle(allPossibleTeamMonsters);
+        totalSims = totalNumOfSims(allPossibleTeamMonsters.size());
         teamStats = allPossibleTeams;
-        Team winner;
         
         System.out.println("Simulations started");
         
@@ -519,20 +481,26 @@ public class Auto_Play extends Thread
         
         totalRunningTime.play();
         //Run all simulations
-        for (int i = 0; i < allPossibleTeams.size(); i++)
+        for (int i = 0; i < allPossibleTeamMonsters.size(); i++)
         {
-            for (int j = i + 1; j < allPossibleTeams.size(); j++)
+            final Team winner = allPossibleTeams.get(i);
+            for (int j = i + 1; j < allPossibleTeamMonsters.size(); j++)
             {
-                winner = allPossibleTeams.get(i);
                 if (pause && numOfCompletedSimulations != 0)
                 {
                     totalRunningTime.pause();
                     updateBestTeams();
-                    if (totalSims < 0)
+                    
+                    if (totalSims < 0 || simsCalculationError)
                     {
                         totalSims = totalNumOfSims(allPossibleTeams.size() - i);
                     }
-                    long numOfSimsLeft = totalSims - numOfCompletedSimulations;
+                    if (simsCalculationError)
+                    {
+                        totalSims *= -1;
+                    }
+                    simsCalculationError = false;
+                    long numOfSimsLeft = Math.abs(totalSims) - numOfCompletedSimulations;
                     String end = (totalSims < 0) ? "+" : "";
                     System.out.println("Number of simulations left: " + Monster.numWithCommas(numOfSimsLeft) + end);
                     long nanosecondsPerSim = totalRunningTime.getElapsedTime() / numOfCompletedSimulations;
@@ -548,32 +516,22 @@ public class Auto_Play extends Thread
                     totalRunningTime.play();
                 }
                 numOfCompletedSimulations++;
-                Team contender = allPossibleTeams.get(j);
+                final Team contender = allPossibleTeams.get(j);
                 
                 //Reset teams
                 resetTeam(winner.getMonsters());
                 resetTeam(contender.getMonsters());
                 Main.setRuneEffectsAndNames(winner, contender);
                 battleTime.play();
-                battle(winner, contender, 0);
+                battle(winner, contender);
                 battleTime.pause();
-                Team loser = contender;
-                if (!game.getWinningTeam().getName().equals("Temp"))
+                
+                //Update teamStats if a team won
+                if (!game.getWinningTeam().getName().equals("None"))
                 {
-                    Team temp = winner;
-                    winner = game.getWinningTeam();
-                    if (!winner.equals(temp))
-                    {
-                        loser = temp;
-                    }
+                    game.getWinningTeam().increaseWins();
+                    game.getLosingTeam().increaseLosses();
                 }
-                
-                //Update teamStats
-                Team finalWinner = winner;
-                finalWinner.incWins();
-                
-                Team finalLoser = loser;
-                finalLoser.incLosses();
             }
         }
     }
@@ -637,12 +595,6 @@ public class Auto_Play extends Thread
      */
     public static long totalNumOfSims(int numOfCombos)
     {
-        if (numOfCombos < 0)
-        {
-            System.out.println(numOfCombos);
-            System.out.println("Error getting total number of simulations");
-            return -1;
-        }
         if (numOfCombos == 0)
         {
             return 0;
@@ -653,7 +605,8 @@ public class Auto_Play extends Thread
         }
         catch (StackOverflowError e)
         {
-            return numOfCombos * -1;
+            simsCalculationError = true;
+            return numOfCombos;
         }
     }
     
@@ -661,7 +614,7 @@ public class Auto_Play extends Thread
      * Asks for four Monsters from the user and finds the Team that has all four.
      *
      * @param pickedMons The Monsters already picked. The first call should pass an empty ArrayList.
-     * @param teams The teams in use
+     * @param teams      The teams in use
      * @return The Team from {@link Auto_Play#teamStats} which contains the four Monsters provided.
      */
     public static Team findTeamFromMonsters(ArrayList<Monster> pickedMons, ArrayList<Team> teams)
@@ -757,15 +710,15 @@ public class Auto_Play extends Thread
         String returnString = "";
         if (days > 0)
         {
-            returnString += days + " days, ";
+            returnString += days + " day" + (days == 1 ? "" : "s") + ", ";
         }
         if (hours > 0)
         {
-            returnString += hours + " hours, ";
+            returnString += hours + " hours" + (hours == 1 ? "" : "s") + "" + ", ";
         }
         if (minutes > 0)
         {
-            returnString += minutes + " minutes, ";
+            returnString += minutes + " minutes" + (minutes == 1 ? "" : "s") + ", ";
         }
         return returnString + seconds + "." + nanoseconds + " seconds";
     }
@@ -832,10 +785,15 @@ public class Auto_Play extends Thread
      */
     public static void postRunOptions(ArrayList<Team> teams)
     {
+        final ArrayList<Team> finalTeams = new ArrayList<>(teams);
         String sortOption = "wins";
         teams = sortTeams(teams, true, "wins");
         while (true)
         {
+            if (teams.isEmpty())
+            {
+                teams = new ArrayList<>(finalTeams);
+            }
             System.out.println("Type \"exit\" to exit, \"inspect\" to inspect a specific team. Type \"order\" to change how the teams are ordered. Enter a number to get the team at that index (start with \"-\" to start counting from " +
                     "the end " + "of the list). To get a range of Teams, use the format \"# - #\" replacing # with a number");
             String input = scan.nextLine();
@@ -856,7 +814,7 @@ public class Auto_Play extends Thread
                     Collections.reverse(teams);
                 }
                 
-                printSingleTeamStats(team, sortOption);
+                printSingleTeamStats(team);
             }
             catch (IndexOutOfBoundsException e)
             {
@@ -864,6 +822,7 @@ public class Auto_Play extends Thread
             }
             catch (NumberFormatException e)
             {
+                //Find a specific team
                 if (input.equalsIgnoreCase("inspect"))
                 {
                     Team inspectTeam = findTeamFromMonsters(new ArrayList<>(), teams);
@@ -878,7 +837,7 @@ public class Auto_Play extends Thread
                     }
                     scan.nextLine();
                 }
-                
+                //Order the teams
                 else if (input.equalsIgnoreCase("order"))
                 {
                     boolean reversed = false;
@@ -946,12 +905,18 @@ public class Auto_Play extends Thread
                     
                     teams = sortTeams(teams, !reversed, sortOption);
                 }
-                
+                //Filter the results
+                else if (input.equalsIgnoreCase("filter"))
+                {
+                    teams = new ArrayList<>(finalTeams);
+                    teams = filterTeams(teams);
+                }
+                //Exit options
                 else if (input.equalsIgnoreCase("exit"))
                 {
                     break;
                 }
-                
+                //GetRange
                 else if (input.contains("-"))
                 {
                     //Remove whitespace
@@ -996,7 +961,7 @@ public class Auto_Play extends Thread
                             
                             for (int i = firstNum; i < secondNum; i++)
                             {
-                                printSingleTeamStats(teams.get(i), sortOption);
+                                printSingleTeamStats(teams.get(i));
                             }
                         }
                         //start is -
@@ -1019,7 +984,7 @@ public class Auto_Play extends Thread
                             
                             for (int i = firstNum; i < secondNum; i++)
                             {
-                                printSingleTeamStats(teams.get(i), sortOption);
+                                printSingleTeamStats(teams.get(i));
                             }
                         }
                     }
@@ -1104,27 +1069,24 @@ public class Auto_Play extends Thread
     /**
      * Prints a single team with its stats
      *
-     * @param team       The Team to print
-     * @param sortOption How the teams are currently sorted
+     * @param team The Team to print
      */
-    public static void printSingleTeamStats(Team team, String sortOption)
+    public static void printSingleTeamStats(Team team)
     {
         for (Monster mon : team.getMonsters())
         {
             System.out.printf("%s\t\t", mon.getName(true, false));
         }
-        System.out.print("Number of wins: " + numWithCommas(team.getWins()) + "\tNumber of losses: " + numWithCommas(team.getLosses()));
+        System.out.printf("Number of wins: %s\tNumber of losses: %s", numWithCommas(team.getWins()), numWithCommas(team.getLosses()));
+        
         //Print ratio
-        Double ratio = 1.0 * team.getWins() / team.getLosses();
+        double ratio = 1.0 * team.getWins() / (team.getLosses() + team.getWins());
+        ratio *= 100;
         if (team.getLosses() == 0)
         {
             if (team.getWins() == 0)
             {
                 ratio = 0.0;
-            }
-            else
-            {
-                ratio = Double.POSITIVE_INFINITY;
             }
         }
         
@@ -1135,74 +1097,70 @@ public class Auto_Play extends Thread
     /**
      * Exports current results to a csv file
      *
-     * @param monsters The Monsters used in the simulations
+     * @return The name of the newly created file
      */
-    public static void exportResults(ArrayList<Monster> monsters)
+    public static String exportResults()
     {
-        //Initialize Library
-        HashMap<String, Integer> library = new HashMap<>();
-        for (int i = 0; i < monsters.size(); i++)
-        {
-            library.put(monsters.get(i).getName(false, false), i);
-        }
-        
         //Initialize list of teams
         ArrayList<String> lines = new ArrayList<>();
+        
         //Add library to top of file
         final String[] temp = {""};
-        library.forEach((name, key) -> temp[0] += name + ":" + key + ",");
+        monsterKeys.forEach((name) -> temp[0] += name + ":" + monsterKeys.indexOf(name) + ",");
         lines.add(temp[0]);
         
         //Add each team to list
         for (Team team : teamStats)
         {
-            String line = "";
-            for (Monster mon : team.getMonsters())
-            {
-                line += library.get(mon.getName(false, false)) + ",";
-            }
-            line += team.getWins() + "," + team.getLosses() + ",";
-            lines.add(line);
+            lines.add(compressTeam(team));
         }
         
         Date today = new Date();
         //Try to crate a file using the current date and time as a name and write to it
+        String fileName;
         try
         {
-            FileWriter writer = new FileWriter("src/Game/Results/" + today.toString().replaceAll(":", "-") + ".csv");
+            fileName = "src/Game/Results/" + today.toString().replaceAll(":", "-") + ".csv";
+            FileWriter writer = new FileWriter(fileName);
             //Add each line to file
             for (String line : lines)
             {
                 writer.write(line + "\n");
             }
             writer.close();
+            return fileName;
         }
         //Create a random seed name in case date file name is already taken
         catch (IOException e)
         {
             try
             {
-                FileWriter writer = new FileWriter("src/Game/Results/" + new Random().nextDouble() + ".csv");
+                fileName = "src/Game/Results/" + new Random().nextDouble(0, 10) + ".csv";
+                FileWriter writer = new FileWriter(fileName);
+                
                 //Add each line to file
                 for (String line : lines)
                 {
                     writer.write(line + "\n");
                 }
                 writer.close();
+                return fileName;
             }
             catch (IOException ignored)
             {
             }
+            return null;
         }
     }
     
     /**
      * Allows the user to whitelist or blacklist Monsters
      *
-     * @param mons The original set of Monsters
+     * @param mons           The original set of Monsters
+     * @param limitSelection True if method should check if user selected a valid number of Monsters, false otherwise
      * @return The new list of Monsters
      */
-    public static ArrayList<Monster> filterMonsters(ArrayList<Monster> mons)
+    public static ArrayList<Monster> filterMonsters(ArrayList<Monster> mons, boolean limitSelection)
     {
         while (true)
         {
@@ -1210,6 +1168,7 @@ public class Auto_Play extends Thread
             String response = scan.nextLine();
             if (response.equals("w"))
             {
+                whitelisted = true;
                 String monName = "";
                 ArrayList<Monster> newMons = new ArrayList<>();
                 while (!monName.equals("exit"))
@@ -1224,7 +1183,7 @@ public class Auto_Play extends Thread
                     }
                     if (monName.equals("exit"))
                     {
-                        if (newMons.size() < 5)
+                        if (newMons.size() < 5 && limitSelection)
                         {
                             monName = "";
                             System.out.println("Error, must include at least 5 monsters");
@@ -1238,6 +1197,7 @@ public class Auto_Play extends Thread
             }
             if (response.equals("b"))
             {
+                whitelisted = false;
                 String monName = "";
                 ArrayList<Monster> blacklistedMonsters = new ArrayList<>();
                 while (!monName.equals("exit"))
@@ -1254,7 +1214,7 @@ public class Auto_Play extends Thread
                     {
                         return mons;
                     }
-                    if (mons.size() == 5)
+                    if (mons.size() == 5 && limitSelection)
                     {
                         monName = "";
                         System.out.println("Error, must include at least 5 monsters");
@@ -1277,5 +1237,65 @@ public class Auto_Play extends Thread
                 return mons;
             }
         }
+    }
+    
+    /**
+     * Filters the teams by Monsters
+     *
+     * @param teams The teams to filter
+     * @return The filtered teams
+     */
+    public static ArrayList<Team> filterTeams(ArrayList<Team> teams)
+    {
+        ArrayList<Monster> filteredMonsters = filterMonsters(Monster.getMonstersFromDatabase(), false);
+        ArrayList<Team> temp = new ArrayList<>(teams);
+        
+        for (int i = temp.size() - 1; i >= 0; i--)
+        {
+            Team t = temp.get(i);
+            if (whitelisted)
+            {
+                for (Monster mon : filteredMonsters)
+                {
+                    if (!t.hasInstanceOf(mon))
+                    {
+                        temp.remove(t);
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                for (Monster monster : t.getMonsters())
+                {
+                    boolean contains = false;
+                    for (Monster filteredMonster : filteredMonsters)
+                    {
+                        if (filteredMonster.getName(false, false).equals(monster.getName(false, false)))
+                        {
+                            contains = true;
+                            break;
+                        }
+                    }
+                    if (!contains)
+                    {
+                        temp.remove(t);
+                        break;
+                    }
+                }
+            }
+        }
+        return temp;
+    }
+    
+    private static String compressTeam(Team team)
+    {
+        String line = "";
+        for (Monster mon : team.getMonsters())
+        {
+            line += monsterKeys.indexOf(mon.getName(false, false)) + ",";
+        }
+        line += team.getWins() + "," + team.getLosses() + ",";
+        return line;
     }
 }

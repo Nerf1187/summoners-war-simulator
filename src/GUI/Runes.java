@@ -153,8 +153,9 @@ public class Runes extends JFrame
     
     /**
      * Tests whether a given String is a valid file name
+     *
      * @param fileName The text to check
-     * @param action The requested action from the user
+     * @param action   The requested action from the user
      * @return True if the text is a valid file name in the Runes/Monster_Runes directory, false otherwise
      */
     public static boolean validFileName(String fileName, char action)

@@ -28,7 +28,7 @@ public class Leader_Skill extends Ability
      * Constructs a new Leader skill but does not apply it.
      *
      * @param stat    the stat that the skill affects. See {@link Stat} for stat numbers
-     * @param amount  the percentage that the skill increases the stat by (ex. 0.33 for 33%)
+     * @param amount  the percentage that the skill increases the stat by (0 - 1)
      * @param element the element for which the skill applies to. See {@link Monster} for element numbers
      */
     public Leader_Skill(int stat, double amount, int element)

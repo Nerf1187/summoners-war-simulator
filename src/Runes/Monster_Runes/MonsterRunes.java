@@ -46,7 +46,7 @@ public class MonsterRunes
         }
         catch (FileNotFoundException e)
         {
-            System.err.println("File not found for " + setToMon.getName(true, false));
+            System.err.println("Rune file not found for " + setToMon.getName(true, false));
             System.exit(1);
         }
         

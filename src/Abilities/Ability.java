@@ -23,7 +23,7 @@ public class Ability
     private final ArrayList<Debuff> debuffs;
     private final ArrayList<Buff> buffs;
     private final ArrayList<Integer> debuffsChance, buffsChance;
-    private final boolean targetEnemy, passive, ignoreDef, ignoreDmgReduction, targetsSelf;
+    private final boolean targetEnemy, passive, ignoreDef, ignoreDmgReduction, targetsSelf, targetsAllTeam;
     
     //base constructor
     
@@ -45,12 +45,13 @@ public class Ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param targetsSelf         whether this ability targets self
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @throws ConflictingArguments if targetsEnemy and targetsSelf are both true
      * @throws BadArgumentLength    if debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy,
-            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction)
+            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, boolean targetsAllTeam)
     {
         if (targetsEnemy && targetsSelf)
         {
@@ -96,6 +97,7 @@ public class Ability
         this.ignoreDmgReduction = ignoresDmgReduction;
         this.targetsSelf = targetsSelf;
         this.numOfActivations = numOfActivations;
+        this.targetsAllTeam = targetsAllTeam;
         descriptionWithLineBreaks();
     }
     
@@ -112,6 +114,7 @@ public class Ability
      * @param cooldown            the cooldown of the ability
      * @param targetsEnemy        whether the ability targets the enemy
      * @param isPassive           whether this ability is a passive
+     * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param targetsSelf         whether this ability targets self
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
@@ -121,10 +124,10 @@ public class Ability
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
-            boolean ignoresDmgReduction, int ignore)
+            boolean ignoresDmgReduction, boolean targetsAllTeam, int ignore)
     {
         this(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), buffs, buffChances, cooldown,
-                targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction);
+                targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction, targetsAllTeam);
     }
     
     /**
@@ -143,15 +146,16 @@ public class Ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param targetsSelf         whether this ability targets self
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
      * @throws BadArgumentLength    if debuffs and debuffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
-            boolean ignoresDmgReduction)
+            boolean ignoresDmgReduction, boolean targetsAllTeam)
     {
         this(name, multiplier, healingPercent, numOfActivations, description, debuffs, debuffChances, new ArrayList<>(), new ArrayList<>(), cooldown,
-                targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction);
+                targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction, targetsAllTeam);
     }
     
     /**
@@ -169,6 +173,7 @@ public class Ability
      * @param cooldown            the cooldown of the ability
      * @param targetsEnemy        whether the ability targets the enemy
      * @param isPassive           whether this ability is a passive
+     * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param targetsSelf         whether this ability targets self
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
@@ -178,10 +183,10 @@ public class Ability
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy,
-            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, int ignore)
+            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, boolean targetsAllTeam, int ignore)
     {
         this(name, multiplier, healingPercent, numOfActivations, description, debuffs, debuffChances, buffs, buffChances, cooldown, targetsEnemy,
-                isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction);
+                isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction, targetsAllTeam);
     }
     
     /**
@@ -198,13 +203,14 @@ public class Ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param targetsSelf         whether this ability targets self
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, int cooldown, boolean targetsEnemy,
-            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction)
+            boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, boolean targetsAllTeam)
     {
         this(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()
-                , cooldown, targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction);
+                , cooldown, targetsEnemy, isPassive, ignoresDefense, targetsSelf, ignoresDmgReduction, targetsAllTeam);
     }
     
     /**
@@ -212,7 +218,7 @@ public class Ability
      */
     protected Ability()
     {
-        this("", 0, 0, 0, "", 0, false, false, false, false, false);
+        this("", 0, 0, 0, "", 0, false, false, false, false, false, false);
     }
     
     /**
@@ -460,5 +466,14 @@ public class Ability
     public boolean ignoresDmgReduction()
     {
         return ignoreDmgReduction;
+    }
+    
+    /**
+     * Checks if the ability targets the entire team
+     * @return True if the ability targets the entire team, false otherwise
+     */
+    public boolean targetsAllTeam()
+    {
+        return targetsAllTeam;
     }
 }

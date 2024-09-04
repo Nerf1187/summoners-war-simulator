@@ -1,6 +1,5 @@
 package Game;
 
-import Monsters.Dark.*;
 import Monsters.Fire.*;
 import Monsters.*;
 import Monsters.Water.*;
@@ -49,6 +48,7 @@ public class Main
         
         //Create game
         Game game = new Game(team1, team2);
+        Monster.setGame(game);
         
         //Play game
         while (!game.endGame())
@@ -196,8 +196,8 @@ public class Main
         
         if (Monster.isPrint())
         {
-            System.out.println(ConsoleColors.RED_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "BOOM!" + ConsoleColors.RESET + " Bomb exploded! You " +
-                    "took " + (target.getMaxHp() * 0.4) + " damage! You have " + Math.max(target.getCurrentHp(), 0) + " health left!");
+            System.out.println(ConsoleColors.RED_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "BOOM!" + ConsoleColors.RESET + " Bomb exploded! You " + "took " + (target.getMaxHp() * 0.4) + " damage! You have " + Math.max(target.getCurrentHp(),
+                    0) + " health left!");
         }
         
         printStunEffect();
@@ -236,33 +236,6 @@ public class Main
             }
         }
         return new Monster();
-    }
-    
-    /**
-     * Sorts the given HashMap keys in alphabetical order
-     *
-     * @param map the HashMap to sort
-     */
-    public static void sort(HashMap<String, String> map)
-    {
-        ArrayList<String> list = new ArrayList<>(map.keySet());
-        for (int i = 1; i < list.size(); i++)
-        {
-            int count = i;
-            String temp = list.get(count);
-            while (count >= 1 && list.get(count).compareTo(list.get(i - 1)) < 0)
-            {
-                list.set(count, list.get(i - 1));
-                count--;
-            }
-            list.set(count, temp);
-        }
-        HashMap<String, String> tempMap = new HashMap<>();
-        for (String s : list)
-        {
-            tempMap.put(s, map.get(s));
-        }
-        map = tempMap;
     }
     
     /**
@@ -308,7 +281,12 @@ public class Main
             Scanner read = new Scanner(Objects.requireNonNull(Monster.class.getResourceAsStream("Monster database.csv")));
             while (read.hasNextLine())
             {
-                String[] monAndElement = read.nextLine().split(",");
+                String line = read.nextLine();
+                if (line.isEmpty())
+                {
+                    continue;
+                }
+                String[] monAndElement = line.split(",");
                 String name = nameWithElement(monAndElement[0], monAndElement[1]);
                 if (getMonFromName(monAndElement[0], monsPicked).equals(new Monster()))
                 {
@@ -369,15 +347,15 @@ public class Main
         }
         if (test.equalsIgnoreCase("y"))
         {
-            mons1.add(new Riley());
-            mons1.add(new Rasheed());
+            mons1.add(new Mellia());
+            mons1.add(new Kumar());
             mons1.add(new Kaki());
-            mons1.add(new Dominic());
+            mons1.add(new Feng_Yan());
             
             mons2.add(new Ariel());
-            mons2.add(new Aegir());
+            mons2.add(new Lushen());
             mons2.add(new Riley());
-            mons2.add(new Rasheed());
+            mons2.add(new Kumar());
         }
         
         //4v4
@@ -402,7 +380,7 @@ public class Main
                         System.out.println("\nTeam 1 choose your monster (type \"inspect\" to inspect a monster)");
                         inputMon = scan.nextLine();
                         
-                        //inspect monster
+                        //Inspect monster
                         if (inputMon.equals("inspect"))
                         {
                             Monster.inspect();
@@ -430,13 +408,14 @@ public class Main
                         }
                         System.out.println("\nTeam 2 choose your monster (type \"inspect\" to inspect a monster)");
                         inputMon = scan.nextLine();
-                        //Inspect
+                        //Inspect monster
                         if (inputMon.equals("inspect"))
                         {
                             Monster.inspect();
                         }
                     }
                     while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, mons2));
+                    addMonToTeam(mons2, inputMon);
                 }
             }
             
@@ -484,7 +463,14 @@ public class Main
         return teams;
     }
     
-    private static boolean addMonToTeam(ArrayList<Monster> teamToAdd, String inputMon)
+    /**
+     * Attempts to create a new Monster from the given name and add it to a team
+     *
+     * @param teamToAdd The team to add the new Monster to
+     * @param inputMon  The name of the Monster
+     * @return true if the Monster was successfully added, false otherwise
+     */
+    public static boolean addMonToTeam(ArrayList<Monster> teamToAdd, String inputMon)
     {
         int runeSetNum = getRuneSetNum();
         
@@ -509,8 +495,7 @@ public class Main
                 }
                 catch (NoSuchMethodException e)
                 {
-                    monToAdd = (Monster) c.getDeclaredConstructor(Class.class).newInstance(Class.forName(String.format("Runes.Monster_Runes.%sRunes%d",
-                            name.substring(10 + element.length()), runeSetNum)));
+                    monToAdd = (Monster) c.getDeclaredConstructor(Class.class).newInstance(Class.forName(String.format("Runes.Monster_Runes.%sRunes%d", name.substring(10 + element.length()), runeSetNum)));
                 }
             }
             teamToAdd.add(monToAdd);
@@ -543,32 +528,8 @@ public class Main
     public static void setRuneEffectsAndNames(Team team1, Team team2)
     {
         //Implement ally rune effects
-        for (Monster mon : team1.getMonsters())
-        {
-            for (Monster mon1 : team1.getMonsters())
-            {
-                mon1.addAppliedBuff(new Rune_shield((int) (mon.getMaxHp() * (0.15 * mon.numOfSets(Rune.SHIELD))), 3), mon);
-                mon1.setAtk((int) (mon1.getAtk() + mon1.getBaseAtk() * (0.08 * mon.numOfSets(Rune.FIGHT))));
-                mon1.setDef((int) (mon1.getDef() + mon1.getBaseDef() * (0.08 * mon.numOfSets(Rune.DETERMINATION))));
-                mon1.setMaxHp((int) (mon1.getMaxHp() + mon1.getBaseMaxHp() * (0.08 * mon.numOfSets(Rune.ENHANCE))));
-                mon1.setAccuracy((mon1.getAccuracy() + (10 * mon.numOfSets(Rune.ACCURACY))));
-                mon1.setResistance(mon1.getResistance() + (10 * mon.numOfSets(Rune.TOLERANCE)));
-                mon1.setCurrentHp(mon1.getMaxHp());
-            }
-        }
-        for (Monster mon : team2.getMonsters())
-        {
-            for (Monster mon1 : team2.getMonsters())
-            {
-                mon1.addAppliedBuff(new Rune_shield((int) (mon.getMaxHp() * (0.15 * mon.numOfSets(Rune.SHIELD))), 3), mon);
-                mon1.setAtk((int) (mon1.getAtk() + mon1.getBaseAtk() * (0.08 * mon.numOfSets(Rune.FIGHT))));
-                mon1.setDef((int) (mon1.getDef() + mon1.getBaseDef() * (0.08 * mon.numOfSets(Rune.DETERMINATION))));
-                mon1.setMaxHp((int) (mon1.getMaxHp() + mon1.getBaseMaxHp() * (0.08 * mon.numOfSets(Rune.ENHANCE))));
-                mon1.setAccuracy((mon1.getAccuracy() + (10 * mon.numOfSets(Rune.ACCURACY))));
-                mon1.setResistance(mon1.getResistance() + (10 * mon.numOfSets(Rune.TOLERANCE)));
-                mon1.setCurrentHp(mon1.getMaxHp());
-            }
-        }
+        setRuneEffects(team1);
+        setRuneEffects(team2);
         
         //Set names for each team
         for (Monster mon : team1.getMonsters())
@@ -578,6 +539,28 @@ public class Main
         for (Monster mon : team2.getMonsters())
         {
             mon.setName(mon.getName(false, false) + "(2)");
+        }
+    }
+    
+    /**
+     * Sets ally rune effects for a single team
+     *
+     * @param team The team to apply rune effects for
+     */
+    private static void setRuneEffects(Team team)
+    {
+        for (Monster mon : team.getMonsters())
+        {
+            for (Monster mon1 : team.getMonsters())
+            {
+                mon1.addAppliedBuff(new Rune_shield((int) (mon.getMaxHp() * (0.15 * mon.numOfSets(Rune.SHIELD))), 3), mon);
+                mon1.setAtk((int) (mon1.getAtk() + mon1.getBaseAtk() * (0.08 * mon.numOfSets(Rune.FIGHT))));
+                mon1.setDef((int) (mon1.getDef() + mon1.getBaseDef() * (0.08 * mon.numOfSets(Rune.DETERMINATION))));
+                mon1.setMaxHp((int) (mon1.getMaxHp() + mon1.getBaseMaxHp() * (0.08 * mon.numOfSets(Rune.ENHANCE))));
+                mon1.setAccuracy((mon1.getAccuracy() + (10 * mon.numOfSets(Rune.ACCURACY))));
+                mon1.setResistance(mon1.getResistance() + (10 * mon.numOfSets(Rune.TOLERANCE)));
+                mon1.setCurrentHp(mon1.getMaxHp());
+            }
         }
     }
     

@@ -15,12 +15,15 @@ public class Sath extends Monster
     
     private static int count = 1;
     
+    private final int finalCritRate;
+    
     
     public Sath()
     {
         super("Sath" + count, FIRE, 9_885, 505, 867, 91, 15, 50, 15, 0);
         setRunes(MonsterRunes.getRunesFromFile("Sath1.csv", this));
         setAbilities();
+        finalCritRate = this.getCritRate();
         count++;
     }
     
@@ -35,21 +38,18 @@ public class Sath extends Monster
     {
         
         abilities.add(new Attack_Ability("Grim Scythe (1)", 4.4 * 1.2, 0, 1, "Reaps the life of the enemy with a deadly scythe. " +
-                "Acquires an additional turn if the enemy dies.", 0, false, false));
+                "Acquires an additional turn if the enemy dies.", 0, false, false, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Deadly Swing (2)", 2.7 * 1.2, 0, 1, "Attacks all enemies with a deadly scythe and " +
                 "inflicts Continuous Damage for 2 turns. Always lands a Critical Hit if the enemy's HP is 30% or lower.", ability2Debuffs,
-                ability2DebuffChances, 3,
-                false, false));
+                ability2DebuffChances, 3, false, false, true));
         
         //@Passive:Creation
         abilities.add(new Passive("Living Hell", "Increases the amount of damage all allies and enemies receive from Continuous Damage by two times. " +
-                "Disturbs the" +
-                " HP recovery for 2 turns with a 75% chance and inflicts Continuous Damage if you attack an enemy on your turn. If you attack an enemy " +
-                "who already has Continuous " +
-                "Damage, your attacks won't land as a Glancing Hit."));
+                "Disturbs the HP recovery for 2 turns with a 75% chance and inflicts Continuous Damage if you attack an enemy on your turn. If you attack an enemy " +
+                "who already has Continuous Damage, your attacks won't land as a Glancing Hit."));
         
         abilities.add(new Leader_Skill(Stat.ATK, 0.3, FIRE));
         
@@ -59,13 +59,12 @@ public class Sath extends Monster
     
     public boolean nextTurn(Monster target, int abilityNum)
     {
-        int critRate = getCritRate();
         //@Passive
         if (!containsDebuff(Debuff.OBLIVION))
         {
             if (target.containsDebuff(Debuff.CONTINUOUS_DMG))
             {
-                setAbilityGlancingRateChange(Integer.MIN_VALUE);
+                setAbilityGlancingRateChange(-999_999);
             }
         }
         
@@ -78,8 +77,7 @@ public class Sath extends Monster
         
         //@Passive
         setAbilityGlancingRateChange(0);
-        
-        setCritRate(critRate);
+        setCritRate(finalCritRate);
         
         if (!b)
         {
@@ -112,42 +110,53 @@ public class Sath extends Monster
             
             case 2 ->
             {
-                Team other = (game.getOtherTeam().size() > 0) ? game.getOtherTeam() : Auto_Play.getOther();
-                for (int i = 0; i < other.size(); i++)
+                //@Passive
+                if (!containsDebuff(Debuff.OBLIVION))
                 {
-                    Monster m = other.get(i);
-                    setCritRate(critRate);
-                    setAbilityGlancingRateChange(0);
-                    //@Passive
-                    if (!containsDebuff(Debuff.OBLIVION))
-                    {
-                        if (m.containsDebuff(Debuff.CONTINUOUS_DMG))
-                        {
-                            setAbilityGlancingRateChange(-10_000);
-                        }
-                    }
-                    
-                    if (m.getHpRatio() < 30)
-                    {
-                        setCritRate(10_000);
-                    }
-                    if (!m.equals(target) && !m.isDead())
-                    {
-                        attack(m, abilities.get(1), false);
-                        //@Passive
-                        if (!containsDebuff(Debuff.OBLIVION))
-                        {
-                            m.addAppliedDebuff(Debuff.UNRECOVERABLE, 75, 2, this);
-                            m.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 1, this);
-                        }
-                    }
+                    applyToTeam(game.getOtherTeam(), m -> {
+                        m.addAppliedDebuff(Debuff.UNRECOVERABLE, 75, 2, this);
+                        m.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 1, this);
+                    });
                 }
             }
         }
         
-        super.afterTurnProtocol((abilityNum == 1) ? target : (game.getOtherTeam().size() > 0) ? game.getOtherTeam() : Auto_Play.getOther(), true);
-        setCritRate(critRate);
+        super.afterTurnProtocol((abilityNum == 1) ? target : game.getOtherTeam(), true);
+        setCritRate(finalCritRate);
         setAbilityGlancingRateChange(0);
         return true;
+    }
+    
+    public void attackTeam(Team target, Ability ability)
+    {
+        for (Monster m : target.getMonsters())
+        {
+            if (m.isDead())
+            {
+                continue;
+            }
+            setCritRate(finalCritRate);
+            setAbilityGlancingRateChange(0);
+            //@Passive
+            if (!containsDebuff(Debuff.OBLIVION))
+            {
+                if (m.containsDebuff(Debuff.CONTINUOUS_DMG))
+                {
+                    setAbilityGlancingRateChange(-10_000);
+                }
+            }
+            
+            if (m.getHpRatio() < 30)
+            {
+                setCritRate(999_999);
+            }
+            attack(m, abilities.get(1), false);
+            //@Passive
+            if (!containsDebuff(Debuff.OBLIVION))
+            {
+                m.addAppliedDebuff(Debuff.UNRECOVERABLE, 75, 2, this);
+                m.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 1, this);
+            }
+        }
     }
 }

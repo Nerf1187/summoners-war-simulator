@@ -44,7 +44,7 @@ public class Rune
         }
         if (type == TYPEARTIFACT && place != 8)
         {
-            throw new ConflictingArguments("Place must be 8 for a type artifact");
+            throw new ConflictingArguments("Place must equal 8 for a type artifact");
         }
         this.type = type;
         this.mainAttribute = mainAttribute;
@@ -80,37 +80,33 @@ public class Rune
         }
         
         applied = true;
-        switch (mainAttribute.getNum())
-        {
-            case ATK -> monster.setTempAtk(monster.getTempAtk() + mainAttribute.getAmount());
-            case ATKPERCENT -> monster.setTempAtk((monBaseAtk * (1.0 * mainAttribute.getAmount() / 100) + monster.getTempAtk()));
-            case DEF -> monster.setTempDef(monster.getTempDef() + mainAttribute.getAmount());
-            case DEFPERCENT -> monster.setTempDef((monBaseDef * (1.0 * mainAttribute.getAmount() / 100) + monster.getTempDef()));
-            case HP -> monster.setTempMaxHp(monster.getTempMaxHp() + mainAttribute.getAmount());
-            case HPPERCENT -> monster.setTempMaxHp((monBaseMaxHp * (1.0 * mainAttribute.getAmount() / 100) + monster.getTempMaxHp()));
-            case SPD -> monster.setSpd(monster.getSpd() + mainAttribute.getAmount());
-            case CRITRATE -> monster.setCritRate(monster.getCritRate() + mainAttribute.getAmount());
-            case CRITDMG -> monster.setCritDmg(monster.getCritDmg() + mainAttribute.getAmount());
-            case RES -> monster.setResistance(monster.getResistance() + mainAttribute.getAmount());
-            case ACC -> monster.setAccuracy(monster.getAccuracy() + mainAttribute.getAmount());
-        }
+        applyAttribute(mainAttribute);
         
         for (SubAttribute sub : subAttributes)
         {
-            switch (sub.getNum())
-            {
-                case ATK -> monster.setTempAtk(monster.getTempAtk() + sub.getAmount());
-                case ATKPERCENT -> monster.setTempAtk((monBaseAtk * (1.0 * sub.getAmount() / 100) + monster.getTempAtk()));
-                case DEF -> monster.setTempDef(monster.getTempDef() + sub.getAmount());
-                case DEFPERCENT -> monster.setTempDef((monBaseDef * (1.0 * sub.getAmount() / 100) + monster.getTempDef()));
-                case HP -> monster.setTempMaxHp(monster.getTempMaxHp() + sub.getAmount());
-                case HPPERCENT -> monster.setTempMaxHp((monBaseMaxHp * (1.0 * sub.getAmount() / 100) + monster.getTempMaxHp()));
-                case SPD -> monster.setSpd(monster.getSpd() + sub.getAmount());
-                case CRITRATE -> monster.setCritRate(monster.getCritRate() + sub.getAmount());
-                case CRITDMG -> monster.setCritDmg(monster.getCritDmg() + sub.getAmount());
-                case RES -> monster.setResistance(monster.getResistance() + sub.getAmount());
-                case ACC -> monster.setAccuracy(monster.getAccuracy() + sub.getAmount());
-            }
+            applyAttribute(sub);
+        }
+    }
+    
+    /**
+     * Applies the given rune attribute
+     * @param attribute The attribute to apply
+     */
+    private void applyAttribute(MainAttribute attribute)
+    {
+        switch (attribute.getNum())
+        {
+            case ATK -> monster.setTempAtk(monster.getTempAtk() + attribute.getAmount());
+            case ATKPERCENT -> monster.setTempAtk((monBaseAtk * (1.0 * attribute.getAmount() / 100) + monster.getTempAtk()));
+            case DEF -> monster.setTempDef(monster.getTempDef() + attribute.getAmount());
+            case DEFPERCENT -> monster.setTempDef((monBaseDef * (1.0 * attribute.getAmount() / 100) + monster.getTempDef()));
+            case HP -> monster.setTempMaxHp(monster.getTempMaxHp() + attribute.getAmount());
+            case HPPERCENT -> monster.setTempMaxHp((monBaseMaxHp * (1.0 * attribute.getAmount() / 100) + monster.getTempMaxHp()));
+            case SPD -> monster.setSpd(monster.getSpd() + attribute.getAmount());
+            case CRITRATE -> monster.setCritRate(monster.getCritRate() + attribute.getAmount());
+            case CRITDMG -> monster.setCritDmg(monster.getCritDmg() + attribute.getAmount());
+            case RES -> monster.setResistance(monster.getResistance() + attribute.getAmount());
+            case ACC -> monster.setAccuracy(monster.getAccuracy() + attribute.getAmount());
         }
     }
     
@@ -227,6 +223,7 @@ public class Rune
     
     /**
      * Sets the main attribute for the rune. This method should not be called outside of rune editing classes
+     *
      * @param newAttribute The new attribute for the Rune
      */
     public void setMainAttribute(MainAttribute newAttribute)

@@ -196,7 +196,7 @@ public class EditRuneFile extends JFrame
     /**
      * Starts the GUI
      *
-     * @param fileName    The name of the file to edit
+     * @param fileName     The name of the file to edit
      * @param selectedRune The default rune to be selected
      */
     public static void run(String fileName, int selectedRune)
@@ -244,8 +244,8 @@ public class EditRuneFile extends JFrame
      * changing the new file's name to the requested name, and deletes the original file.
      *
      * @param fileName The name of the file to edit. Should end in ".csv"
-     * @param lineNum The line number to edit
-     * @param newRune The new Rune to replace the old one with
+     * @param lineNum  The line number to edit
+     * @param newRune  The new Rune to replace the old one with
      * @return True if and only if the file was successfully edited
      */
     public static boolean editFile(String fileName, int lineNum, Rune newRune)

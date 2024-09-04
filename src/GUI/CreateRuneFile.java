@@ -366,23 +366,7 @@ public class CreateRuneFile extends JFrame
         String fileName;
         if (args.length > 0 && args[0].equals("0"))
         {
-            GetNameAndNum nameAndNum = new GetNameAndNum();
-            while (nameAndNum.isVisible())
-            {
-                pause(5);
-            }
-            String monName = Monster.toProperName(nameAndNum.monNameTxt.getText());
-            int runeSetNum = 0;
-            try
-            {
-                runeSetNum = Integer.parseInt(nameAndNum.runeSetNumText.getText());
-            }
-            catch (NumberFormatException e)
-            {
-                System.err.println(e);
-                System.exit(1);
-            }
-            fileName = monName + runeSetNum;
+            fileName = Runes.getFileName();
             if ((fileName).equals("tempFile") || (fileName).equals("oldTempFile"))
             {
                 new Message("Please choose a different Monster name", true);

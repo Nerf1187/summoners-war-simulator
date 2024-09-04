@@ -34,9 +34,9 @@ public class Raoq extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.DEC_DEF, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(80);
         abilities.add(new Attack_Ability("Scratch (1)", 4.5 * 1.2, 0, 1, "Attacks with giant claws to weaken the enemy's defense for 2 turns with a 70% " +
-                "chance and attacks consecutively with a 30% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false));
+                "chance and attacks consecutively with a 30% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
         
-        abilities.add(new Attack_Ability("Team Up (2)", 4.5 * 1.2, 0, 1, "Teams up with two other allies to attack an enemy.", 3, false, false));
+        abilities.add(new Attack_Ability("Team Up (2)", 4.5 * 1.2, 0, 1, "Teams up with two other allies to attack an enemy.", 3, false, false, false));
         
         //@Passive:Creation
         abilities.add(new Passive("Annihilate", "If you kill the enemy, you will get an extra turn instantly and your skill cooldown time will decrease " +
@@ -65,7 +65,7 @@ public class Raoq extends Monster
         
         if (abilityNum == 2)
         {
-            Team friendlyTeam = (game.getNextMonsTeam().size() > 0) ? game.getNextMonsTeam() : Auto_Play.getHighestAtkBar();
+            Team friendlyTeam = game.getNextMonsTeam();
             Monster attackingMon1 = null;
             do
             {

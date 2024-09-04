@@ -12,7 +12,7 @@ import java.util.*;
 
 public class Stat
 {
-    public static int BERSERK = 0, TOTEM = 1, MAGIC_SPHERE = 2, NULL = -1;
+    public static int NULL = -1, BERSERK = 0, TOTEM = 1, MAGIC_SPHERE = 2, MACARON_SHIELD = 3;
     //Rune sub-stats
     public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC = 11;
     
@@ -76,6 +76,7 @@ public class Stat
     
     /**
      * Sets the number of turns remaining to a given value
+     *
      * @param numTurns The new number of turns remaining
      */
     public void setNumTurns(int numTurns)
@@ -106,6 +107,8 @@ public class Stat
         {
             case 0 -> s = "Berserk (" + getNumTurns() + " turns remaining)";
             case 1 -> s = "Totems (" + numOfSpecialEffects + ")";
+            case 2 -> s = "Magic Sphere (" + numOfSpecialEffects + ")";
+            case 3 -> s = "Macaron Shield";
         }
         return s;
     }

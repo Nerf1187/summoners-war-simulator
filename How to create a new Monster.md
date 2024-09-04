@@ -19,14 +19,14 @@ This file is only needed if you intend to create a new Monster.
 5. Create a nextTurn method that overrides the parent class.
    This method should now do anything needed before the actual turn starts then call the super method.
    If the parent returns false then the child method should immediately end, returning false.
-   Otherwise, now is when you add the specific things the abilities do, such as targeting multiple
-   Monsters, or conditional debuffs/buffs. At the end of the method, call the afterTurnProtocol() parent function and return true.
+   Otherwise, now is when you add the specific things the abilities do, such as conditional debuffs/buffs. At the end of the method, call the afterTurnProtocol() parent 
+   function and return true.
 
 
 6. Create any other methods as needed (ex. Miho has an attacked() and afterHitProtocol() function for her passive).
 
 
-7. Go to GUI_CreateRuneFile and follow the instructions to create your rune class
+7. Go to GUI/CreateRuneFile and follow the instructions to create your rune set(s)
 
 
 8. Add the Monster's name and element into The Monsters/Monster database, and it will automatically be added to the program

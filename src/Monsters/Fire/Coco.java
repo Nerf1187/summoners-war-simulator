@@ -15,7 +15,7 @@ public class Coco extends Monster
     private static int count = 1;
     Stat numOfMagicSpheres = new Stat(999_999);
     
-    Ability magicSphereAttack = new Attack_Ability("", 1.5, 0, 1, "", 0, false, false);
+    Ability magicSphereAttack = new Attack_Ability("", 1.5, 0, 1, "", 0, false, false, false);
     
     public Coco()
     {
@@ -39,18 +39,18 @@ public class Coco extends Monster
         ArrayList<Integer> ability1DebuffChances = abilityChances(65);
         abilities.add(new Attack_Ability("Magical Eye (1)", 1.9 * 1.15, 0, 2, "Attacks the enemy 2 times " +
                 "and decreases the Attack Power for 2 turns with a 35% chance with each attack.", ability1Debuffs, ability1DebuffChances, 0, false,
-                false));
+                false, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.BRAND, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(80);
         abilities.add(new Attack_Ability("Night Crow (2)", 2.3 * 1.25, 0, 3, "Attacks the enemy 3 times " +
                 "and leaves a Branding effect for 2 turns with a 75% chance each. The cooldown time of [Chaos Magic Circle] will be decreased by 1 turn " +
-                "each whenever you attack the target under harmful effects.", ability2Debuffs, ability2DebuffChances, 3, false, false));
+                "each whenever you attack the target under harmful effects.", ability2Debuffs, ability2DebuffChances, 3, false, false, false));
         
         abilities.add(new Ability("Chaos Magic Circle (3)", 0, 0, 0, "Summons 5 magic spheres, which " +
                 "each can inflict damage equal to 150% of your Attack Power. If you get attacked from an enemy while you still have magic spheres, uses " +
                 "1 magic sphere to counterattack and increases your Attack Bar by 50%. When you attack on your turn, all remaining spheres will attack the" +
-                " enemy target together. Recovers your HP by 10% for every sphere that counterattacks", 5, false, false, false, true, false));
+                " enemy target together. Recovers your HP by 10% for every sphere that counterattacks", 5, false, false, false, true, false, false));
         
         abilities.add(new Leader_Skill(Stat.ATK, 0.44, ALL));
         
@@ -81,7 +81,7 @@ public class Coco extends Monster
     
     public void attacked(Monster attacker)
     {
-        if (numOfMagicSpheres.getNumOfSpecialEffects() == 0)
+        if (numOfMagicSpheres.getNumOfSpecialEffects() <= 0 || !Game.canCounter())
         {
             return;
         }

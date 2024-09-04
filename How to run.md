@@ -13,3 +13,7 @@ The Game/Test_One_Team allows you to create a Team and simulate it in a battle a
 The GUI/Runes class is an easier way to work with rune sets. 
 You will first be asked to enter a Monster name and rune set number then choose what action to complete. 
 The program will handle everything to do with the files themselves. Just supply the information requested
+
+
+The Game/Read_results class allows you to view results of past Auto_Play runs. File names are determined by the date and time of their creation if possible, otherwise a randomly
+    generated number is used as the name.

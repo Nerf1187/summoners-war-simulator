@@ -3,8 +3,8 @@ package Monsters.Light;
 import Abilities.*;
 import Monsters.*;
 import Runes.Monster_Runes.*;
-import Stats.*;
 import Stats.Debuffs.*;
+import Stats.*;
 import java.util.*;
 
 public class Loren extends Monster
@@ -31,12 +31,12 @@ public class Loren extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.DEC_ATK_SPD, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(50);
         abilities.add(new Attack_Ability("Cross Fire (1)", 1.25 * 1.25, 0, 3, "Shoots 3 projectiles, with each projectile having a 30% chance to slow the Attack Speed for 2 turns.", ability1Debuffs,
-                ability1DebuffChances, 0, false, false));
+                ability1DebuffChances, 0, false, false, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.REMOVE_BENEFICIAL_EFFECT, 1, 1, Debuff.UNRECOVERABLE, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(75, 100);
         abilities.add(new Attack_Ability("Silver-Plated Bullet (2)", 3.0 * 1.25, 0, 2, "Attacks the enemy 2 times with holy bullets. Each attack has a 60% chance to remove one beneficial effect and disturb the HP recovery for 2 turns.",
-                ability2Debuffs, ability2DebuffChances, 3, false, false));
+                ability2Debuffs, ability2DebuffChances, 3, false, false, false));
         
         //@Passive: Creation
         abilities.add(new Passive("Chaser", "Decreases the enemy's Attack Bar by 20% with each attack and weakens the enemy's defense for 1 turn with a 75% chance."));

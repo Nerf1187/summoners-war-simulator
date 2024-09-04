@@ -34,7 +34,7 @@ public class Lulu_And_Friends extends Monster
     {
         
         abilities.add(new Attack_Ability("Attack! (1)", 4.4 * 1.1, 0, 1, "Attacks the enemy target and recovers the HP of the " +
-                "ally with the lowest HP ratio by 15%.", 0, false, false));
+                "ally with the lowest HP ratio by 15%.", 0, false, false, false));
         
         ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.CLEANSE, 0, Buff.IMMUNITY, 1);
         ArrayList<Integer> ability2BuffChances = abilityChances(100, 100);
@@ -55,58 +55,28 @@ public class Lulu_And_Friends extends Monster
             return false;
         }
         
-        Team friendlyTeam = (game.getNextMonsTeam().size() > 0) ? game.getNextMonsTeam() : Auto_Play.getHighestAtkBar();
+        Team team = game.getNextMonsTeam();
         switch (abilityNum)
         {
             case 1 ->
             {
-                double lowestRatio = getHpRatio();
-                ArrayList<Monster> lowestRatioMons = new ArrayList<>();
-                lowestRatioMons.add(this);
-                for (int i = 0; i < friendlyTeam.size(); i++)
-                {
-                    Monster monster = friendlyTeam.get(i);
-                    if (monster.getHpRatio() < lowestRatio && !monster.isDead())
-                    {
-                        lowestRatioMons.clear();
-                        lowestRatioMons.add(monster);
-                        lowestRatio = monster.getHpRatio();
-                    }
-                    if (monster.getHpRatio() == lowestRatio)
-                    {
-                        lowestRatioMons.add(monster);
-                    }
-                }
-                heal(lowestRatioMons.get(new Random().nextInt(lowestRatioMons.size())), new Heal_Ability("", 1.15 * 0.15, 1, "",
-                        0, false));
+                heal(team.getMonsterWithLowestHpRatio(), new Heal_Ability("", 1.15 * 0.15, 1, "", 0, false));
             }
             case 2 ->
             {
-                if (!target.equals(this))
-                {
-                    heal(this, new Heal_Ability("", 0.25 * 1.25, 1, "", 0, false));
-                }
+                heal(this, new Heal_Ability("", 0.25 * 1.25, 1, "", 0, false));
             }
             case 3 ->
             {
-                for (Monster m : friendlyTeam.getMonsters())
-                {
-                    if (m.isDead())
-                    {
-                        continue;
-                    }
+                applyToTeam(team, m -> {
                     boolean hasDebuffs = !m.getAppliedDebuffs().isEmpty();
                     m.cleanse();
-                    if (!m.equals(target))
-                    {
-                        heal(m, abilities.get(2));
-                    }
                     
                     if (!hasDebuffs)
                     {
                         m.addAppliedBuff(Buff.IMMUNITY, 2, this);
                     }
-                }
+                });
             }
         }
         super.afterTurnProtocol(target, abilityNum == 1);

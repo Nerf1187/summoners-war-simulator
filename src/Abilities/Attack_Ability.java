@@ -27,14 +27,15 @@ public class Attack_Ability extends Ability
      * @param cooldown            the cooldown of the ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param hitsTeam            whether this ability targets everyone on the enemy team
      * @throws BadArgumentLength if debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense,
-            boolean ignoresDmgReduction)
+            boolean ignoresDmgReduction, boolean hitsTeam)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, debuffs, debuffChances, buffs, buffChances, cooldown, true, false,
-                ignoresDefense, false, ignoresDmgReduction);
+                ignoresDefense, false, ignoresDmgReduction, hitsTeam);
     }
     
     /**
@@ -50,13 +51,14 @@ public class Attack_Ability extends Ability
      * @param cooldown            the cooldown of the ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param hitsTeam            whether this ability targets everyone on the enemy team
      * @throws BadArgumentLength if debuffs and debuffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
-            ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction)
+            ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), debuffs, debuffChances, cooldown,
-                true, false, ignoresDefense, false, ignoresDmgReduction, 0);
+                true, false, ignoresDefense, false, ignoresDmgReduction, hitsTeam, 0);
     }
     
     /**
@@ -73,13 +75,14 @@ public class Attack_Ability extends Ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
      * @param ignore              an int to distinguish this constructor from another
+     * @param hitsTeam            whether this ability targets everyone on the enemy team
      * @throws BadArgumentLength if buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
-            ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, int ignore)
+            ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, int ignore, boolean hitsTeam)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), buffs, buffChances, cooldown, true,
-                false, ignoresDefense, false, ignoresDmgReduction);
+                false, ignoresDefense, false, ignoresDmgReduction, hitsTeam);
     }
     
     /**
@@ -97,16 +100,17 @@ public class Attack_Ability extends Ability
      * @param cooldown            the cooldown of the ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param hitsTeam            whether this ability targets everyone on the enemy team
      * @param ignore              an int to distinguish this constructor from another
      * @throws BadArgumentLength if debuffs and debuffChances or buffs and buffChances are different lengths
      */
     //Reverse buffs and debuffs in header
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense,
-            boolean ignoresDmgReduction, int ignore)
+            boolean ignoresDmgReduction, boolean hitsTeam, int ignore)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, debuffs, debuffChances, buffs, buffChances, cooldown, true, false,
-                ignoresDefense, false, ignoresDmgReduction);
+                ignoresDefense, false, ignoresDmgReduction, hitsTeam);
     }
     
     /**
@@ -120,12 +124,13 @@ public class Attack_Ability extends Ability
      * @param cooldown            the cooldown of the ability
      * @param ignoresDefense      whether this ability ignores the targets defense
      * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param hitsTeam            whether this ability targets everyone on the enemy team
      */
     //No buffs or debuffs
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, int cooldown,
-            boolean ignoresDefense, boolean ignoresDmgReduction)
+            boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
-                new ArrayList<>(), cooldown, true, false, ignoresDefense, false, ignoresDmgReduction);
+                new ArrayList<>(), cooldown, true, false, ignoresDefense, false, ignoresDmgReduction, hitsTeam);
     }
 }

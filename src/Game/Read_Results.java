@@ -4,14 +4,12 @@ import javax.swing.*;
 import javax.swing.filechooser.*;
 import Monsters.*;
 import java.io.*;
-import java.net.*;
-import java.sql.*;
 import java.util.*;
 
 /**
  * This class allows the user to view and run search commands on previous runs from {@link Auto_Play}
  */
-public class Read_Results extends  JFrame
+public class Read_Results extends JFrame
 {
     private JPanel panel;
     private JFileChooser fileChooser;
@@ -44,7 +42,7 @@ public class Read_Results extends  JFrame
         setVisible(true);
     }
     
-   public static void main(String[] args)
+    public static void main(String[] args)
     {
         new Read_Results();
     }

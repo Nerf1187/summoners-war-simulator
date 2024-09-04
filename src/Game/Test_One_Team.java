@@ -4,7 +4,6 @@ import Monsters.*;
 import java.util.*;
 
 import static Game.Auto_Play.generateCombinations;
-import static Game.Main.getRuneSetNum;
 import static Game.Main.printMonsToPick;
 
 /**
@@ -34,7 +33,7 @@ public class Test_One_Team
             Auto_Play.resetTeam(mainTeam.getMonsters());
             Auto_Play.resetTeam(enemyTeam.getMonsters());
             Main.setRuneEffectsAndNames(mainTeam, enemyTeam);
-            Game g = Auto_Play.battle(mainTeam, enemyTeam, 0);
+            Game g = Auto_Play.battle(mainTeam, enemyTeam);
             numOfBattles++;
             if (g.getWinningTeam().getName().equals("Team 1"))
             {
@@ -69,49 +68,9 @@ public class Test_One_Team
                 inputMon = scan.nextLine();
             }
             while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, monstersPicked));
-            //Get class
-            int runeSetNum = getRuneSetNum();
             
-            try
-            {
-                inputMon = inputMon.replaceAll(" ", "_");
-                inputMon = Monster.toProperName(inputMon);
-                String temp = inputMon.replaceAll("_", " ");
-                String element = Monster.monsterNamesDatabase.get(temp);
-                String name = "Monsters." + element + "." + inputMon;
-                Class<?> c = Class.forName(name);
-                Monster monToAdd;
-                if (runeSetNum == -1)
-                {
-                    monToAdd = (Monster) c.getDeclaredConstructor().newInstance();
-                }
-                else
-                {
-                    try
-                    {
-                        monToAdd = (Monster) c.getDeclaredConstructor(String.class).newInstance(inputMon + runeSetNum + ".csv");
-                    }
-                    catch (NoSuchMethodException e)
-                    {
-                        monToAdd = (Monster) c.getDeclaredConstructor(Class.class).newInstance(Class.forName(String.format("Runes.Monster_Runes.%sRunes%d",
-                                name.substring(10 + element.length()), runeSetNum)));
-                    }
-                }
-                monstersPicked.add(monToAdd);
-                if (runeSetNum != -1)
-                {
-                    scan.nextLine();
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                System.out.println("Oops! Rune set not found");
-                scan.nextLine();
-                System.out.println();
-            }
-            catch (Exception ignored)
-            {
-            }
+            //Add Monster to team
+            Main.addMonToTeam(monstersPicked, inputMon);
         }
         return new Team("Team 1", monstersPicked);
     }

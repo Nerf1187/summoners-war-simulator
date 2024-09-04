@@ -16,11 +16,10 @@ public class StopWatch
      *
      * @param start True if the stopwatch should start on creation
      */
-    public StopWatch (boolean start)
+    public StopWatch(boolean start)
     {
         if (start)
         {
-            paused = false;
             play();
         }
     }

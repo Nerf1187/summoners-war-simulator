@@ -13,7 +13,7 @@ public class Passive extends Ability
      */
     public Passive(String name, String description)
     {
-        super(name, 0, 0, 0, description, 0, false, true, false, true, false);
+        super(name, 0, 0, 0, description, 0, false, true, false, true, false, false);
         setToNumTurns(Integer.MAX_VALUE);
     }
     
@@ -26,7 +26,7 @@ public class Passive extends Ability
      */
     public Passive(String name, String description, int cooldown)
     {
-        super(name, 0, 0, 0, description, cooldown, false, true, false, true, false);
+        super(name, 0, 0, 0, description, cooldown, false, true, false, true, false, false);
     }
     
     /**
