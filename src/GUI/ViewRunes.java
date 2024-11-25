@@ -24,26 +24,26 @@ public class ViewRunes extends JFrame
     private int selectedRow = -1;
     
     /**
-     * Creates the GUI
+     * Creates the GUI.
      */
     private ViewRunes(String fileName)
     {
+        //General GUI stuff
         add(panel);
-        setTitle("View " + fileName);
+        setTitle("View %s".formatted(fileName));
         setSize(900, 400);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         
-        
+        //Exit viewing
         exitButton.addActionListener(_ -> System.exit(0));
         
+        //Go to edit runes
         toEditButton.addActionListener(_ -> {
             dispose();
-            EditRuneFile.run(fileName, selectedRow);
+            EditRuneFile.run(fileName, table.getSelectedRow());
         });
-        
-        table.getSelectionModel().addListSelectionListener(_ -> selectedRow = table.getSelectedRow());
     }
     
     /**
@@ -53,15 +53,16 @@ public class ViewRunes extends JFrame
      */
     public static void run(String fileName)
     {
+        //Get the Monster's runes
         ArrayList<Rune> runes = MonsterRunes.getRunesFromFile(fileName, new Monster());
         ArrayList<String[]> rowValues = new ArrayList<>();
         int i = 0;
         for (Rune rune : runes)
         {
             rowValues.add(new String[4]);
-            //Place
-            rowValues.get(i)[0] = i + 1 + "";
-            //Type
+            //Rune number
+            rowValues.get(i)[0] = "%d".formatted(i + 1);
+            //Rune type
             rowValues.get(i)[1] = (Rune.numToType(rune.getType()));
             //Main attribute
             rowValues.get(i)[2] = (rune.getMainAttribute().toString());
@@ -72,6 +73,7 @@ public class ViewRunes extends JFrame
             {
                 tempText += subAttribute.toString() + bufferText;
             }
+            //Make sure there is a sub attribute
             if (tempText.length() > 2)
             {
                 tempText = tempText.substring(0, tempText.length() - bufferText.length());
@@ -88,17 +90,21 @@ public class ViewRunes extends JFrame
     }
     
     /**
-     * Creates the table to display the runes
+     * Creates the table to display the runes.
      */
     private void createUIComponents()
     {
+        //Set the table column names
         String[] columnNames = {"Place", "Type", "Main Attribute", "Sub Attributes"};
+        
+        //Convert table values to array
         String[][] temp = new String[tableValues.size()][4];
         for (int i = 0; i < tableValues.size(); i++)
         {
             temp[i] = tableValues.get(i);
         }
         
+        //Set table size
         table = new JTable(temp, columnNames);
         TableColumnModel tc = table.getColumnModel();
         tc.getColumn(0).setPreferredWidth(75);

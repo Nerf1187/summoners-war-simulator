@@ -7,11 +7,17 @@ import Stats.Debuffs.*;
 import Stats.*;
 import java.util.*;
 
+/**
+ * Light Cowgirl
+ */
 public class Loren extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Loren()
     {
         super("Loren" + count, LIGHT, 9_225, 516, 681, 101, 15, 50, 15, 25);
@@ -20,10 +26,15 @@ public class Loren extends Monster
         count++;
     }
     
-    public Loren(String fileName)
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
+    public Loren(String runeFileName)
     {
         this();
-        super.setRunes(MonsterRunes.getRunesFromFile(fileName, this));
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
     }
     
     private void setAbilities()
@@ -58,15 +69,16 @@ public class Loren extends Monster
         return true;
     }
     
-    public void selfAfterHitProtocol(Monster target)
+    public void selfAfterHitProtocol(Monster target, int abilityNum)
     {
         //@Passive
-        if (!containsDebuff(Debuff.OBLIVION))
+        //Decrease the target's attack bar and apply Defense down
+        if (this.passiveCanActivate())
         {
             target.addAppliedDebuff(new DecAtkBar(20), 100, this);
             target.addAppliedDebuff(Debuff.DEC_DEF, 75, 1, this);
         }
         
-        super.selfAfterHitProtocol(target);
+        super.selfAfterHitProtocol(target, abilityNum);
     }
 }

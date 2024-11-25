@@ -6,14 +6,17 @@ import Runes.Monster_Runes.*;
 import Stats.Debuffs.*;
 import java.util.*;
 
-
+/**
+ * Wind Joker
+ */
 public class Lushen extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
-    
     private static int count = 1;
     
-    
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Lushen()
     {
         super("Lushen" + count, WIND, 9_225, 461, 900, 103, 15, 50, 15, 0);
@@ -22,11 +25,15 @@ public class Lushen extends Monster
         count++;
     }
     
-    
-    public Lushen(String fileName)
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
+    public Lushen(String runeFileName)
     {
         this();
-        super.setRunes(MonsterRunes.getRunesFromFile(fileName, this));
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
     }
     
     private void setAbilities()
@@ -35,14 +42,14 @@ public class Lushen extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.UNRECOVERABLE, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Flying Cards (1)", 1.2 * 3.6, 0, 1, "Throws a sharp card to attack and disturbs the " +
-                "enemy's HP recovery for 2 turns with a 90% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
+                                                                              "enemy's HP recovery for 2 turns with a 90% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
         
         abilities.add(new Attack_Ability("Surprise Box (2)", 1.25 * 2.4, 0, 1, "Summons a surprise box that inflicts damage" +
-                " and grants 1 random weakening effect among Stun, Glancing Hit Rate Increase, and Attack Speed Decrease to all enemies.", 3, false,
+                                                                               " and grants 1 random weakening effect among Stun, Glancing Hit Rate Increase, and Attack Speed Decrease to all enemies.", 3, false,
                 false, true));
         
         abilities.add(new Attack_Ability("Amputation Magic (3)", 1.3 * 0.68, 0, 3, "Throws a number of cards and inflicts " +
-                "damage to all enemies, ignoring their Defense.", 4, true, false, true));
+                                                                                   "damage to all enemies, ignoring their Defense.", 4, true, false, true));
         
         super.setAbilities(abilities);
     }
@@ -55,6 +62,7 @@ public class Lushen extends Monster
             return false;
         }
         
+        //Apply random debuff
         if (abilityNum == 2)
         {
             applyToTeam(game.getOtherTeam(), m -> {

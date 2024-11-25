@@ -8,14 +8,17 @@ import Stats.Debuffs.*;
 import Stats.*;
 import java.util.*;
 
-//2A
-
+/**
+ * Light Martial Cat (2A)
+ */
 public class Xiao_Ling extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
-    
     private static int count = 1;
     
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Xiao_Ling()
     {
         super("Xiao Ling" + count, LIGHT, 12_180, 527, 692, 104, 15, 50, 40, 0);
@@ -24,11 +27,15 @@ public class Xiao_Ling extends Monster
         count++;
     }
     
-    
-    public Xiao_Ling(String fileName)
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
+    public Xiao_Ling(String runeFileName)
     {
         this();
-        super.setRunes(MonsterRunes.getRunesFromFile(fileName, this));
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
     }
     
     private void setAbilities()
@@ -36,18 +43,19 @@ public class Xiao_Ling extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.STUN, 1, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Energy Punch (1)", 1.2 * (2.0 + ((0.2 * getMaxHp())) / getAtk()), 0, 1, "Attacks " +
-                "with a spinning punch and stuns the enemy for 1 turn with a 50% chance. The damage of this attack increases according to your MAX HP.",
+                                                                                                                  "with a spinning punch and stuns the enemy for 1 turn with a 50% chance. The damage of this attack increases according to your MAX HP.",
                 ability1Debuffs, ability1DebuffChances, 0, false, false, false));
         
         ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.CRIT_RATE_UP, 2, Buff.COUNTER, 2);
-        ArrayList<Integer> ability2BuffChances = abilityChances(100, 100);
+        ability2Buffs.add(new IncAtkBar(70));
+        ArrayList<Integer> ability2BuffChances = abilityChances(100, 100, 100);
         abilities.add(new Ability("Counterattack (2)", 0, 0, 1, "Increases the critical rate for 2 turns and counterattacks " +
-                "when attacked. The Attack Bar is increased by 70%, and the damage you receive will be reduced by half when you get attacked while this " +
-                "skill is on cooldown.", ability2Buffs, ability2BuffChances, 3, false, false, false, true, false, false, 0));
+                                                                "when attacked. The Attack Bar is increased by 70%, and the damage you receive will be reduced by half when you get attacked while this " +
+                                                                "skill is on cooldown.", ability2Buffs, ability2BuffChances, 3, false, false, false, true, false, false, 0));
         
         //@Passive:Creation
         abilities.add(new Passive("Lonely Fight", "Absorbs the Attack Bar by 50% if you attack a monster with same or lower HP status compared to yours." +
-                " Recovers your HP by 50% of the damage dealt if you attack a monster that has better HP status than yours."));
+                                                  " Recovers your HP by 50% of the damage dealt if you attack a monster that has better HP status than yours."));
         
         abilities.add(new Leader_Skill(Stat.ATK, 0.21, ALL));
         
@@ -68,24 +76,19 @@ public class Xiao_Ling extends Monster
         }
         
         //@Passive
-        if (!containsDebuff(Debuff.OBLIVION))
+        if (this.passiveCanActivate())
         {
-            if (target.getHpRatio() <= this.getHpRatio())
+            //Steal a portion of the attack bar if the target has a worse HP ratio
+            if (target.getHpRatio() <= this.getHpRatio() && !target.containsBuff(Buff.IMMUNITY))
             {
                 setAtkBar((int) (target.getAtkBar() * 0.5));
                 target.setAtkBar((int) (target.getAtkBar() * 0.5));
             }
-            else
+            else if (!this.containsDebuff(Debuff.UNRECOVERABLE)) //Increase HP by half the damage done
             {
                 setCurrentHp(getCurrentHp() + (int) (0.5 * getDmgDealtThisTurn()));
             }
         }
-        
-        if (abilityNum == 2)
-        {
-            setAtkBar((int) (getAtkBar() + 700));
-        }
-        
         
         super.afterTurnProtocol(target, abilityNum == 1);
         return true;
@@ -97,6 +100,7 @@ public class Xiao_Ling extends Monster
         {
             return num;
         }
+        //Halve the damage if ability 2 is on cooldown
         return (abilities.get(1).getTurnsRemaining() == 0) ? num : num / 2;
     }
 }

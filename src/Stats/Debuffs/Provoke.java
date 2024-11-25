@@ -3,8 +3,9 @@ package Stats.Debuffs;
 import Monsters.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to create all Provoke debuffs
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Provoke extends Debuff
 {
@@ -23,6 +24,8 @@ public class Provoke extends Debuff
     }
     
     /**
+     * Gets the Monster who cast the Debuff
+     *
      * @return The Monster who cast the Debuff
      */
     public Monster getCaster()

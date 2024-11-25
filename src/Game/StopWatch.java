@@ -7,8 +7,17 @@ import java.time.*;
  */
 public class StopWatch
 {
+    /**
+     * Time of last play
+     */
     private Instant start;
+    /**
+     * Time since first start (in nanoseconds)
+     */
     private long elapsedNanoseconds = 0;
+    /**
+     * Flag for if the timer is paused
+     */
     private boolean paused = true;
     
     /**
@@ -20,6 +29,7 @@ public class StopWatch
     {
         if (start)
         {
+            //Start the timer immediately if needed
             play();
         }
     }
@@ -31,10 +41,12 @@ public class StopWatch
      */
     public boolean play()
     {
+        //Do nothing if already playing
         if (!paused)
         {
             return false;
         }
+        //Set new start time
         start = Instant.now();
         paused = false;
         return true;
@@ -47,10 +59,12 @@ public class StopWatch
      */
     public boolean pause()
     {
+        //Do nothing if already paused
         if (paused)
         {
             return false;
         }
+        //Update elapsed time
         Instant end = Instant.now();
         elapsedNanoseconds += Duration.between(start, end).toNanos();
         paused = true;

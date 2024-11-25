@@ -14,13 +14,12 @@ import java.util.*;
  */
 public class Main
 {
-    //Scanner
+    /**
+     * Scanner
+     */
     public static final Scanner scan = new Scanner(System.in);
     
-    //Boolean to test if nextMon is stunned
-    protected static boolean stunned = false;
-    
-    //Boolean to make sure next monster isn't changed when changing abilities
+    //Boolean to make sure the acting Monster isn't changed when changing abilities
     private static boolean monChosen = false;
     
     private static Monster next = null;
@@ -28,13 +27,15 @@ public class Main
     /**
      * Runs this program
      */
-    void main()
+    public void main()
     {
+        //Initialize Monster database
         Monster.setDatabase();
         //Create team ArrayLists
         ArrayList<Monster> mons1;
         ArrayList<Monster> mons2;
         
+        //Select teams
         ArrayList<ArrayList<Monster>> teams = selectTeams();
         mons1 = teams.get(0);
         mons2 = teams.get(1);
@@ -43,7 +44,10 @@ public class Main
         Team team1 = new Team("Team 1", mons1);
         Team team2 = new Team("Team 2", mons2);
         
+        //Activate rune set effects
         setRuneEffectsAndNames(team1, team2);
+        
+        //Pick leaders for each team
         pickLeaders(team1, team2);
         
         //Create game
@@ -61,19 +65,26 @@ public class Main
             }
             
             //Print game and find who is next
-            System.out.println("\n\n" + game + "\n\n");
+            System.out.printf("%n%n%s%n%n%n", game);
+            
+            //Delay output
             pause(1000);
+            
+            //Get acting Monster
             if (!monChosen)
             {
                 Team teamWithHighestAtkBar = game.getTeamWithHighestAtkBar();
                 next = teamWithHighestAtkBar.MonsterWithHighestFullAtkBar();
             }
+            //Print acting Monster
             System.out.println(next);
+            //Delay output
             pause(1000);
             
             //Activate before turn passives
             game.activateBeforeTurnPassives(next);
             
+            //Apply buffs and debuffs before the Monster's turn starts
             if (!monChosen)
             {
                 game.applyStats(next);
@@ -88,10 +99,9 @@ public class Main
             //Print next mon
             System.out.println(next.shortToString(true));
             
-            //Check if stunned
-            if (stunned)
+            //Check if the Monster is stunned
+            if (next.isStunned())
             {
-                stunned = false;
                 next.decreaseStatCooldowns();
                 next.setAtkBar(0);
                 continue;
@@ -113,13 +123,14 @@ public class Main
             {
                 break;
             }
+            //Delay output
             pause(300);
             
             //Check for Provoke
             Provoke p = next.getProvoke();
             if (p != null)
             {
-                System.out.println(ConsoleColors.YELLOW + "Provoked!" + ConsoleColors.RESET);
+                System.out.printf("%sProvoked!%s%n", ConsoleColors.YELLOW, ConsoleColors.RESET);
                 Monster caster = p.getCaster();
                 next.nextTurn(caster, 1);
                 continue;
@@ -128,21 +139,22 @@ public class Main
             //Checks if any Monster on the other team has Threat
             boolean threat = game.getOtherTeam().monHasThreat();
             
-            //Get ability number/print buffs and debuffs descriptions
+            //Get ability number/print buff and debuff descriptions
             monChosen = true;
             int abilityNum = Game.getAbilityNum(next);
             
-            //get target num/re-choose ability if wanted
+            //Get target num
             Monster targetMon = game.getTarget(next, abilityNum, threat);
+            //Re-choose ability if no target selected
             if (targetMon == null)
             {
                 continue;
             }
             
-            //Apply nextTurn()
-            //If something went wrong, does process again
+            //Start the Monster's turn
             Game.applyNextTurn(next, targetMon, abilityNum);
             monChosen = false;
+            //Delay output
             pause(800);
         }
         
@@ -181,7 +193,7 @@ public class Main
     {
         if (Monster.isPrint())
         {
-            System.out.println(ConsoleColors.CYAN_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "Brrr... Frozen!" + ConsoleColors.RESET);
+            System.out.printf("%s%sBrrr... Frozen!%s%n", ConsoleColors.CYAN_BACKGROUND_BRIGHT, ConsoleColors.BLACK_BOLD, ConsoleColors.RESET);
             pause(200);
         }
     }
@@ -196,8 +208,8 @@ public class Main
         
         if (Monster.isPrint())
         {
-            System.out.println(ConsoleColors.RED_BACKGROUND_BRIGHT + ConsoleColors.BLACK_BOLD + "BOOM!" + ConsoleColors.RESET + " Bomb exploded! You " + "took " + (target.getMaxHp() * 0.4) + " damage! You have " + Math.max(target.getCurrentHp(),
-                    0) + " health left!");
+            System.out.printf("%s%sBOOM!%s Bomb exploded! You took %,f damage! %s has %,d health left!%n", ConsoleColors.RED_BACKGROUND_BRIGHT, ConsoleColors.BLACK_BOLD, ConsoleColors.RESET, target.getMaxHp() * 0.4, target.getName(true, true),
+                    Math.max(target.getCurrentHp(), 0));
         }
         
         printStunEffect();
@@ -220,14 +232,15 @@ public class Main
     }
     
     /**
-     * Converts the given String to a Monster using the name
+     * Converts the given String to a Monster
      *
      * @param name The name of the Monster
-     * @param mons the List of Monsters to search in
-     * @return the Monster whose name equals the given String
+     * @param mons The List of Monsters to search in
+     * @return The Monster whose name equals the given String
      */
     private static Monster getMonFromName(String name, ArrayList<Monster> mons)
     {
+        //Search the list for the Monster
         for (Monster mon : mons)
         {
             if (mon.getName(false, false).equalsIgnoreCase(name))
@@ -235,6 +248,7 @@ public class Main
                 return mon;
             }
         }
+        //Return a blank Monster if the name was not found
         return new Monster();
     }
     
@@ -243,30 +257,25 @@ public class Main
      *
      * @param name    The name of the Monster
      * @param element The element of the Monster
-     * @return the name of the Monster with the appropriate elemental color
+     * @return The name of the Monster with the appropriate elemental color
      */
     private static String nameWithElement(String name, String element)
     {
-        String s;
-        switch (element.toLowerCase())
-        {
-            case "fire" -> s = ConsoleColors.RED_BOLD_BRIGHT;
-            case "water" -> s = ConsoleColors.BLUE_BOLD_BRIGHT;
-            case "wind" -> s = ConsoleColors.YELLOW_BOLD_BRIGHT;
-            case "light" -> s = ConsoleColors.WHITE_BOLD_BRIGHT;
-            case "dark" -> s = ConsoleColors.PURPLE_BOLD_BRIGHT;
-            default ->
-            {
-                return null;
-            }
-        }
-        return s + name + ConsoleColors.RESET;
+        return switch (element.toLowerCase())
+               {
+                   case "fire" -> ConsoleColors.RED_BOLD_BRIGHT;
+                   case "water" -> ConsoleColors.BLUE_BOLD_BRIGHT;
+                   case "wind" -> ConsoleColors.YELLOW_BOLD_BRIGHT;
+                   case "light" -> ConsoleColors.WHITE_BOLD_BRIGHT;
+                   case "dark" -> ConsoleColors.PURPLE_BOLD_BRIGHT;
+                   default -> "";
+               } + name + ConsoleColors.RESET;
     }
     
     /**
      * Prints the Monsters that can still be picked for the Team
      *
-     * @param monsPicked The Monsters that can not be picked
+     * @param monsPicked The Monsters that cannot be picked
      */
     protected static void printMonsToPick(ArrayList<Monster> monsPicked)
     {
@@ -278,6 +287,7 @@ public class Main
         ArrayList<String> dark = new ArrayList<>();
         try
         {
+            //Read from the Monster database
             Scanner read = new Scanner(Objects.requireNonNull(Monster.class.getResourceAsStream("Monster database.csv")));
             while (read.hasNextLine())
             {
@@ -288,8 +298,10 @@ public class Main
                 }
                 String[] monAndElement = line.split(",");
                 String name = nameWithElement(monAndElement[0], monAndElement[1]);
+                //Monster has not been picked yet
                 if (getMonFromName(monAndElement[0], monsPicked).equals(new Monster()))
                 {
+                    //Add Monster to the proper array
                     switch (monAndElement[1].toLowerCase())
                     {
                         case "fire" -> fire.add(name);
@@ -300,19 +312,24 @@ public class Main
                     }
                 }
             }
+            //Sort the arrays alphabetically
             Collections.sort(water);
             Collections.sort(fire);
             Collections.sort(wind);
             Collections.sort(light);
             Collections.sort(dark);
+            
+            //Combine the arrays
             toPrint.addAll(water);
             toPrint.addAll(fire);
             toPrint.addAll(wind);
             toPrint.addAll(light);
             toPrint.addAll(dark);
+            
+            //Print each Monster
             for (String s : toPrint)
             {
-                System.out.print(s + "      ");
+                System.out.printf("%s      ", s);
             }
         }
         catch (Throwable e)
@@ -345,17 +362,23 @@ public class Main
         {
             test = "y";
         }
+        //Preset teams (Mainly for testing/debugging)
         if (test.equalsIgnoreCase("y"))
         {
-            mons1.add(new Mellia());
-            mons1.add(new Kumar());
-            mons1.add(new Kaki());
+            //Team 1
+            mons1.add(new Dominic());
+            mons1.add(new Trevor());
+            mons1.add(new Alice());
             mons1.add(new Feng_Yan());
             
+            //Team 2
             mons2.add(new Ariel());
-            mons2.add(new Lushen());
+            mons2.add(new Dominic());
             mons2.add(new Riley());
-            mons2.add(new Kumar());
+            mons2.add(new Chakra());
+            
+            mons1.getFirst().addAppliedBuff(new Shield(2, 2), mons1.getFirst());
+            mons1.getFirst().addAppliedBuff(new Shield(1, 2), mons1.getFirst());
         }
         
         //4v4
@@ -371,12 +394,17 @@ public class Main
                 {
                     do
                     {
+                        //Print potential Monsters
                         printMonsToPick(mons1);
+                        
+                        //Print current team
                         System.out.print("\nTeam 1 current team: ");
                         for (Monster mon : mons1)
                         {
-                            System.out.print(mon.getName(true, false) + ", ");
+                            System.out.printf("%s, ", mon.getName(true, false));
                         }
+                        
+                        //Get the next Monster's name
                         System.out.println("\nTeam 1 choose your monster (type \"inspect\" to inspect a monster)");
                         inputMon = scan.nextLine();
                         
@@ -387,9 +415,11 @@ public class Main
                         }
                     }
                     while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, mons1));
-                    //Get class
+                    
+                    //Attempt to add the Monster to the team
                     if (!addMonToTeam(mons1, inputMon))
                     {
+                        scan.nextLine();
                         continue;
                     }
                 }
@@ -400,14 +430,20 @@ public class Main
                 {
                     do
                     {
+                        //Print potential Monsters
                         printMonsToPick(mons2);
+                        
+                        //Print current team
                         System.out.print("\nTeam 2 current team: ");
                         for (Monster mon : mons2)
                         {
-                            System.out.print(mon.getName(true, false) + ", ");
+                            System.out.printf("%s, ", mon.getName(true, false));
                         }
+                        
+                        //Get the next Monster's name
                         System.out.println("\nTeam 2 choose your monster (type \"inspect\" to inspect a monster)");
                         inputMon = scan.nextLine();
+                        
                         //Inspect monster
                         if (inputMon.equals("inspect"))
                         {
@@ -415,21 +451,32 @@ public class Main
                         }
                     }
                     while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, mons2));
-                    addMonToTeam(mons2, inputMon);
+                    
+                    //Attempt to add the Monster to the team
+                    if (!addMonToTeam(mons2, inputMon))
+                    {
+                        scan.nextLine();
+                    }
                 }
             }
             
-            //Ban one mon from other team
+            //Ban one Monster from the other team
             String banName;
+            //Team 2 choosing
             do
             {
                 System.out.println("Team 2 choose one monster from Team 1 to ban.");
+                
+                //Print team 1 Monsters
                 for (Monster mon : mons1)
                 {
-                    System.out.print(mon.getName(true, false) + ", ");
+                    System.out.printf("%s, ", mon.getName(true, false));
                 }
                 System.out.println();
+                
+                //Get input
                 banName = scan.nextLine();
+                
                 //Inspect
                 if (banName.equals("inspect"))
                 {
@@ -437,17 +484,25 @@ public class Main
                 }
             }
             while (!Monster.stringIsMonsterName(banName, mons1));
+            
+            //Remove Monster from team 1
             mons1.remove(getMonFromName(banName, mons1));
             
+            //Team 1 choosing
             do
             {
                 System.out.println("Team 1 choose one monster from Team 2 to ban.");
+                
+                //Print team 2 Monsters
                 for (Monster mon : mons2)
                 {
-                    System.out.print(mon.getName(true, false) + ", ");
+                    System.out.printf("%s, ", mon.getName(true, false));
                 }
                 System.out.println();
+                
+                //Get input
                 banName = scan.nextLine();
+                
                 //Inspect
                 if (banName.equals("inspect"))
                 {
@@ -455,9 +510,12 @@ public class Main
                 }
             }
             while (!Monster.stringIsMonsterName(banName, mons2));
+            
+            //Remove Monster from team 2
             mons2.remove(getMonFromName(banName, mons2));
         }
         
+        //Return final teams
         teams.add(mons1);
         teams.add(mons2);
         return teams;
@@ -468,59 +526,36 @@ public class Main
      *
      * @param teamToAdd The team to add the new Monster to
      * @param inputMon  The name of the Monster
-     * @return true if the Monster was successfully added, false otherwise
+     * @return True if the Monster was successfully added, false otherwise
      */
     public static boolean addMonToTeam(ArrayList<Monster> teamToAdd, String inputMon)
     {
+        //Get the rune set number to use
         int runeSetNum = getRuneSetNum();
         
-        try
+        //Try to create a Monster with the given rune set number
+        Monster monToAdd = Monster.createNewMonFromName(inputMon, Math.abs(runeSetNum));
+        
+        //Return false if the Monster could not be added
+        if (monToAdd == null)
         {
-            inputMon = inputMon.replaceAll(" ", "_");
-            inputMon = Monster.toProperName(inputMon);
-            String temp = inputMon.replaceAll("_", " ");
-            String element = Monster.monsterNamesDatabase.get(temp);
-            String name = "Monsters." + element + "." + inputMon;
-            Class<?> c = Class.forName(name);
-            Monster monToAdd;
-            if (runeSetNum == -1)
-            {
-                monToAdd = (Monster) c.getDeclaredConstructor().newInstance();
-            }
-            else
-            {
-                try
-                {
-                    monToAdd = (Monster) c.getDeclaredConstructor(String.class).newInstance(inputMon + runeSetNum + ".csv");
-                }
-                catch (NoSuchMethodException e)
-                {
-                    monToAdd = (Monster) c.getDeclaredConstructor(Class.class).newInstance(Class.forName(String.format("Runes.Monster_Runes.%sRunes%d", name.substring(10 + element.length()), runeSetNum)));
-                }
-            }
-            teamToAdd.add(monToAdd);
-            if (runeSetNum != -1)
-            {
-                scan.nextLine();
-            }
-        }
-        catch (ClassNotFoundException e)
-        {
-            System.out.println("Oops! Rune set not found");
-            scan.nextLine();
-            System.out.println();
             return false;
         }
-        catch (Throwable e)
+        
+        //Add the Monster to the team
+        teamToAdd.add(monToAdd);
+        
+        //Scan the next line cause Java is weird
+        if (runeSetNum != -1)
         {
-            throw new RuntimeException(e);
+            scan.nextLine();
         }
         System.out.println();
         return true;
     }
     
     /**
-     * Activates the team based rune effects (e.g. fight, shield) and sets the names for each Monster
+     * Activates the team-based rune effects (e.g., fight, shield) and sets the names for each Monster
      *
      * @param team1 The first Team to apply
      * @param team2 The second Team to apply
@@ -534,11 +569,11 @@ public class Main
         //Set names for each team
         for (Monster mon : team1.getMonsters())
         {
-            mon.setName(mon.getName(false, false) + "(1)");
+            mon.setName("%s(1)".formatted(mon.getName(false, false)));
         }
         for (Monster mon : team2.getMonsters())
         {
-            mon.setName(mon.getName(false, false) + "(2)");
+            mon.setName("%s(2)".formatted(mon.getName(false, false)));
         }
     }
     
@@ -553,10 +588,11 @@ public class Main
         {
             for (Monster mon1 : team.getMonsters())
             {
-                mon1.addAppliedBuff(new Rune_shield((int) (mon.getMaxHp() * (0.15 * mon.numOfSets(Rune.SHIELD))), 3), mon);
-                mon1.setAtk((int) (mon1.getAtk() + mon1.getBaseAtk() * (0.08 * mon.numOfSets(Rune.FIGHT))));
-                mon1.setDef((int) (mon1.getDef() + mon1.getBaseDef() * (0.08 * mon.numOfSets(Rune.DETERMINATION))));
-                mon1.setMaxHp((int) (mon1.getMaxHp() + mon1.getBaseMaxHp() * (0.08 * mon.numOfSets(Rune.ENHANCE))));
+                //Apply rune effects for each Monster
+                mon1.addAppliedBuff(new Rune_shield((int) Math.ceil(mon.getMaxHp() * (0.15 * mon.numOfSets(Rune.SHIELD))), 3), mon);
+                mon1.setAtk((int) Math.ceil(mon1.getAtk() + mon1.getBaseAtk() * (0.08 * mon.numOfSets(Rune.FIGHT))));
+                mon1.setDef((int) Math.ceil(mon1.getDef() + mon1.getBaseDef() * (0.08 * mon.numOfSets(Rune.DETERMINATION))));
+                mon1.setMaxHp((int) Math.ceil(mon1.getMaxHp() + mon1.getBaseMaxHp() * (0.08 * mon.numOfSets(Rune.ENHANCE))));
                 mon1.setAccuracy((mon1.getAccuracy() + (10 * mon.numOfSets(Rune.ACCURACY))));
                 mon1.setResistance(mon1.getResistance() + (10 * mon.numOfSets(Rune.TOLERANCE)));
                 mon1.setCurrentHp(mon1.getMaxHp());
@@ -567,7 +603,7 @@ public class Main
     /**
      * Gets the rune set number to apply to the Monster
      *
-     * @return the rune set number to apply
+     * @return The rune set number to apply
      */
     public static int getRuneSetNum()
     {
@@ -625,26 +661,34 @@ public class Main
     /**
      * Prompt the user to select a leader Monster for the Team if possible, prints a message otherwise.
      *
-     * @param potentialLeaders An ArrayList of potential leaders.
+     * @param potentialLeaders A list of potential leaders.
      * @param team             The Team to apply the leader skill to.
      */
     private static void getLeader(Team potentialLeaders, Team team)
     {
+        //Do nothing if there are no available leaders
         if (!potentialLeaders.getMonsters().isEmpty())
         {
             String inputMon;
+            //Get monster name
             do
             {
-                System.out.println("Team " + potentialLeaders.getName() + " pick a leader by typing their name (Type \"inspect\" to inspect a Monster)");
+                System.out.printf("Team %s pick a leader by typing their name (Type \"inspect\" to inspect a Monster or \"none\" for no leader)%n", potentialLeaders.getName());
                 System.out.println(potentialLeaders);
                 inputMon = scan.nextLine();
                 if (inputMon.equals("inspect"))
                 {
                     Monster.inspect();
                 }
+                else if (inputMon.equals("none"))
+                {
+                    return;
+                }
             }
             while (!Monster.stringIsMonsterName(inputMon, potentialLeaders.getMonsters()));
+            //Get leader
             Monster leader = getMonFromName(inputMon, potentialLeaders.getMonsters());
+            //Apply leader skill to the team
             leader.applyLeaderSkill(team);
         }
         else

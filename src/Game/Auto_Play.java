@@ -7,7 +7,7 @@ import Stats.Debuffs.*;
 import java.io.*;
 import java.util.*;
 
-import static Monsters.Monster.*;
+import static Game.Main.scan;
 
 /**
  * This class runs multiple simulations such that every possible team combination fights against every other team.
@@ -16,65 +16,123 @@ import static Monsters.Monster.*;
  */
 public class Auto_Play extends Thread
 {
-    private static final Scanner scan = new Scanner(System.in);
     private static Game game;
-    private static boolean stunned = false, pause = false;
+    private static boolean pause = false, endThread = false, completed = false;
     private static Team highestAtkBar = new Team("", new ArrayList<>()), other = new Team("", new ArrayList<>());
     private static ArrayList<Team> teamStats = new ArrayList<>();
     private static final ArrayList<Team> bestTeams = new ArrayList<>();
     private static final ArrayList<String> monsterKeys = new ArrayList<>();
     private static long numOfCompletedSimulations = 0, totalSims = 0;
+    private static int i = 0, j = 1;
     private static boolean simsCalculationError = false;
     private static final StopWatch totalRunningTime = new StopWatch(false), battleTime = new StopWatch(false);
-    private static boolean whitelisted = false;
     
     /**
      * Runs the Auto_Play class
      */
-    public static void main(String[] args)
+    public void main()
     {
+        //Initialize global game and Monster database
         Monster.setGame(game);
         Monster.setDatabase();
+        //Show results when the program unnaturally ends
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n\nTotal number of simulations ran: " + numWithCommas(numOfCompletedSimulations));
+            //Total simulations run
+            System.out.printf("\n\nTotal number of simulations ran: %,d%n", numOfCompletedSimulations);
             totalRunningTime.pause();
             updateBestTeams();
-            System.out.println("Total time elapsed: \t" + toReadableTime(totalRunningTime.getElapsedTime()));
-            System.out.println("Time elapsed during battle: " + toReadableTime(battleTime.getElapsedTime()));
+            //Total time elapsed while running (not including while paused)
+            System.out.printf("Total time elapsed: \t%s%n", toReadableTime(totalRunningTime.getElapsedTime()));
+            //Time spent simulating battles
+            System.out.printf("Time elapsed during battle: %s%n", toReadableTime(battleTime.getElapsedTime()));
             System.out.println("Final standings:");
+            //Print the top 4 teams
             for (Team team : bestTeams)
             {
                 for (Monster mon : team.getMonsters())
                 {
                     System.out.printf("%s\t\t", mon.getName(true, false));
                 }
-                System.out.printf("Number of wins: %s Number of losses: %s\n", numWithCommas(team.getWins()), numWithCommas(team.getLosses()));
+                System.out.printf("Number of wins: %,d Number of losses: %,d\n", team.getWins(), team.getLosses());
             }
             System.out.println("\n\n");
-            if (numOfCompletedSimulations >= 500_000 || numOfCompletedSimulations >= totalSims * 0.5 || battleTime.getElapsedTime() >= 3.6e12)
+            //export results to file if there are more than 500,000 simulations run, the number of completed simulations is more than half the total number, or more than an hour of battle time has passed.
+            if (numOfCompletedSimulations >= 500_000 || numOfCompletedSimulations >= Math.abs(totalSims) * 0.5 || battleTime.getElapsedTime() >= 3.6e12)
             {
-                String fileName = exportResults();
+                //Attempt to export and get file name
+                String fileName = exportResults(i, j);
                 
+                //Print file name if possible
                 if (fileName != null)
                 {
-                    System.out.printf("Results Exported to \"%s\"\n", fileName);
+                    System.out.printf("Results exported to \"%s\"\n", fileName);
+                }
+                else
+                {
+                    System.out.println("Unable to export to file");
                 }
             }
         }));
         
+        //Initialize the best teams array
         for (int i = 0; i < 4; i++)
         {
             bestTeams.add(null);
         }
         
+        //Prevent the battles from printing
         Monster.setPrint(false);
         
+        //Run simulations
         allPossibleTeams();
         
+        completed = true;
+        //Allow the user to view results
         System.out.println("Simulations complete");
+        endThread = true;
+        System.out.println("Press enter to continue");
+        while (endThread)
+        {
+            Main.pause(5);
+        }
         postRunOptions(teamStats);
-        
-        System.exit(0);
+    }
+    
+    /**
+     * Continues simulations from a previous instance of Auto_Play
+     *
+     * @param teams   The teams to use
+     * @param library The names of every Monster used
+     * @param _i      The last i value from the previous instance
+     * @param _j      The last j value from the previous instance
+     */
+    public void main(ArrayList<Team> teams, ArrayList<String> library, int _i, int _j)
+    {
+        teamStats = teams;
+        monsterKeys.addAll(library);
+        i = _i;
+        j = _j;
+        numOfCompletedSimulations = calculateNumOfPreCompletedSims(_i, _j, teams.size());
+        main();
+    }
+    
+    /**
+     * Calculates the number of completed simulations from a previous instance of Auto_Play
+     *
+     * @param i    The last i value from the previous instance
+     * @param j    The last j value from the previous instance
+     * @param size The size of the library from the previous instance
+     * @return The number of simulations from the previous Auto_Play instance
+     */
+    private int calculateNumOfPreCompletedSims(int i, int j, int size)
+    {
+        int total = 0;
+        for (int k = 0; k < i; k++)
+        {
+            total += size - (k + 1);
+        }
+        total += j - (i + 1);
+        return total;
     }
     
     /**
@@ -82,19 +140,19 @@ public class Auto_Play extends Thread
      */
     public void run()
     {
-        Scanner scan = new Scanner(System.in);
-        while (true)
+        while (!endThread)
         {
-            while (!pause)
+            scan.nextLine();
+            if (!endThread)
             {
-                scan.nextLine();
                 pause = true;
             }
-            while (pause)
+            while (pause) //Pause program
             {
                 Main.pause(5);
             }
         }
+        endThread = false;
     }
     
     /**
@@ -102,7 +160,7 @@ public class Auto_Play extends Thread
      *
      * @param team1 The first team in the battle
      * @param team2 The second team in the battle
-     * @return the Game object that was used in the battle
+     * @return The Game object that was used in the battle
      */
     public static Game battle(Team team1, Team team2)
     {
@@ -129,23 +187,24 @@ public class Auto_Play extends Thread
             //Activate before turn passives
             game.activateBeforeTurnPassives(next);
             
+            //Apply before turn buffs and debuffs
             game.applyStats(next);
             
-            //If the monster's Hp falls below zero before turn
+            //If the monster's Hp falls below zero before turn (like from DoT)
             if (next.getCurrentHp() <= 0)
             {
                 next.kill();
             }
             
             //Check if stunned
-            if (stunned)
+            if (next.isStunned())
             {
-                stunned = false;
                 next.decreaseStatCooldowns();
                 next.setAtkBar(0);
                 continue;
             }
             
+            //Check if dead again
             if (next.getCurrentHp() <= 0)
             {
                 next.kill();
@@ -174,10 +233,10 @@ public class Auto_Play extends Thread
             //Checks if any Monster on the other team has Threat
             boolean threat = other.monHasThreat();
             
-            //Get abilityNum and print
+            //Get ability number
             int abilityNum = next.chooseAbilityNum(next, game.getTeamWithHighestAtkBar(), next.getAbilities(), true);
             
-            //Get target and print
+            //Get target and apply nextTurn
             if (threat && !next.getAbility(abilityNum).targetsEnemy())
             {
                 Monster target = other.getMonWithThreat();
@@ -185,7 +244,7 @@ public class Auto_Play extends Thread
             }
             chooseTargetAndApplyNextTurn(next, abilityNum, (next.getAbility(abilityNum).targetsEnemy() ? other : highestAtkBar), true);
             
-            //Apply nextTurn()
+            //Check if the target is dead after turn
             for (Monster mon : other.getMonsters())
             {
                 if (mon.isDead() && !deadMons.containsKey(mon))
@@ -194,27 +253,37 @@ public class Auto_Play extends Thread
                 }
             }
             
+            //End battle if more than 150 games have passed
             turnNumber++;
             if (turnNumber >= 150)
             {
                 break;
             }
         }
-        
+        //Return game object
         return game;
     }
     
     /**
-     * A recursive algorithm to choose the best target to attack/heal and apply the {@link Monster#nextTurn(Monster, int)} function. The order of attack
-     * significance: low health targets, advantageous attributes, neutral attributes, disadvantageous attributes, damage taken increasing debuffs.
+     * A recursive algorithm to choose the best target to attack/heal and apply the {@link Monster#nextTurn(Monster, int)} function.
+     * <pre>
+     *     The significance when choosing the target is as follows:
+     *     1. low health targets
+     *     2. Advantageous attributes
+     *     3. Neutral attributes
+     *     4. Disadvantageous attributes
+     *     5. Monsters with a low number of buffs that decrease damage taken
+     *     6. Monsters with a high number of debuffs that increase damage
+     * </pre>
      *
-     * @param next             The attacking/healing Monster
+     * @param next             The acting Monster
      * @param abilityNum       The ability number to use
      * @param potentialTargets A temporary team of Monsters that contain the potential targets
      * @param firstCall        True if this call is the first time it is called (From outside the method)
      */
     public static void chooseTargetAndApplyNextTurn(Monster next, int abilityNum, Team potentialTargets, boolean firstCall)
     {
+        //Remove all dead monsters on first call
         if (firstCall)
         {
             ArrayList<Monster> modifiedTeam = new ArrayList<>();
@@ -228,141 +297,71 @@ public class Auto_Play extends Thread
             chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
             return;
         }
+        //Do nothing if no potential targets found
         if (potentialTargets.size() == 0)
         {
             return;
         }
-        Team friendlyTeam = highestAtkBar;
+        Team allyTeam = highestAtkBar;
         Ability chosenAbility = next.getAbility(abilityNum);
         
         //Ability is a support ability
         if (chosenAbility instanceof Heal_Ability)
         {
-            Monster target = friendlyTeam.getLowestHpMon();
-            verifyTarget(next, chosenAbility, target, abilityNum, potentialTargets);
+            //Target the Monster on the allied team with the lowest HP ratio
+            Monster target = allyTeam.getLowestHpMon();
+            verifyTargetAndApplyTurn(next, chosenAbility, target, abilityNum, potentialTargets);
             return;
         }
         
-        //Ability targetsSelf
+        //Ability targets self
         if (chosenAbility.targetsSelf())
         {
             next.nextTurn(next, abilityNum);
             return;
         }
         
-        ArrayList<Monster> advantageousElements = new ArrayList<>();
-        ArrayList<Monster> neutralElements = new ArrayList<>();
-        ArrayList<Monster> disadvantageousElements = new ArrayList<>();
-        
         //Ability is an attack ability
-        for (Monster target : potentialTargets.getMonsters())
-        {
-            if (!target.isDead() && target.getHpRatio() <= 20.0)
-            {
-                verifyTarget(next, chosenAbility, target, abilityNum, potentialTargets);
-                return;
-            }
-            if (target.isDead())
-            {
-                continue;
-            }
-            if (Team.elementalRelationship(next.getElement(), target.getElement()).equals(ConsoleColors.GREEN_BACKGROUND))
-            {
-                advantageousElements.add(target);
-            }
-            else if (Team.elementalRelationship(next.getElement(), target.getElement()).equals(ConsoleColors.YELLOW_BACKGROUND))
-            {
-                neutralElements.add(target);
-            }
-            else
-            {
-                disadvantageousElements.add(target);
-            }
-        }
-        
-        if (!advantageousElements.isEmpty())
-        {
-            if (getNewTarget(next, abilityNum, potentialTargets, chosenAbility, advantageousElements))
-            {
-                return;
-            }
-        }
-        else if (!neutralElements.isEmpty())
-        {
-            if (getNewTarget(next, abilityNum, potentialTargets, chosenAbility, neutralElements))
-            {
-                return;
-            }
-        }
-        else if (!disadvantageousElements.isEmpty())
-        {
-            if (getNewTarget(next, abilityNum, potentialTargets, chosenAbility, disadvantageousElements))
-            {
-                return;
-            }
-        }
-        
-        for (Monster target : other.getMonsters())
-        {
-            if (next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
-            {
-                if (!next.nextTurn(target, abilityNum))
-                {
-                    ArrayList<Monster> modifiedTeam = new ArrayList<>();
-                    for (Monster potentialTarget : potentialTargets.getMonsters())
-                    {
-                        if (!potentialTarget.equals(target))
-                        {
-                            modifiedTeam.add(potentialTarget);
-                        }
-                    }
-                    try
-                    {
-                        chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
-                    }
-                    catch (StackOverflowError e)
-                    {
-                        System.out.println(next);
-                        System.out.println(potentialTargets);
-                    }
-                }
-                return;
-            }
-        }
+        //Get best attack choice and try to attack
+        verifyTargetAndApplyTurn(next, chosenAbility, getBestMonToAttack(next, potentialTargets.getMonsters(), chosenAbility.getNumOfBeneficialEffectsToRemove()), abilityNum, potentialTargets);
     }
     
-    private static void verifyTarget(Monster next, Ability chosenAbility, Monster target, int abilityNum, Team potentialTargets)
+    /**
+     * Verifies the target and attempts to complete its turn
+     *
+     * @param next             The acting Monster
+     * @param chosenAbility    The chosen ability
+     * @param target           The target Monster
+     * @param abilityNum       The ability number
+     * @param potentialTargets The potential targets
+     */
+    private static void verifyTargetAndApplyTurn(Monster next, Ability chosenAbility, Monster target, int abilityNum, Team potentialTargets)
     {
-        if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
+        //Check if the target is valid
+        if (!next.targetIsValid(target, chosenAbility.targetsEnemy()))
         {
-            
-            removeInvalidTarget(next, abilityNum, potentialTargets, target);
+            removeInvalidTarget(next, target, abilityNum, potentialTargets);
             return;
         }
+        //Try to complete turn
         if (!next.nextTurn(target, abilityNum))
         {
-            removeInvalidTarget(next, abilityNum, potentialTargets, target);
+            removeInvalidTarget(next, target, abilityNum, potentialTargets);
         }
     }
     
-    private static boolean getNewTarget(Monster next, int abilityNum, Team potentialTargets, Ability chosenAbility, ArrayList<Monster> allMons)
-    {
-        Monster target = getBestMonToAttack(allMons);
-        if (!next.targetIsValid(next, target, chosenAbility.targetsEnemy()))
-        {
-            removeInvalidTarget(next, abilityNum, potentialTargets, target);
-            return false;
-        }
-        if (!next.nextTurn(target, abilityNum))
-        {
-            removeInvalidTarget(next, abilityNum, potentialTargets, target);
-        }
-        return true;
-    }
-    
-    private static void removeInvalidTarget(Monster next, int abilityNum, Team potentialTargets, Monster target)
+    /**
+     * Removes an invalid target and attempts to find a new one
+     *
+     * @param next             The acting Monster
+     * @param target           The target to remove
+     * @param abilityNum       The chosen ability number
+     * @param potentialTargets The potential targets
+     */
+    private static void removeInvalidTarget(Monster next, Monster target, int abilityNum, Team potentialTargets)
     {
         ArrayList<Monster> modifiedTeam = new ArrayList<>();
+        //Remove invalid target
         for (Monster potentialTarget : potentialTargets.getMonsters())
         {
             if (!potentialTarget.equals(target))
@@ -370,18 +369,22 @@ public class Auto_Play extends Thread
                 modifiedTeam.add(potentialTarget);
             }
         }
+        //Attempt to find new target
         chooseTargetAndApplyNextTurn(next, abilityNum, new Team("Modified", modifiedTeam), false);
     }
     
     /**
-     * A method to find the Monster with the most damage taken increasing effects
+     * A method to find the best Monster to attack
      *
-     * @param monsters The Monsters to search through
-     * @return the Monster with the most damage taken increasing effects in the list
+     * @param next                       The attacking Monster
+     * @param monsters                   The Monsters to search through
+     * @param numOfBuffsCanAbilityRemove Whether the chosen ability can remove buffs
+     * @return The best Monster to attack
      */
-    public static Monster getBestMonToAttack(ArrayList<Monster> monsters)
+    public static Monster getBestMonToAttack(Monster next, ArrayList<Monster> monsters, int numOfBuffsCanAbilityRemove)
     {
         Monster target = null;
+        //Make sure there is at least one Monster alive
         for (Monster mon : monsters)
         {
             if (!mon.isDead())
@@ -390,45 +393,75 @@ public class Auto_Play extends Thread
                 break;
             }
         }
+        //Do nothing if no alive targets
         if (target == null)
         {
             return null;
         }
-        double highestPoints = Double.MIN_VALUE;
+        
+        //Calculate each Monster's "score" and find the highest
+        double highestPoints = -1;
         double currentPoints;
         for (Monster mon : monsters)
         {
-            currentPoints = 0;
+            //Set to a predetermined non zero value
+            currentPoints = 2;
             if (mon.isDead())
             {
                 continue;
             }
+            
             ArrayList<Buff> targetBuffs = mon.getAppliedBuffs();
+            //Decrease score for certain buffs
             for (Buff buff : targetBuffs)
             {
-                switch (buff.getBuffNum())
+                currentPoints *= switch (buff.getBuffNum())
                 {
-                    case Buff.CRIT_RESIST_UP, Buff.COUNTER, Buff.IMMUNITY, Buff.REFLECT, Buff.SHIELD -> currentPoints -= 1;
-                    case Buff.DEF_UP -> currentPoints -= 2;
-                    case Buff.ENDURE, Buff.SOUL_PROTECTION, Buff.DEFEND -> currentPoints -= 3;
-                    case Buff.INVINCIBILITY -> currentPoints -= 4;
-                }
+                    case Buff.REFLECT -> 0.9;
+                    case Buff.SHIELD -> 0.946;
+                    case Buff.IMMUNITY -> 0.82;
+                    case Buff.COUNTER -> 0.916;
+                    case Buff.CRIT_RESIST_UP -> 0.83;
+                    case Buff.DEF_UP -> 0.947;
+                    case Buff.ENDURE -> 0.983;
+                    case Buff.SOUL_PROTECTION -> 0.74;
+                    case Buff.DEFEND -> 0.69;
+                    case Buff.INVINCIBILITY -> 0.65;
+                    default -> 1;
+                };
             }
+            //Increase the score depending on how many buffs the ability can remove
+            currentPoints *= (0.19 * numOfBuffsCanAbilityRemove + 1);
             ArrayList<Debuff> targetDebuffs = mon.getAppliedDebuffs();
+            //Increase score for certain debuffs
             for (Debuff debuff : targetDebuffs)
             {
-                if (debuff.getDebuffNum() == Debuff.DEC_DEF || debuff.getDebuffNum() == Debuff.BRAND)
+                switch (debuff.getDebuffNum())
                 {
-                    currentPoints += 2;
+                    case Debuff.DEC_DEF -> currentPoints *= 1.2;
+                    case Debuff.BRAND -> currentPoints *= 1.15;
                 }
             }
-            currentPoints /= (target.getHpRatio() * 1.15);
             
+            //Alter score for elemental relationship
+            currentPoints *= switch (Team.elementalRelationship(next.getElement(), mon.getElement()))
+            {
+                case ConsoleColors.GREEN_BACKGROUND -> 1.3;
+                case ConsoleColors.RED_BACKGROUND -> 0.7;
+                default -> 1.16; //Neutral
+            };
+            
+            //Alter score for HP ratio
+            double weight = target.getHpRatio() / 100 * 1.31;
+            currentPoints /= weight;
+            
+            //Set a new target if it has a higher score
             if (currentPoints > highestPoints)
             {
                 target = mon;
                 highestPoints = currentPoints;
             }
+            //If the scores are the same, choose the one with a lower HP ratio
             else if (currentPoints == highestPoints)
             {
                 target = (mon.getHpRatio() < target.getHpRatio()) ? mon : target;
@@ -438,7 +471,9 @@ public class Auto_Play extends Thread
     }
     
     /**
-     * @return the Team without the next Monster.
+     * Gets the Team without the acting Monster
+     *
+     * @return The Team without the acting Monster
      */
     public static Team getOther()
     {
@@ -446,7 +481,9 @@ public class Auto_Play extends Thread
     }
     
     /**
-     * @return the Game object currently in use
+     * Gets the Game object currently in use
+     *
+     * @return The Game object currently in use
      */
     public static Game getGame()
     {
@@ -454,77 +491,147 @@ public class Auto_Play extends Thread
     }
     
     /**
-     * A method to create every possible Team combination (ignores leader skills to decrease the number of combinations) and simulates each of their
-     * battles
+     * Creates every possible Team combination (ignores leader skills to decrease the number of combinations) and simulates each of their battles
      */
     public static void allPossibleTeams()
     {
-        ArrayList<Monster> allMons = filterMonsters(Monster.getMonstersFromDatabase(), true);
-        for (Monster allMon : allMons)
-        {
-            monsterKeys.add(allMon.getName(false, false));
-        }
-        ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = generateCombinations(allMons, 4);
+        boolean saveTime;
         ArrayList<Team> allPossibleTeams = new ArrayList<>();
-        for (ArrayList<Monster> list : allPossibleTeamMonsters)
+        if (teamStats.isEmpty())
         {
-            allPossibleTeams.add(new Team("temp", list));
+            //Filter Monsters
+            ArrayList<Monster> allMons = filterMonsters(Monster.getMonstersFromDatabase(), true);
+            //Add Monster names to the keys list
+            for (Monster mon : allMons)
+            {
+                monsterKeys.add(mon.getName(false, false));
+            }
+            
+            //Ask if the user wants to save time or memory
+            String response;
+            do
+            {
+                System.out.println("Do you want to prioritize speed or memory? (\"s\" for speed, \"m\" for memory, \"info\" to learn more)");
+                response = scan.nextLine();
+                if (response.equalsIgnoreCase("info"))
+                {
+                    System.out.println("Choosing speed is much faster but takes up more RAM and takes longer to create the teams.");
+                    System.out.println("Choosing memory takes up less RAM and creates the teams faster but takes much longer to finish.");
+                }
+            }
+            while (!response.equalsIgnoreCase("s") && !response.equalsIgnoreCase("m"));
+            saveTime = response.equalsIgnoreCase("s");
+            
+            //Create teams
+            System.out.println("Creating teams...");
+            ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = generateCombinations(allMons, 4, saveTime);
+            //Add teams to list
+            for (ArrayList<Monster> list : allPossibleTeamMonsters)
+            {
+                allPossibleTeams.add(new Team("temp", list));
+            }
+            //Randomize order
+            Collections.shuffle(allPossibleTeams);
+            //Calculate the total number of simulations to be run
+            totalSims = totalNumOfSims(allPossibleTeams.size());
+            teamStats = allPossibleTeams;
         }
-        Collections.shuffle(allPossibleTeamMonsters);
-        totalSims = totalNumOfSims(allPossibleTeamMonsters.size());
-        teamStats = allPossibleTeams;
+        else
+        {
+            allPossibleTeams = teamStats;
+            saveTime = true;
+            totalSims = -1;
+        }
         
         System.out.println("Simulations started");
         
+        //Check for pausing
         Auto_Play thread = new Auto_Play();
         thread.start();
         
+        boolean firstRun = true;
+        
+        //Start overall timer
         totalRunningTime.play();
         //Run all simulations
-        for (int i = 0; i < allPossibleTeamMonsters.size(); i++)
+        for (; i < allPossibleTeams.size(); i++)
         {
-            final Team winner = allPossibleTeams.get(i);
-            for (int j = i + 1; j < allPossibleTeamMonsters.size(); j++)
+            //Current team for testing
+            final Team current = allPossibleTeams.get(i);
+            
+            final int tempI = i;
+            if (firstRun)
             {
+                i = j - 1;
+            }
+            for (j = i + 1; j < allPossibleTeams.size(); j++)
+            {
+                if (firstRun)
+                {
+                    i = tempI;
+                    firstRun = false;
+                }
+                
+                //Pause program
                 if (pause && numOfCompletedSimulations != 0)
                 {
+                    //Pause program and update best teams
                     totalRunningTime.pause();
                     updateBestTeams();
                     
+                    //Try to recalculate total simulations if there was an error previously
                     if (totalSims < 0 || simsCalculationError)
                     {
-                        totalSims = totalNumOfSims(allPossibleTeams.size() - i);
+                        totalSims = totalNumOfSims(allPossibleTeams.size());
                     }
                     if (simsCalculationError)
                     {
                         totalSims *= -1;
                     }
                     simsCalculationError = false;
+                    //Calculate the number of simulations remaining
                     long numOfSimsLeft = Math.abs(totalSims) - numOfCompletedSimulations;
+                    //Show there may be more simulations than shown if there was an error in calculations
                     String end = (totalSims < 0) ? "+" : "";
-                    System.out.println("Number of simulations left: " + Monster.numWithCommas(numOfSimsLeft) + end);
+                    //Print information
+                    System.out.printf("Number of simulations run: %,d%n", numOfCompletedSimulations);
+                    System.out.printf("Number of simulations left: %,d%s%n", numOfSimsLeft, end);
                     long nanosecondsPerSim = totalRunningTime.getElapsedTime() / numOfCompletedSimulations;
                     long timeRemaining = nanosecondsPerSim * numOfSimsLeft;
-                    System.out.println("Total elapsed time: " + toReadableTime(totalRunningTime.getElapsedTime()));
-                    System.out.println("Time elapsed during battle: " + toReadableTime(battleTime.getElapsedTime()));
-                    System.out.println("Estimated time remaining: " + toReadableTime(timeRemaining) + end);
+                    System.out.printf("Total elapsed time: %s%n", toReadableTime(totalRunningTime.getElapsedTime()));
+                    System.out.printf("Time elapsed during battle: %s%n", toReadableTime(battleTime.getElapsedTime()));
+                    System.out.printf("Estimated time remaining: %s%s%n", toReadableTime(timeRemaining), end);
                     System.out.println();
+                    
+                    //Allow the user to view current standings
                     postRunOptions(teamStats);
                     
+                    //Exit pause
                     pause = false;
                     System.out.println("Running");
                     totalRunningTime.play();
                 }
-                numOfCompletedSimulations++;
                 final Team contender = allPossibleTeams.get(j);
                 
                 //Reset teams
-                resetTeam(winner.getMonsters());
-                resetTeam(contender.getMonsters());
-                Main.setRuneEffectsAndNames(winner, contender);
+                if (saveTime)
+                {
+                    resetTeamForTime(current);
+                    resetTeamForTime(contender);
+                }
+                else //Save memory
+                {
+                    resetTeamForMemory(current.getMonsters());
+                    resetTeamForMemory(contender.getMonsters());
+                    Main.setRuneEffectsAndNames(current, contender);
+                }
+                //Start battle timer
                 battleTime.play();
-                battle(winner, contender);
+                //Simulate the battle
+                battle(current, contender);
+                //Pause the battle timer
                 battleTime.pause();
+                numOfCompletedSimulations++;
                 
                 //Update teamStats if a team won
                 if (!game.getWinningTeam().getName().equals("None"))
@@ -541,70 +648,91 @@ public class Auto_Play extends Thread
      *
      * @param monsters A list of Monsters to generate combinations from
      * @param r        The length of each combination
-     * @return a list of lists of Monsters to set up the Teams
+     * @param saveTime True if the program should prioritize time over space, false otherwise
+     * @return A list containing lists of Monsters to set up the Teams
      * @author ChatGPT
      */
-    public static ArrayList<ArrayList<Monster>> generateCombinations(ArrayList<Monster> monsters, int r)
+    public static ArrayList<ArrayList<Monster>> generateCombinations(ArrayList<Monster> monsters, int r, boolean saveTime)
     {
         ArrayList<ArrayList<Monster>> result = new ArrayList<>();
         ArrayList<Monster> currentCombination = new ArrayList<>();
+        //Initialize list
         for (int i = 0; i < r; i++)
         {
             currentCombination.add(null);
         }
-        generateCombinationsUtil(monsters, r, 0, 0, currentCombination, result);
+        generateCombinationsUtil(monsters, r, 0, 0, currentCombination, result, saveTime);
         return result;
     }
     
     /**
-     * A helper method to generate each combination. This method should only be called from {@link Auto_Play#generateCombinations(ArrayList, int)}
+     * A helper method to generate each combination. This method should only be called from {@link Auto_Play#generateCombinations(ArrayList, int, boolean)}
      *
      * @param monsters           A list of Monsters to generate the combinations from
      * @param r                  The length of each combination
-     * @param index              The place in the list Monsters to start. This should be 0 on the first call
-     * @param depth              The current place in the current combination to add the next Monster. This should be 0 on the first call
+     * @param index              The place in the list Monsters to start. This should be zero on the first call
+     * @param depth              The current place in the current combination to add the next Monster. This should be zero on the first call
      * @param currentCombination The current combination being built. This should be a new ArrayList with a size of r on the first call
      * @param result             All combinations built already. This should be a new ArrayList on the first call.
+     * @param saveTime           True if the program should prioritize time over space, false otherwise
      * @author ChatGPT
      */
-    private static void generateCombinationsUtil(ArrayList<Monster> monsters, int r, int index, int depth, ArrayList<Monster> currentCombination, ArrayList<ArrayList<Monster>> result)
+    private static void generateCombinationsUtil(ArrayList<Monster> monsters, int r, int index, int depth, ArrayList<Monster> currentCombination, ArrayList<ArrayList<Monster>> result, boolean saveTime)
     {
+        //Add the current combination to the result if it is complete
         if (depth == r)
         {
-            result.add(new ArrayList<>(currentCombination));
+            if (saveTime)
+            {
+                ArrayList<Monster> a = new ArrayList<>();
+                //Create new instances of each Monster to save time later
+                currentCombination.forEach(m -> {
+                    try
+                    {
+                        a.add(m.getClass().getDeclaredConstructor().newInstance());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                });
+                
+                result.add(a);
+            }
+            else
+            {
+                //Add the same instance of each Monster to save memory
+                result.add(new ArrayList<>(currentCombination));
+            }
             return;
         }
         
         for (int i = index; i < monsters.size(); i++)
         {
-            try
-            {
-                currentCombination.set(depth, monsters.get(i));
-            }
-            catch (Throwable e)
-            {
-                throw new RuntimeException(e);
-            }
-            generateCombinationsUtil(monsters, r, i + 1, depth + 1, currentCombination, result);
+            //Add the Monster to the current combination and go to the place
+            currentCombination.set(depth, monsters.get(i));
+            generateCombinationsUtil(monsters, r, i + 1, depth + 1, currentCombination, result, saveTime);
         }
     }
     
     /**
      * @param numOfCombos The number of combinations being tested
-     * @return the total number of different simulations that can be run (equivalent to numOfCombos!)
+     * @return The total number of different simulations that can be run (equivalent to numOfCombos!)
      */
     public static long totalNumOfSims(int numOfCombos)
     {
+        //Base case
         if (numOfCombos == 0)
         {
             return 0;
         }
-        try
+        try //to add recursively
         {
             return numOfCombos + totalNumOfSims(numOfCombos - 1);
         }
-        catch (StackOverflowError e)
+        catch (StackOverflowError e) //Too many recursive calls
         {
+            //Flag an error
             simsCalculationError = true;
             return numOfCombos;
         }
@@ -615,62 +743,50 @@ public class Auto_Play extends Thread
      *
      * @param pickedMons The Monsters already picked. The first call should pass an empty ArrayList.
      * @param teams      The teams in use
-     * @return The Team from {@link Auto_Play#teamStats} which contains the four Monsters provided.
+     * @return The position (index) of the Team in the array
      */
-    public static Team findTeamFromMonsters(ArrayList<Monster> pickedMons, ArrayList<Team> teams)
+    public static int findTeamFromMonsters(ArrayList<Monster> pickedMons, ArrayList<Team> teams)
     {
+        //Get the name of 1 one the Monster in the team
         String inputMon;
         do
         {
-            System.out.println("Enter Monster " + (pickedMons.size() + 1) + "'s name");
+            System.out.printf("Enter Monster %d's name%n", pickedMons.size() + 1);
             inputMon = scan.nextLine();
         }
-        while (!stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, pickedMons));
+        while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, pickedMons));
         
-        try
-        {
-            inputMon = inputMon.replaceAll(" ", "_");
-            inputMon = toProperName(inputMon);
-            String temp = inputMon.replaceAll("_", " ");
-            String element = Monster.monsterNamesDatabase.get(temp);
-            String name = "Monsters." + element + "." + inputMon;
-            Class<?> c = Class.forName(name);
-            pickedMons.add((Monster) c.getDeclaredConstructor().newInstance());
-        }
-        catch (Exception ignored)
-        {
-        }
+        pickedMons.add(Monster.createNewMonFromName(inputMon));
+        //Do the above until there are 4 selected Monsters
         if (pickedMons.size() < 4)
         {
             return findTeamFromMonsters(pickedMons, teams);
         }
-        else
+        
+        int index = teams.size() - 1;
+        
+        //Linear search to find the team
+        outer:
+        for (int i = teams.size() - 1; i >= 0; i--)
         {
-            ArrayList<Team> allTeams = new ArrayList<>(teams);
-            
-            for (int i = allTeams.size() - 1; i >= 0; i--)
+            Team team = teams.get(i);
+            for (int j = 0; j < 4; j++)
             {
-                Team team = allTeams.get(i);
-                for (int j = 0; j < 4; j++)
+                //Go to the next team if the current one does not have one of the Monsters
+                if (!team.hasInstanceOf(pickedMons.get(j)))
                 {
-                    if (!team.hasInstanceOf(pickedMons.get(j)))
-                    {
-                        allTeams.remove(team);
-                        break;
-                    }
+                    index--;
+                    continue outer;
                 }
             }
-            
-            try
-            {
-                return allTeams.getFirst();
-            }
-            catch (IndexOutOfBoundsException | NoSuchElementException e)
-            {
-                System.out.println("Oops! Team not found.");
-                return null;
-            }
+            break;
         }
+        
+        if (index < 0)
+        {
+            System.out.println("Oops! Team not found!");
+        }
+        return index;
     }
     
     /**
@@ -681,16 +797,19 @@ public class Auto_Play extends Thread
      */
     private static String toReadableTime(long nanoseconds)
     {
+        //Initialize times
         int seconds = 0;
         int minutes = 0;
         int hours = 0;
         int days = 0;
         
-        while (nanoseconds >= 1e9)
+        while (nanoseconds >= 1e9) //1 second
         {
+            //Increment seconds
             seconds++;
             nanoseconds -= (long) 1e9;
             
+            //Increment times if they are overflowed
             if (seconds >= 60)
             {
                 seconds -= 60;
@@ -707,20 +826,21 @@ public class Auto_Play extends Thread
                 days++;
             }
         }
+        //Format final String
         String returnString = "";
         if (days > 0)
         {
-            returnString += days + " day" + (days == 1 ? "" : "s") + ", ";
+            returnString += "%d day%s, ".formatted(days, days == 1 ? "" : "s");
         }
         if (hours > 0)
         {
-            returnString += hours + " hours" + (hours == 1 ? "" : "s") + "" + ", ";
+            returnString += "%d hour%s, ".formatted(hours, hours == 1 ? "" : "s");
         }
         if (minutes > 0)
         {
-            returnString += minutes + " minutes" + (minutes == 1 ? "" : "s") + ", ";
+            returnString += "%d minute%s, ".formatted(minutes, minutes == 1 ? "" : "s");
         }
-        return returnString + seconds + "." + nanoseconds + " seconds";
+        return "%s%d.%d seconds".formatted(returnString, seconds, nanoseconds);
     }
     
     /**
@@ -728,13 +848,13 @@ public class Auto_Play extends Thread
      *
      * @param team The team to replace Monsters on
      */
-    public static void resetTeam(ArrayList<Monster> team)
+    public static void resetTeamForMemory(ArrayList<Monster> team)
     {
         for (int i = 0; i < team.size(); i++)
         {
             try
             {
-                team.set(i, team.get(i).getClass().getDeclaredConstructor().newInstance());
+                team.set(i, Monster.createNewMonFromMon(team.get(i)));
             }
             catch (Throwable e)
             {
@@ -744,186 +864,234 @@ public class Auto_Play extends Thread
     }
     
     /**
+     * Resets each Monster on the team
+     *
+     * @param team The team to reset
+     */
+    public static void resetTeamForTime(Team team)
+    {
+        team.resetTeam();
+    }
+    
+    /**
      * Updates the current best teams (sorts by number of wins)
      */
     private static void updateBestTeams()
     {
-        int highest = 0;
-        int second = 0;
-        int third = 0;
-        int fourth = 0;
+        final int[] highest = {0};
+        final int[] second = {0};
+        final int[] third = {0};
+        final int[] fourth = {0};
         
+        //Compare each team and find the top 4
         for (Team team : teamStats)
         {
-            if (team.getWins() > highest)
+            switch (team.getWins())
             {
-                highest = team.getWins();
-                bestTeams.set(0, team);
-            }
-            else if (team.getWins() > second)
-            {
-                second = team.getWins();
-                bestTeams.set(1, team);
-            }
-            else if (team.getWins() > third)
-            {
-                third = team.getWins();
-                bestTeams.set(2, team);
-            }
-            else if (team.getWins() > fourth)
-            {
-                fourth = team.getWins();
-                bestTeams.set(3, team);
+                //Best
+                case int wins when wins > highest[0] ->
+                {
+                    highest[0] = team.getWins();
+                    bestTeams.set(0, team);
+                }
+                //2nd best
+                case int wins when wins > second[0] ->
+                {
+                    second[0] = team.getWins();
+                    bestTeams.set(1, team);
+                }
+                //3rd best
+                case int wins when wins > third[0] ->
+                {
+                    third[0] = team.getWins();
+                    bestTeams.set(2, team);
+                }
+                //4th best
+                case int wins when wins > fourth[0] ->
+                {
+                    fourth[0] = team.getWins();
+                    bestTeams.set(3, team);
+                }
+                default ->
+                {
+                }
             }
         }
     }
     
     /**
-     * Allows the user to look at the teams in more detail after every run is done
+     * Allows the user to look at the teams in more detail
      *
      * @param teams A list of the teams to use.
      */
     public static void postRunOptions(ArrayList<Team> teams)
     {
         final ArrayList<Team> finalTeams = new ArrayList<>(teams);
-        String sortOption = "wins";
-        teams = sortTeams(teams, true, "wins");
+        ArrayList<Team> tempTeams = new ArrayList<>(finalTeams);
+        sortTeams(tempTeams, true, "wins");
+        outer:
         while (true)
         {
             if (teams.isEmpty())
             {
                 teams = new ArrayList<>(finalTeams);
             }
-            System.out.println("Type \"exit\" to exit, \"inspect\" to inspect a specific team. Type \"order\" to change how the teams are ordered. Enter a number to get the team at that index (start with \"-\" to start counting from " +
-                    "the end " + "of the list). To get a range of Teams, use the format \"# - #\" replacing # with a number");
+            System.out.println("Enter a command or type \"help\" for a list of commands.");
             String input = scan.nextLine();
-            try
+            try //Single teams at an index
             {
                 boolean neg = input.contains("-");
                 int index = Math.abs(Integer.parseInt(input));
                 
+                //Start from the end of the list if the user entered with a negative number
                 if (neg)
                 {
-                    Collections.reverse(teams);
+                    Collections.reverse(tempTeams);
                 }
                 
-                Team team = teams.get(index);
+                //Get team at requested index
+                Team team = tempTeams.get(index);
                 
+                //Flip the list again if the user entered a negative number
                 if (neg)
                 {
-                    Collections.reverse(teams);
+                    Collections.reverse(tempTeams);
                 }
                 
                 printSingleTeamStats(team);
             }
-            catch (IndexOutOfBoundsException e)
+            catch (IndexOutOfBoundsException e) //Invalid index
             {
-                System.out.println("Index out of bounds, please enter a number between 0 and " + numWithCommas(teams.size() - 1) + " inclusive");
+                System.out.printf("Index out of bounds, please enter a number between 0 and %,d inclusive%n", tempTeams.size() - 1);
             }
             catch (NumberFormatException e)
             {
-                //Find a specific team
-                if (input.equalsIgnoreCase("inspect"))
+                switch (switch (input.toLowerCase())
                 {
-                    Team inspectTeam = findTeamFromMonsters(new ArrayList<>(), teams);
-                    if (inspectTeam != null)
+                    //Find a specific team
+                    case "inspect" ->
                     {
+                        //Get the index of the requested team
+                        int index = findTeamFromMonsters(new ArrayList<>(), tempTeams);
+                        
+                        //Team not found
+                        if (index == -1)
+                        {
+                            yield 1;
+                        }
+                        
+                        //Print team
+                        Team inspectTeam = tempTeams.get(index);
                         for (Monster mon : inspectTeam.getMonsters())
                         {
                             System.out.printf("%s\t\t", mon.getName(true, false));
                         }
-                        System.out.println("number of wins: " + numWithCommas(inspectTeam.getWins()) + "\tNumber of losses: " + numWithCommas(inspectTeam.getLosses()));
-                        System.out.println("Press enter to continue");
+                        //Print team info
+                        System.out.printf("Number of wins: %,d\tNumber of losses: %,d\tPlace: %,d%n", inspectTeam.getWins(), inspectTeam.getLosses(), index);
+                        yield 1;
                     }
-                    scan.nextLine();
-                }
-                //Order the teams
-                else if (input.equalsIgnoreCase("order"))
-                {
-                    boolean reversed = false;
-                    boolean exit = false;
-                    while (true)
+                    //Order the teams
+                    case "order" ->
                     {
-                        System.out.println("Type \"wins\" to sort by wins, \"losses\" to sort by losses, \"ratio\" to sort by win/loss ratio, or \"back\" to go back");
-                        String sortString = scan.nextLine();
-                        if (sortString.equalsIgnoreCase("wins"))
+                        int reversed = -1;
+                        String sortOption = "";
+                        
+                        //Get the value to sort by
+                        while (sortOption.isEmpty())
                         {
-                            sortOption = "wins";
-                            break;
+                            System.out.println("Type \"wins\" to sort by wins, \"losses\" to sort by losses, \"ratio\" to sort by win/loss ratio, or \"back\" to go back");
+                            String sortString = scan.nextLine();
+                            
+                            sortOption = switch (sortString.toLowerCase())
+                            {
+                                case "wins", "losses", "ratio", "back" -> sortString;
+                                default ->
+                                {
+                                    System.out.println("Please enter a valid response");
+                                    yield "";
+                                }
+                            };
+                            if (sortOption.equals("back"))
+                            {
+                                yield 1;
+                            }
                         }
-                        else if (sortString.equalsIgnoreCase("losses"))
+                        
+                        //Get the sort order
+                        while (reversed == -1)
                         {
-                            sortOption = "losses";
-                            break;
+                            System.out.println("Type \"normal\" to sort highest to lowest, \"reversed\" to sort lowest to highest, or \"back\" to go back");
+                            String reverseInput = scan.nextLine();
+                            
+                            switch (reverseInput.toLowerCase())
+                            {
+                                case "reversed" -> reversed = 0;
+                                case "normal" -> reversed = 1;
+                                case "back" ->
+                                {
+                                }
+                                default -> System.out.println("Please enter a valid input");
+                            }
+                            if (reverseInput.equalsIgnoreCase("back")) //Cancel operation
+                            {
+                                yield 1;
+                            }
                         }
-                        else if (sortString.equalsIgnoreCase("ratio"))
-                        {
-                            sortOption = "ratio";
-                            break;
-                        }
-                        else if (sortString.equalsIgnoreCase("back"))
-                        {
-                            exit = true;
-                            break;
-                        }
-                        else
-                        {
-                            System.out.println("Please enter a valid response");
-                        }
+                        
+                        //Sort the teams as requested
+                        sortTeams(tempTeams, reversed == 1, sortOption);
+                        yield 1;
                     }
-                    if (exit)
+                    //Filter the results
+                    case "filter" ->
+                    {
+                        tempTeams = new ArrayList<>(finalTeams);
+                        tempTeams = filterTeams(tempTeams);
+                        yield 1;
+                    }
+                    //Order Monsters by their average placing
+                    case "monsters" ->
+                    {
+                        ArrayList<Monster> sortMonsByPlace = sortMonsByPlace(tempTeams);
+                        
+                        //Print each monster
+                        for (int i = 0; i < sortMonsByPlace.size(); i++)
+                        {
+                            Monster m = sortMonsByPlace.get(i);
+                            System.out.printf("%d. %s%n", i + 1, m.getName(true, false));
+                        }
+                        yield 1;
+                    }
+                    case "help" ->
+                    {
+                        printPostRunCommands();
+                        yield 1;
+                    }
+                    //Exit
+                    case "exit" -> -1;
+                    default -> 0;
+                })
+                {
+                    case -1 ->
+                    {
+                        break outer;
+                    }
+                    case 1 ->
                     {
                         continue;
                     }
-                    while (true)
+                    default ->
                     {
-                        System.out.println("Type \"normal\" to sort highest to lowest, \"reversed\" to sort lowest to highest, or \"back\" to go back");
-                        String reverseInput = scan.nextLine();
-                        if (reverseInput.equalsIgnoreCase("normal"))
-                        {
-                            break;
-                        }
-                        else if (reverseInput.equalsIgnoreCase("reversed"))
-                        {
-                            reversed = true;
-                            break;
-                        }
-                        else if (reverseInput.equalsIgnoreCase("back"))
-                        {
-                            exit = true;
-                            break;
-                        }
-                        else
-                        {
-                            System.out.println("Please enter a valid input");
-                        }
                     }
-                    if (exit)
-                    {
-                        continue;
-                    }
-                    
-                    teams = sortTeams(teams, !reversed, sortOption);
                 }
-                //Filter the results
-                else if (input.equalsIgnoreCase("filter"))
-                {
-                    teams = new ArrayList<>(finalTeams);
-                    teams = filterTeams(teams);
-                }
-                //Exit options
-                else if (input.equalsIgnoreCase("exit"))
-                {
-                    break;
-                }
-                //GetRange
-                else if (input.contains("-"))
+                //Range of teams
+                if (input.contains("-"))
                 {
                     //Remove whitespace
                     input = input.replaceAll(" ", "");
                     try
                     {
-                        //Check if first number is negative and remove first dash if it is to properly parse number
+                        //Check if the first number is negative and remove the first dash if it is to properly parse number
                         boolean firstNeg = input.startsWith("-");
                         if (firstNeg)
                         {
@@ -933,79 +1101,159 @@ public class Auto_Play extends Thread
                         int firstNum = Integer.parseInt(input.substring(0, input.indexOf("-")));
                         int secondNum = Integer.parseInt(input.substring(input.indexOf("-") + 1));
                         
-                        //Make first number negative if needed
+                        //Make the first number negative if needed
                         if (firstNeg)
                         {
                             firstNum *= -1;
                         }
-                        if (secondNum > teams.size())
+                        if (secondNum > tempTeams.size())
                         {
                             System.out.println("Please enter a valid range");
                             continue;
                         }
                         
-                        //Start is +
+                        //Start is positive
                         if (firstNum >= 0)
                         {
                             //Get end value if input is negative
                             if (secondNum < 0)
                             {
-                                secondNum = teams.size() + secondNum - 1;
+                                secondNum = tempTeams.size() + secondNum - 1;
                             }
                             
+                            //End value is less than starting value (Invalid range)
                             if (firstNum > secondNum)
                             {
                                 System.out.println("Please enter a valid range");
                                 continue;
                             }
                             
+                            //Print each team in the range
                             for (int i = firstNum; i < secondNum; i++)
                             {
-                                printSingleTeamStats(teams.get(i));
+                                printSingleTeamStats(tempTeams.get(i));
                             }
                         }
-                        //start is -
+                        //Start is negative
                         else
                         {
+                            //End is positive (Invalid range)
                             if (secondNum > 0)
                             {
                                 System.out.println("Please enter a valid range");
                                 continue;
                             }
                             
-                            //-, -
-                            firstNum = teams.size() + firstNum - 1;
-                            secondNum = teams.size() + secondNum - 1;
+                            //End is negative
+                            firstNum = tempTeams.size() + firstNum - 1;
+                            secondNum = tempTeams.size() + secondNum - 1;
+                            //End value is less than the starting value (Invalid range)
                             if (firstNum > secondNum)
                             {
                                 System.out.println("Please enter a valid range");
                                 continue;
                             }
                             
+                            //Print each team in the range
                             for (int i = firstNum; i < secondNum; i++)
                             {
-                                printSingleTeamStats(teams.get(i));
+                                printSingleTeamStats(tempTeams.get(i));
                             }
                         }
                     }
-                    catch (NumberFormatException error)
+                    catch (NumberFormatException error) //Invalid range
                     {
-                        System.out.println("Please enter a valid range (min of 0, max of " + numWithCommas(teams.size() - 1));
+                        System.out.printf("Please enter a valid range (min of 0, max of %,d)%n", tempTeams.size() - 1);
                     }
                 }
             }
         }
     }
     
+    private static void printPostRunCommands()
+    {
+        String[] commands = {"inspect", "order", "monsters", "Any number", "# - #", "help", "filter", "exit"};
+        String[] commandInfo = {
+                "Inspect a specific team using its Monsters",
+                "Change how the teams are ordered",
+                "View every Monster sorted by their average place",
+                "Get the team at a specific index. You can use a negative number to start counting from the end of the list",
+                "Use this format to get a range of teams, replacing \"#\" with a number",
+                "Show this commands list",
+                "Filter the teams by whitelisting or blacklisting specific Monsters",
+                "Exit this part of the program"
+        };
+        
+        for (int i = 0; i < commands.length; i++)
+        {
+            System.out.printf("%d. \"%s\": %s%n", i + 1, commands[i], commandInfo[i]);
+        }
+    }
+    
     /**
-     * Sorts the teams. This method does not change the original HashMap
+     * Calculates each Monster's average place and sorts them from lowest to highest
      *
+     * @param teams The teams to look through
+     * @return An ordered list of Monsters
+     */
+    private static ArrayList<Monster> sortMonsByPlace(final ArrayList<Team> teams)
+    {
+        HashMap<String, int[]> map = new HashMap<>(); //Monster name, sum, number of appearances
+        //For each team, add the index to each Monster's respective sum
+        for (int i = 0; i < teams.size(); i++)
+        {
+            Team team = teams.get(i);
+            for (Monster monster : team.getMonsters())
+            {
+                //Increase the Monster's sum and # of appearances if it is already in the HashMap
+                if (map.containsKey(monster.getName(false, false)))
+                {
+                    int[] temp = map.get(monster.getName(false, false));
+                    temp[0] += i;
+                    temp[1]++;
+                    map.put(monster.getName(false, false), temp);
+                }
+                else //Put the Monster into the HashMap with new values
+                {
+                    map.put(monster.getName(false, false), new int[]{i, 1});
+                }
+            }
+        }
+        
+        //Get each Monster's average place
+        ArrayList<Monster> monsters = new ArrayList<>();
+        HashMap<Monster, Integer> averages = new HashMap<>();
+        map.forEach((name, vals) -> {
+            Monster m = Monster.createNewMonFromName(name);
+            averages.put(m, (vals[0] / vals[1]));
+            monsters.add(m);
+        });
+        
+        //Sort the final list according to each Monster's average place
+        for (int i = 0; i < monsters.size(); i++)
+        {
+            Monster key = monsters.get(i);
+            int j = i - 1;
+            while (j >= 0 && averages.get(key) < averages.get(monsters.get(j)))
+            {
+                monsters.set(j + 1, monsters.get(j));
+                j--;
+            }
+            monsters.set(j + 1, key);
+        }
+        return monsters;
+    }
+    
+    /**
+     * Sorts the teams. This method does not change the original List
+     *
+     * @param teams      The teams to sort
      * @param highToLow  True if the returned value should be sorted highest to lowest, false otherwise
      * @param sortOption The values the program should sort the teams by. ("wins" for wins "losses" for losses and "ratio" for win/loss ratio)
-     * @return A sorted ArrayList of Teams
      */
-    private static ArrayList<Team> sortTeams(ArrayList<Team> teams, boolean highToLow, String sortOption)
+    private static void sortTeams(ArrayList<Team> teams, boolean highToLow, String sortOption)
     {
+        //Insertion sort
         for (int i = 1; i < teams.size(); i++)
         {
             Team key = teams.get(i);
@@ -1017,8 +1265,6 @@ public class Auto_Play extends Thread
             }
             teams.set(j + 1, key);
         }
-        
-        return teams;
     }
     
     /**
@@ -1033,37 +1279,28 @@ public class Auto_Play extends Thread
      */
     private static boolean insertionSortBoolean(boolean highToLow, String sortOption, int j, Team key, ArrayList<Team> teams)
     {
+        //Beginning of the list
         if (j < 0)
         {
             return false;
         }
         
+        //Calculate ratios
         double keyRatio = 1.0 * key.getWins() / key.getWins();
-        double otherRatio = 1.0 * teams.get(j).getWins() / teams.get(j).getLosses();
-        if (highToLow)
-        {
-            if (sortOption.equals("wins"))
-            {
-                return key.getWins() > teams.get(j).getWins();
-            }
-            else if (sortOption.equals("losses"))
-            {
-                return key.getLosses() > teams.get(j).getLosses();
-            }
-            return keyRatio > otherRatio;
-        }
+        double ratioToCheck = 1.0 * teams.get(j).getWins() / teams.get(j).getLosses();
         
-        //Low to high
-        if (sortOption.equals("wins"))
+        //Sort high to low
+        return (highToLow) ? switch (sortOption)
         {
-            return key.getWins() < teams.get(j).getWins();
-        }
-        
-        else if (sortOption.equals("losses"))
+            case "wins" -> key.getWins() > teams.get(j).getWins(); //Sort by wins
+            case "losses" -> key.getLosses() > teams.get(j).getLosses(); //Sort by losses
+            default -> keyRatio > ratioToCheck; //Sort by ratios
+        } : switch (sortOption) //Sort low to high
         {
-            return key.getLosses() < teams.get(j).getLosses();
-        }
-        return keyRatio < otherRatio;
+            case "wins" -> key.getWins() < teams.get(j).getWins(); //Sort by wins
+            case "losses" -> key.getLosses() < teams.get(j).getLosses(); //Sort by losses
+            default -> keyRatio < ratioToCheck; //Sort by ratios
+        };
     }
     
     /**
@@ -1073,13 +1310,14 @@ public class Auto_Play extends Thread
      */
     public static void printSingleTeamStats(Team team)
     {
+        //Print each Monster in the team
         for (Monster mon : team.getMonsters())
         {
             System.out.printf("%s\t\t", mon.getName(true, false));
         }
-        System.out.printf("Number of wins: %s\tNumber of losses: %s", numWithCommas(team.getWins()), numWithCommas(team.getLosses()));
+        System.out.printf("Number of wins: %,d\tNumber of losses: %,d", team.getWins(), team.getLosses());
         
-        //Print ratio
+        //Calculate the win-loss ratio
         double ratio = 1.0 * team.getWins() / (team.getLosses() + team.getWins());
         ratio *= 100;
         if (team.getLosses() == 0)
@@ -1090,26 +1328,31 @@ public class Auto_Play extends Thread
             }
         }
         
-        System.out.print("\tWin/Loss Ratio: " + numWithCommas(ratio));
+        //Print win-loss ratio
+        System.out.printf("\tWin/Loss Ratio: %f", ratio);
         System.out.println();
     }
     
     /**
      * Exports current results to a csv file
      *
-     * @return The name of the newly created file
+     * @return The name of the newly created file or null if the file could not be created
      */
-    public static String exportResults()
+    public static String exportResults(int i, int j)
     {
-        //Initialize list of teams
+        //Initialize the list of teams
         ArrayList<String> lines = new ArrayList<>();
         
-        //Add library to top of file
+        //Add the library to the top of the file
         final String[] temp = {""};
-        monsterKeys.forEach((name) -> temp[0] += name + ":" + monsterKeys.indexOf(name) + ",");
+        monsterKeys.forEach((name) -> temp[0] += "%s:%d,".formatted(name, monsterKeys.indexOf(name)));
         lines.add(temp[0]);
+        if (!completed)
+        {
+            lines.add("%d,%d".formatted(i, j));
+        }
         
-        //Add each team to list
+        //Add each team to the list
         for (Team team : teamStats)
         {
             lines.add(compressTeam(team));
@@ -1120,12 +1363,13 @@ public class Auto_Play extends Thread
         String fileName;
         try
         {
-            fileName = "src/Game/Results/" + today.toString().replaceAll(":", "-") + ".csv";
+            //Create the file
+            fileName = "src/Game/Results/%s.csv".formatted(today.toString().replaceAll(":", "-"));
             FileWriter writer = new FileWriter(fileName);
             //Add each line to file
             for (String line : lines)
             {
-                writer.write(line + "\n");
+                writer.write("%s\n".formatted(line));
             }
             writer.close();
             return fileName;
@@ -1135,13 +1379,14 @@ public class Auto_Play extends Thread
         {
             try
             {
-                fileName = "src/Game/Results/" + new Random().nextDouble(0, 10) + ".csv";
+                //Create the file
+                fileName = "src/Game/Results/%s.csv".formatted(new Random().nextDouble(0, 10));
                 FileWriter writer = new FileWriter(fileName);
                 
                 //Add each line to file
                 for (String line : lines)
                 {
-                    writer.write(line + "\n");
+                    writer.write("%s\n".formatted(line));
                 }
                 writer.close();
                 return fileName;
@@ -1164,138 +1409,161 @@ public class Auto_Play extends Thread
     {
         while (true)
         {
+            //Ask the user if they want to whitelist, blacklist, or do neither
             System.out.println("Would you like to whitelist or blacklist any monsters? (\"w\" for whitelist, \"b\" for blacklist, \"n\" for no)");
             String response = scan.nextLine();
-            if (response.equals("w"))
+            switch (response)
             {
-                whitelisted = true;
-                String monName = "";
-                ArrayList<Monster> newMons = new ArrayList<>();
-                while (!monName.equals("exit"))
+                //Whitelist
+                case "w" ->
                 {
-                    while (!stringIsMonsterName(monName, mons) && !monName.equals("exit"))
+                    String monName = "";
+                    ArrayList<Monster> whitelistedMonsters = new ArrayList<>();
+                    while (true)
                     {
-                        System.out.println("Type the next monster to whitelist or \"exit\" to exit");
-                        System.out.print("Current Monsters: ");
-                        newMons.forEach(m -> System.out.print(m.getName(true, false) + "\t\t"));
-                        System.out.println();
-                        monName = scan.nextLine();
+                        //Get Monster name
+                        while (!Monster.stringIsMonsterName(monName, mons) && !monName.equals("exit"))
+                        {
+                            //Print current whitelisted Monsters
+                            System.out.println("Type the next monster to whitelist or \"exit\" to exit");
+                            System.out.print("Current Monsters: ");
+                            whitelistedMonsters.forEach(m -> System.out.printf("%s\t\t", m.getName(true, false)));
+                            System.out.println();
+                            //Get the next Monster
+                            monName = scan.nextLine();
+                        }
+                        //Exit filtering
+                        if (monName.equals("exit"))
+                        {
+                            //Check there are enough Monsters
+                            if (whitelistedMonsters.size() < 5 && limitSelection)
+                            {
+                                monName = "";
+                                System.out.println("Error, must include at least 5 monsters");
+                                continue;
+                            }
+                            return whitelistedMonsters;
+                        }
+                        //Move Monster to whitelist
+                        movetoFilteredList(mons, monName, whitelistedMonsters);
+                        monName = "";
                     }
-                    if (monName.equals("exit"))
+                }
+                //Blacklist
+                case "b" ->
+                {
+                    String monName = "";
+                    ArrayList<Monster> blacklistedMonsters = new ArrayList<>();
+                    while (true)
                     {
-                        if (newMons.size() < 5 && limitSelection)
+                        //Get Monster name
+                        while (!Monster.stringIsMonsterName(monName, mons) && !monName.equals("exit"))
+                        {
+                            //Print current blacklisted Monsters
+                            System.out.println("Type the next monster to blacklist or \"exit\" to exit");
+                            System.out.print("Current Monsters: ");
+                            blacklistedMonsters.forEach(m -> System.out.printf("%s\t\t", m.getName(true, false)));
+                            System.out.println();
+                            //Get the next Monster
+                            monName = scan.nextLine();
+                        }
+                        //Exit filtering
+                        if (monName.equals("exit"))
+                        {
+                            return mons;
+                        }
+                        //Check there are enough Monsters left to remove another one
+                        if (mons.size() == 5 && limitSelection)
                         {
                             monName = "";
                             System.out.println("Error, must include at least 5 monsters");
                             continue;
                         }
-                        return newMons;
-                    }
-                    newMons.add(createNewMonFromName(monName));
-                    monName = "";
-                }
-            }
-            if (response.equals("b"))
-            {
-                whitelisted = false;
-                String monName = "";
-                ArrayList<Monster> blacklistedMonsters = new ArrayList<>();
-                while (!monName.equals("exit"))
-                {
-                    while (!stringIsMonsterName(monName, mons) && !monName.equals("exit"))
-                    {
-                        System.out.println("Type the next monster to blacklist or \"exit\" to exit");
-                        System.out.print("Current blacklisted Monsters: ");
-                        blacklistedMonsters.forEach(m -> System.out.print(m.getName(true, false) + "\t\t"));
-                        System.out.println();
-                        monName = scan.nextLine();
-                    }
-                    if (monName.equals("exit"))
-                    {
-                        return mons;
-                    }
-                    if (mons.size() == 5 && limitSelection)
-                    {
+                        //Move Monster to blacklist
+                        movetoFilteredList(mons, monName, blacklistedMonsters);
                         monName = "";
-                        System.out.println("Error, must include at least 5 monsters");
-                        continue;
                     }
-                    Monster mon = createNewMonFromName(monName);
-                    for (int i = 0; i < mons.size(); i++)
-                    {
-                        if (mons.get(i).getName(false, false).equals(mon.getName(false, false)))
-                        {
-                            blacklistedMonsters.add(mons.remove(i));
-                            break;
-                        }
-                    }
-                    monName = "";
                 }
-            }
-            if (response.equals("n"))
-            {
-                return mons;
+                //No filter
+                case "n" ->
+                {
+                    return mons;
+                }
             }
         }
     }
     
     /**
-     * Filters the teams by Monsters
+     * Creates a new Monster from the given name, adds it to the filtered list, and removes it from the unfiltered list
+     *
+     * @param unfilteredMonsters The unfiltered monsters
+     * @param monName            The name of the Monster
+     * @param filteredMonsters   The filtered monsters
+     */
+    private static void movetoFilteredList(ArrayList<Monster> unfilteredMonsters, String monName, ArrayList<Monster> filteredMonsters)
+    {
+        //Create Monster from name
+        Monster mon = Monster.createNewMonFromName(monName);
+        
+        //Move Monster from the unfiltered list to the filtered one
+        for (int i = 0; i < unfilteredMonsters.size(); i++)
+        {
+            if (unfilteredMonsters.get(i).getName(false, false).equals(mon.getName(false, false)))
+            {
+                filteredMonsters.add(unfilteredMonsters.remove(i));
+                break;
+            }
+        }
+    }
+    
+    /**
+     * Filters the teams by Monsters (original list is unchanged)
      *
      * @param teams The teams to filter
      * @return The filtered teams
      */
-    public static ArrayList<Team> filterTeams(ArrayList<Team> teams)
+    public static ArrayList<Team> filterTeams(final ArrayList<Team> teams)
     {
+        //Get filtered Monsters
         ArrayList<Monster> filteredMonsters = filterMonsters(Monster.getMonstersFromDatabase(), false);
+        Team tempFilteredTeam = new Team("Filtered", filteredMonsters);
+        //Create a temporary list so the original list is unchanged
         ArrayList<Team> temp = new ArrayList<>(teams);
         
+        //Filter teams
+        outer:
         for (int i = temp.size() - 1; i >= 0; i--)
         {
             Team t = temp.get(i);
-            if (whitelisted)
+            //Remove the team if it has a Monster that is not included in the filter
+            for (Monster teamMonster : t.getMonsters())
             {
-                for (Monster mon : filteredMonsters)
+                if (!tempFilteredTeam.hasInstanceOf(teamMonster))
                 {
-                    if (!t.hasInstanceOf(mon))
-                    {
-                        temp.remove(t);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                for (Monster monster : t.getMonsters())
-                {
-                    boolean contains = false;
-                    for (Monster filteredMonster : filteredMonsters)
-                    {
-                        if (filteredMonster.getName(false, false).equals(monster.getName(false, false)))
-                        {
-                            contains = true;
-                            break;
-                        }
-                    }
-                    if (!contains)
-                    {
-                        temp.remove(t);
-                        break;
-                    }
+                    temp.remove(t);
+                    continue outer;
                 }
             }
         }
         return temp;
     }
     
+    /**
+     * Compresses a team into a line to export to a file
+     *
+     * @param team The team to compress
+     * @return A String containing a single line containing the team
+     */
     private static String compressTeam(Team team)
     {
         String line = "";
+        //Add each Monsters key denoted by the library
         for (Monster mon : team.getMonsters())
         {
-            line += monsterKeys.indexOf(mon.getName(false, false)) + ",";
+            line += "%d,".formatted(monsterKeys.indexOf(mon.getName(false, false)));
         }
-        line += team.getWins() + "," + team.getLosses() + ",";
+        //Add wins and losses
+        line += "%d,%d,".formatted(team.getWins(), team.getLosses());
         return line;
     }
 }

@@ -3,8 +3,9 @@ package Stats.Buffs;
 import Monsters.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to create all Defend buffs
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Defend extends Buff
 {
@@ -23,6 +24,8 @@ public class Defend extends Buff
     }
     
     /**
+     * Gets the Monster who cast the buff
+     *
      * @return The Monster who cast the buff
      */
     public Monster getCaster()

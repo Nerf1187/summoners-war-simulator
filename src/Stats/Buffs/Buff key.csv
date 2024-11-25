@@ -13,7 +13,7 @@
 12,Defend,,The caster will receive half of the damage dealt on the target while reducing the damage on the target to 0 and counterattacks the enemy,done
 13,Soul Protection,30% of max health on revive,Target will revive with 30% of max HP when defeated,done
 15,Threat,,The enemy can only attack the target with Threat. Target receives 15% less damage. The duration is only reduced when target is attacked,done
-16,Increase Atk Bar,Ability specific,null,done
+16,Inc Atk Bar,Ability specific,null,done
 17,Cleanse,,null,done
 18,Buff steal,,null,done
 19,Vampire,+20% of damage dealt,Recovers HP by 20% of damage dealt,done

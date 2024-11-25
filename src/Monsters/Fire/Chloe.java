@@ -7,12 +7,17 @@ import Stats.Buffs.*;
 import Stats.*;
 import java.util.*;
 
-
+/**
+ * Fire Epikion Priest
+ */
 public class Chloe extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Chloe()
     {
         super("Chloe" + count, FIRE, 11_700, 648, 549, 111, 15, 50, 15, 0);
@@ -21,6 +26,11 @@ public class Chloe extends Monster
         count++;
     }
     
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
     public Chloe(String runeFileName)
     {
         this();
@@ -30,11 +40,11 @@ public class Chloe extends Monster
     private void setAbilities()
     {
         abilities.add(new Attack_Ability("Absorb Mana (1)", 1.35 * (1.8 + (0.12 * getMaxHp()) / getAtk()), 0.5, 1, "Attacks the " +
-                "enemy and recovers the HP by 50% of the damage dealt. This attack will deal more damage according to your MAX HP.", 0, false,
+                                                                                                                   "enemy and recovers the HP by 50% of the damage dealt. This attack will deal more damage according to your MAX HP.", 0, false,
                 false, false));
         
         abilities.add(new Heal_Ability("Fill (2)", 1.3 * 1.2, 1, "Removes 1 harmful effect from all allies " +
-                "(excluding yourself) and recovers the HP of all allies (including yourself) by 20% each.", 3, true));
+                                                                 "(excluding yourself) and recovers the HP of all allies (including yourself) by 20% each.", 3, true));
         
         ArrayList<Buff> ability3Buffs = abilityBuffs(Buff.INVINCIBILITY, 1, Buff.IMMUNITY, 3);
         ArrayList<Integer> ability3BuffChances = abilityChances(100, 100);
@@ -57,6 +67,7 @@ public class Chloe extends Monster
         
         if (abilityNum == 2)
         {
+            //Remove a debuff for all team members except self
             applyToTeam(game.getNextMonsTeam(), m -> {
                 if (!m.equals(this))
                 {

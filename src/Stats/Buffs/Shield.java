@@ -1,12 +1,13 @@
 package Stats.Buffs;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to create all shields
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Shield extends Buff
 {
-    private final int amount;
+    private int amount;
     
     /**
      * Creates a new Shield
@@ -21,10 +22,22 @@ public class Shield extends Buff
     }
     
     /**
+     * Gets the amount of health the Shield has
+     *
      * @return The amount of health the Shield has
      */
     public int getAmount()
     {
         return amount;
+    }
+    
+    /**
+     * Decreases the amount of shield health left
+     *
+     * @param amount The amount to decrease by
+     */
+    public void decreaseShieldHealth(int amount)
+    {
+        this.amount -= amount;
     }
 }

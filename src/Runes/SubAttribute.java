@@ -1,8 +1,9 @@
 package Runes;
 
 /**
+ * This class exists purely as an organizational tool, it functions exactly as a MainAttribute
+ *
  * @author Anthony (Tony) Youssef
- * This class exists purely as an organizational tool, it functions exactly as a Mainattribute
  */
 public class SubAttribute extends MainAttribute
 {

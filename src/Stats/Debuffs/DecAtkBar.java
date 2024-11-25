@@ -1,8 +1,9 @@
 package Stats.Debuffs;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to create all decrease attack bar debuffs
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class DecAtkBar extends Debuff
 {
@@ -11,7 +12,7 @@ public class DecAtkBar extends Debuff
     /**
      * Creates a new DecAtkBar Debuff
      *
-     * @param amountPercent The amount (as a percent) to decrease the attack bar
+     * @param amountPercent The amount (0-100) to decrease the attack bar
      */
     public DecAtkBar(int amountPercent)
     {
@@ -20,6 +21,8 @@ public class DecAtkBar extends Debuff
     }
     
     /**
+     * Gets the amount to decrease the attack bar
+     *
      * @return The amount to decrease the attack bar
      */
     public int getAmount()

@@ -5,15 +5,16 @@ import Monsters.*;
 import Stats.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * The parent class for all Debuffs
+ *
+ * @author Anthony (Tony) Youssef
  */
 
 public class Debuff extends Stat
 {
     public static final int GLANCING_HIT_UP = 0, DEC_ATK = 1, DEC_DEF = 2, DEC_ATK_SPD = 3, BLOCK_BENEFICIAL_EFFECTS = 4, BOMB = 5, PROVOKE = 6, SLEEP = 7;
     public final static int CONTINUOUS_DMG = 8, FREEZE = 9, STUN = 10, UNRECOVERABLE = 11, SILENCE = 12, BRAND = 13, OBLIVION = 14, DEC_ATK_BAR = 15,
-            REMOVE_BENEFICIAL_EFFECT = 16, STRIP = 17, SEAL = 18;
+            REMOVE_BENEFICIAL_EFFECT = 16, STRIP = 17, SEAL = 18, SHORTEN_BUFFS = 19;
     private final boolean goesThroughImmunity;
     int debuffNum;
     private Monster caster = null;
@@ -23,11 +24,12 @@ public class Debuff extends Stat
      *
      * @param debuff              The debuff number
      * @param numTurns            The number of turns to apply
-     * @param goesThroughImmunity True if the debuff ignores immunity, false otherwise
+     * @param goesThroughImmunity 0 if the debuff ignores immunity, 1 otherwise
      */
     public Debuff(int debuff, int numTurns, int goesThroughImmunity)
     {
         super(numTurns);
+        //Make sure the int is valid
         if (goesThroughImmunity != 1 && goesThroughImmunity != 0)
         {
             throw new ConflictingArguments("goesThroughImmunity must be 0 (false) or 1 (true)");
@@ -53,7 +55,7 @@ public class Debuff extends Stat
      */
     public String toString()
     {
-        return numToDebuff(debuffNum) + " (" + getNumTurns() + " turns remaining)";
+        return "%s (%d turns remaining)".formatted(numToDebuff(debuffNum), getNumTurns());
     }
     
     /**
@@ -64,33 +66,35 @@ public class Debuff extends Stat
      */
     public static String numToDebuff(int num)
     {
-        String debuff = "";
-        switch (num)
+        return switch (num)
         {
-            case 0 -> debuff = "Glancing Hit Chance up";
-            case 1 -> debuff = "Dec atk";
-            case 2 -> debuff = "Dec def";
-            case 3 -> debuff = "Dec Atk Spd";
-            case 4 -> debuff = "Block Beneficial Effects";
-            case 5 -> debuff = "Bomb";
-            case 6 -> debuff = "Stats.Provoke";
-            case 7 -> debuff = "Sleep";
-            case 8 -> debuff = "Continuous Dmg";
-            case 9 -> debuff = "Freeze";
-            case 10 -> debuff = "Stun";
-            case 11 -> debuff = "Unrecoverable";
-            case 12 -> debuff = "Silence";
-            case 13 -> debuff = "Brand";
-            case 14 -> debuff = "Oblivion";
-            case 15 -> debuff = "Dec atk bar";
-            case 16 -> debuff = "Remove Beneficial Effect";
-            case 17 -> debuff = "Strip";
-            case 18 -> debuff = "Seal";
-        }
-        return debuff;
+            case 0 -> "Glancing Hit Rate up";
+            case 1 -> "Dec Atk";
+            case 2 -> "Dec Def";
+            case 3 -> "Dec Atk Spd";
+            case 4 -> "Block Beneficial Effects";
+            case 5 -> "Bomb";
+            case 6 -> "Provoke";
+            case 7 -> "Sleep";
+            case 8 -> "Continuous Dmg";
+            case 9 -> "Freeze";
+            case 10 -> "Stun";
+            case 11 -> "Unrecoverable";
+            case 12 -> "Silence";
+            case 13 -> "Brand";
+            case 14 -> "Oblivion";
+            case 15 -> "Dec Atk Bar";
+            case 16 -> "Remove Beneficial Effect";
+            case 17 -> "Strip";
+            case 18 -> "Seal";
+            case 19 -> "Shorten Buff";
+            default -> "";
+        };
     }
     
     /**
+     * Gets the debuff number
+     *
      * @return The debuff number
      */
     public int getDebuffNum()
@@ -110,6 +114,8 @@ public class Debuff extends Stat
     }
     
     /**
+     * Checks if the debuff can be applied through immunity
+     *
      * @return True if the debuff ignores immunity, false otherwise
      */
     public boolean goesThroughImmunity()
@@ -118,7 +124,7 @@ public class Debuff extends Stat
     }
     
     /**
-     * Set the Monster who cast the Debuff
+     * Sets the Monster who cast the Debuff
      *
      * @param caster The Monster who cast the Debuff
      */
@@ -128,6 +134,8 @@ public class Debuff extends Stat
     }
     
     /**
+     * Gets the Monster who cast the Debuff if one has been set
+     *
      * @return The Monster who cast the Debuff if one has been set
      */
     public Monster getCaster()

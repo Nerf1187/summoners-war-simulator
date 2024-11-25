@@ -1,9 +1,9 @@
 package Game;
 
 /**
- * @author W3Schools
- * <p>
  * This class contains all the colors used to print to the console
+ *
+ * @author W3Schools
  */
 
 public class ConsoleColors

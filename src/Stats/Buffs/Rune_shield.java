@@ -1,8 +1,9 @@
 package Stats.Buffs;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to differentiate between rune shields and regular shields
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Rune_shield extends Shield
 {

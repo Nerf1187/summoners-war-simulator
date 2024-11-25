@@ -16,7 +16,7 @@ This file is only needed if you intend to create a new Monster.
 4. Look at the Monster child classes already created for help formatting the constructors.
 
 
-5. Create a nextTurn method that overrides the parent class.
+5. Create a nextTurn() method that overrides the parent class.
    This method should now do anything needed before the actual turn starts then call the super method.
    If the parent returns false then the child method should immediately end, returning false.
    Otherwise, now is when you add the specific things the abilities do, such as conditional debuffs/buffs. At the end of the method, call the afterTurnProtocol() parent 
@@ -24,13 +24,14 @@ This file is only needed if you intend to create a new Monster.
 
 
 6. Create any other methods as needed (ex. Miho has an attacked() and afterHitProtocol() function for her passive).
+   If the Monster creates or uses any effects that are not buffs or debuffs, create a reset() method that handles how to dispose of them when resetting the Monster.
 
 
-7. Go to GUI/CreateRuneFile and follow the instructions to create your rune set(s)
+7. Go to [Runes](src/GUI/Runes.java) and follow the instructions to create your rune set(s)
 
 
-8. Add the Monster's name and element into The Monsters/Monster database, and it will automatically be added to the program
+8. Add the Monster's name and element to the [database](src/Monsters/Monster%20database.csv), and it will automatically be added to the program
 
 
-9. You can use the Game/Main class to make sure your runes are correct and to test your new Monster.
+9. You can use the [Main](src/Game/Main.java) class to make sure your runes are correct and to test your new Monster.
    (You can adjust stats in the class if you want, such as the speed stat if you want them to always go first).

@@ -8,7 +8,9 @@ import Stats.Buffs.*;
 import Stats.Debuffs.*;
 import java.util.*;
 
-//2A
+/**
+ * Dark Martial Cat (2A)
+ */
 public class Miho extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
@@ -16,7 +18,9 @@ public class Miho extends Monster
     private boolean gotCritThisTurn = false;
     private final int critRate;
     
-    
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Miho()
     {
         super("Miho" + count, DARK, 10_050, 560, 801, 119, 15, 50, 15, 0);
@@ -26,7 +30,11 @@ public class Miho extends Monster
         count++;
     }
     
-    
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
     public Miho(String runeFileName)
     {
         this();
@@ -38,20 +46,20 @@ public class Miho extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.STUN, 1, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(50);
         abilities.add(new Attack_Ability("Energy Punch (1)", 1.2 * 4.45, 0.2, 1, "Attacks with a spinning punch and stuns the " +
-                "enemy for 1 turn with a 50% chance and recovers HP by 20% of inflicted damage.", ability1Debuffs, ability1DebuffChances, 0, false,
+                                                                                 "enemy for 1 turn with a 50% chance and recovers HP by 20% of inflicted damage.", ability1Debuffs, ability1DebuffChances, 0, false,
                 false, false));
         
         ArrayList<Debuff> ability2Debuffs = new ArrayList<>();
         ability2Debuffs.add(new DecAtkBar(25));
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Chain Attack(2)", 1.2 * 3.9, 0, 2, "Launches 2 consecutive attacks on an enemy, " +
-                "inflicting damage and decreasing the enemy's Attack Bar by 25% with each attack.", ability2Debuffs, ability2DebuffChances, 3, false,
+                                                                             "inflicting damage and decreasing the enemy's Attack Bar by 25% with each attack.", ability2Debuffs, ability2DebuffChances, 3, false,
                 false, false));
         
         //@Passive:Creation
         abilities.add(new Passive("Eye For An Eye", "Increases your Attack Bar by 30% and counterattacks the attacker with a critical hit when you are " +
-                "attacked " +
-                "with a critical hit. You won't get defeated with critical hit attacks."));
+                                                    "attacked " +
+                                                    "with a critical hit. You won't get defeated with critical hit attacks."));
         
         super.setAbilities(abilities);
     }
@@ -65,6 +73,7 @@ public class Miho extends Monster
         }
         
         super.afterTurnProtocol(target, !Game.canCounter(), true);
+        //Reset crit rate
         setCritRate(critRate);
         return true;
     }
@@ -74,7 +83,8 @@ public class Miho extends Monster
         super.attacked(attacker);
         
         //@Passive
-        if (gotCritThisTurn && !containsDebuff(Debuff.OBLIVION) && Game.canCounter())
+        //Counter if hit by a crit
+        if (gotCritThisTurn && this.passiveCanActivate() && Game.canCounter())
         {
             increaseAtkBarByPercent(40);
             setCritRate(10_000);
@@ -85,8 +95,9 @@ public class Miho extends Monster
     public void targetAfterHitProtocol(Monster attacker)
     {
         //@Passive
+        //Make sure Miho does not die from a crit attack
         gotCritThisTurn = wasCrit() || gotCritThisTurn;
-        if (wasCrit() && !containsDebuff(Debuff.OBLIVION) && getCurrentHp() <= 0)
+        if (wasCrit() && this.passiveCanActivate() && (getCurrentHp() <= 0 || this.isDead()))
         {
             setCurrentHp(1);
             setDead(false);

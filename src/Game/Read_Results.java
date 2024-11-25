@@ -21,12 +21,20 @@ public class Read_Results extends JFrame
      */
     public Read_Results()
     {
+        //Get the results file to read from
         int i = fileChooser.showOpenDialog(null);
         if (i == JFileChooser.APPROVE_OPTION)
         {
             chosenFile = fileChooser.getSelectedFile();
             dispose();
-            readFile();
+            //Read file and view results
+            ArrayList<Team> teams = readFile(chosenFile);
+            if (teams == null)
+            {
+                return;
+            }
+            Auto_Play.postRunOptions(teams);
+            System.exit(0);
         }
         else if (i == JFileChooser.CANCEL_OPTION)
         {
@@ -34,6 +42,7 @@ public class Read_Results extends JFrame
             System.exit(0);
         }
         
+        //General GUI stuff
         add(panel);
         setTitle("Choose file");
         setSize(600, 400);
@@ -42,7 +51,10 @@ public class Read_Results extends JFrame
         setVisible(true);
     }
     
-    public static void main(String[] args)
+    /**
+     * Runs the class.
+     */
+    public void main()
     {
         new Read_Results();
     }
@@ -53,6 +65,7 @@ public class Read_Results extends JFrame
     private void createUIComponents()
     {
         fileChooser = new JFileChooser(new File("src/Game/Results"));
+        //Allow only 1 .csv file to be chosen
         fileChooser.setMultiSelectionEnabled(false);
         fileChooser.setAcceptAllFileFilterUsed(false);
         FileNameExtensionFilter filter = new FileNameExtensionFilter("Only .csv files", "csv");
@@ -61,72 +74,109 @@ public class Read_Results extends JFrame
     
     /**
      * Checks that the selected file is a valid file and reads the file.
+     * @param chosenFile The to read from
+     * @return A list of teams from the file
      */
-    private void readFile()
+    public static ArrayList<Team> readFile(File chosenFile)
     {
         System.out.println("Checking file...");
+        if (chosenFile == null)
+        {
+            System.out.println("Error, please choose a file");
+            return null;
+        }
         if (!chosenFile.canRead())
         {
             System.err.println("Error, can not read file");
-            System.exit(1);
+            return null;
         }
         
-        //Get expected path of "Results" directory
-        try
-        {
-            ClassLoader loader = Read_Results.class.getClassLoader();
-            String classPath = loader.getResource("Game/Read_Results.class").getPath().replaceAll("%20", " ");
-            ArrayList<String> temp = new ArrayList<>(Arrays.asList(classPath.split("/")));
-            temp.removeLast();
-            String expectedPathName = String.join("\\", temp).replaceAll("\\\\out\\\\production\\\\Summoners War Battle Simulator", "\\\\src").substring(1) + "\\Results\\";
-            
-            if (!chosenFile.getAbsolutePath().contains(expectedPathName))
-            {
-                System.out.println("Done\n");
-                System.err.println("Error, please choose a file within the result directory");
-                throw new RuntimeException();
-            }
-        }
-        catch (Exception e)
-        {
-            System.exit(1);
-        }
         System.out.println("Done\n");
         System.out.println("Reading file...");
+        //Start reading the chosen file
+        int lineNum = 1;
+        int lastI = -1;
+        String line = "";
         try
         {
             Scanner read = new Scanner(chosenFile);
+            
+            //Read the library on the first line
             HashMap<Integer, String> library = new HashMap<>();
-            for (String s : read.nextLine().split(","))
+            line = read.nextLine();
+            for (String s : line.split(","))
             {
+                lastI++;
                 String name = s.split(":")[0];
                 int key = Integer.parseInt(s.split(":")[1]);
                 library.put(key, name);
             }
             ArrayList<Team> teams = new ArrayList<>();
+            
+            //Create teams
             while (read.hasNextLine())
             {
+                lineNum++;
                 ArrayList<Monster> teamMonsters = new ArrayList<>();
-                String line = read.nextLine();
+                line = read.nextLine();
                 String[] list = line.split(",");
+                
+                if (list.length == 2)
+                {
+                    continue;
+                }
+                
+                //Add monsters to team
                 for (int i = 0; i < 4; i++)
                 {
-                    teamMonsters.add(Monster.createNewMonFromName(library.get(Integer.parseInt(list[i]))));
+                    //TODO Add option to save time or memory
+                    lastI = i;
+                    String name = library.get(Integer.parseInt(list[i]));
+                    if (name == null)
+                    {
+                        System.err.println("Error reading file, Monster not found on line " + lineNum);
+                        int lineLength = line.substring(0, line.indexOf(list[i])).length();
+                        System.err.println(line);
+                        String errorMsg = "";
+                        for (int j = 0; j < lineLength; j++)
+                        {
+                            errorMsg += " ";
+                        }
+                        System.err.println(errorMsg + "^");
+                        System.exit(1);
+                    }
+                    Monster m = Monster.createNewMonFromName(name);
+                    teamMonsters.add(m);
                 }
                 teams.add(new Team("Team", teamMonsters));
+                //Set number of wins and losses
                 teams.getLast().setWins(Integer.parseInt(list[4]));
                 teams.getLast().setLosses(Integer.parseInt(list[5]));
             }
             
             System.out.println("Done\n");
-            Auto_Play.postRunOptions(teams);
-            System.exit(0);
+            return teams;
+        }
+        catch (NumberFormatException e)
+        {
+            System.err.println("Error reading file, unexpected character on line " + lineNum);
+            System.err.println(line);
+            String[] list = line.split(",");
+            String errorMsg = "";
+            int lineLength = line.substring(0, line.indexOf(list[lastI])).length() + list[lastI].split(":")[0].length() + 1;
+            for (int i = 0; i < lineLength; i++)
+            {
+                errorMsg += " ";
+            }
+            System.err.println(errorMsg + "^");
+            return null;
         }
         catch (Exception e)
         {
+            //Could not read the file for some reason
             System.out.println("Done");
             System.err.println("Error reading file. Please check that the selected file is a valid file created by Game/Auto_Play");
-            System.exit(1);
+            return null;
         }
     }
 }

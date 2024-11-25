@@ -23,6 +23,7 @@ public class DeleteRuneFile extends JFrame
      */
     public DeleteRuneFile(String fileName)
     {
+        //General GUI stuff
         add(panel);
         setTitle("Confirm");
         setSize(450, 200);
@@ -30,8 +31,10 @@ public class DeleteRuneFile extends JFrame
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setVisible(true);
         
+        //Confirm action
         yesButton.addActionListener(_ -> {
-            if (new File("src/Runes/Monster_Runes/" + fileName).delete())
+            //Try to delete the file and show a message displaying the result
+            if (new File("src/Runes/Monster_Runes/%s".formatted(fileName)).delete())
             {
                 new Message("Success", false);
                 dispose();
@@ -42,27 +45,25 @@ public class DeleteRuneFile extends JFrame
                 dispose();
             }
         });
+        
+        //Cancel action
         noButton.addActionListener(_ -> {
+            //Show message that the action was canceled
             new Message("Aborted", false);
             dispose();
         });
         
+        //Add key listeners
         panel.addKeyListener(new KeyAdapter()
         {
             public void keyPressed(KeyEvent e)
             {
                 switch (e.getKeyChar())
                 {
-                    case 'y':
-                    {
-                        yesButton.doClick();
-                        break;
-                    }
-                    case 'n':
-                    {
-                        noButton.doClick();
-                        break;
-                    }
+                    //Click confirm
+                    case 'y' -> yesButton.doClick();
+                    //Click cancel
+                    case 'n' -> noButton.doClick();
                 }
             }
         });

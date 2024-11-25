@@ -1,8 +1,9 @@
 package Runes;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class contains the information for rune attributes
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class MainAttribute
 {
@@ -21,6 +22,8 @@ public class MainAttribute
     }
     
     /**
+     * Gets the attribute's amount
+     *
      * @return The attribute's amount
      */
     public int getAmount()
@@ -29,6 +32,8 @@ public class MainAttribute
     }
     
     /**
+     * Gets the attribute number
+     *
      * @return The attribute number
      */
     public int getNum()
@@ -39,22 +44,23 @@ public class MainAttribute
     /**
      * Formats the attribute into a readable String
      *
-     * @return the formatted String
+     * @return The formatted String
      */
     public String toString()
     {
-        String s = "";
-        switch (num)
+        //Get the affected stat
+        String s = switch (num)
         {
-            case 1, 2 -> s += "Attack ";
-            case 3, 4 -> s += "Defense ";
-            case 5, 6 -> s += "HP ";
-            case 7 -> s += "Speed ";
-            case 8 -> s += "Crit Rate ";
-            case 9 -> s += "Crit Damage ";
-            case 10 -> s += "Resistance ";
-            case 11 -> s += "Accuracy ";
-        }
+            case 1, 2 -> "Attack ";
+            case 3, 4 -> "Defense ";
+            case 5, 6 -> "HP ";
+            case 7 -> "Speed ";
+            case 8 -> "Crit Rate ";
+            case 9 -> "Crit Damage ";
+            case 10 -> "Resistance ";
+            case 11 -> "Accuracy ";
+            default -> "";
+        };
         
         s += amount;
         if ((num % 2 == 0 && num <= 6) || num >= 8)

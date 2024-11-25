@@ -32,7 +32,7 @@ public class Passive extends Ability
     /**
      * Formats the Passive ability object into a readable String
      *
-     * @return the formatted String
+     * @return The formatted String
      */
     public String toString()
     {

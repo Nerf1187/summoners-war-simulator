@@ -3,12 +3,12 @@ package Stats.Buffs;
 import Stats.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * The parent class for all buffs
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Buff extends Stat
 {
-    //Buff numbers
     public static final int ATK_UP = 0, DEF_UP = 1, CRIT_RATE_UP = 2, CRIT_RESIST_UP = 3, ATK_SPD_UP = 4, RECOVERY = 5, COUNTER = 6, IMMUNITY = 7,
             INVINCIBILITY = 8, REFLECT = 9, SHIELD = 10, ENDURE = 11, DEFEND = 12, SOUL_PROTECTION = 13, RUNE_SHIELD = 14, THREAT = 15, INCREASE_ATK_BAR = 16, CLEANSE = 17,
             BUFF_STEAL = 18, VAMPIRE = 19, REMOVE_DEBUFF = 20, EXTEND_BUFF = 21, SHORTEN_DEBUFF = 22;
@@ -30,7 +30,7 @@ public class Buff extends Stat
     /**
      * Creates a new Buff that applies for one turn
      *
-     * @param buff the Buff number
+     * @param buff The Buff number
      */
     public Buff(int buff)
     {
@@ -44,7 +44,7 @@ public class Buff extends Stat
      */
     public String toString()
     {
-        return numToBuff(buffNum) + " (" + getNumTurns() + " turns remaining)";
+        return "%s (%d turns remaining)".formatted(numToBuff(buffNum), getNumTurns());
     }
     
     /**
@@ -83,6 +83,8 @@ public class Buff extends Stat
     }
     
     /**
+     * Gets the Buff's number
+     *
      * @return The Buff's number
      */
     public int getBuffNum()

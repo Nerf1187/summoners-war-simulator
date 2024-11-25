@@ -11,13 +11,7 @@ import java.awt.event.*;
 
 public class GetNameAndNum extends JFrame
 {
-    /**
-     * Textbox for Monster name
-     */
-    public JTextField monNameTxt;
-    /**
-     * Textbox for rune set number
-     */
+    public JTextField monNameText;
     public JTextField runeSetNumText;
     private JLabel monNameLabel;
     private JLabel runeSetNumLabel;
@@ -29,6 +23,7 @@ public class GetNameAndNum extends JFrame
      */
     public GetNameAndNum()
     {
+        //General GUI stuff
         add(infoFrame);
         setTitle("Enter Monster name and rune set number");
         setSize(800, 400);
@@ -36,12 +31,16 @@ public class GetNameAndNum extends JFrame
         setDefaultCloseOperation(HIDE_ON_CLOSE);
         setVisible(true);
         
-        submitButton.addActionListener(e -> {
-            if (!monNameTxt.getText().isEmpty() && !runeSetNumText.getText().isEmpty())
+        //Submit data
+        submitButton.addActionListener(_ -> {
+            //Make sure input fields have been filled
+            if (!monNameText.getText().isEmpty() && !runeSetNumText.getText().isEmpty())
             {
                 try
                 {
+                    //Make sure the rune number is an integer
                     Integer.parseInt(runeSetNumText.getText());
+                    //Remove the current window
                     dispose();
                 }
                 catch (Exception ignored)
@@ -50,6 +49,7 @@ public class GetNameAndNum extends JFrame
             }
         });
         
+        //Allow the user to press the Enter button to submit the form
         runeSetNumText.addKeyListener(new KeyAdapter()
         {
             public void keyPressed(KeyEvent e)

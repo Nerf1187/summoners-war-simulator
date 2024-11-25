@@ -4,18 +4,21 @@ import Abilities.*;
 import Monsters.*;
 import Runes.Monster_Runes.*;
 import Stats.Buffs.*;
-import Stats.Debuffs.*;
 import Stats.*;
 import java.util.*;
 
-
+/**
+ * Fire Neostone Fighter
+ */
 public class Trevor extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
     
     private static int count = 1;
     
-    
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Trevor()
     {
         super("Trevor" + count, FIRE, 8_895, 659, 725, 107, 15, 50, 15, 0);
@@ -24,11 +27,15 @@ public class Trevor extends Monster
         count++;
     }
     
-    
-    public Trevor(String fileName)
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
+    public Trevor(String runeFileName)
     {
         this();
-        super.setRunes(MonsterRunes.getRunesFromFile(fileName, this));
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
     }
     
     private void setAbilities()
@@ -37,15 +44,15 @@ public class Trevor extends Monster
         ArrayList<Buff> ability1Buffs = abilityBuffs(Buff.ATK_UP, 2);
         ArrayList<Integer> ability1BuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Combat Knife (1)", 1.35 * 1.9, 0, 2, "Swings a dagger to attack the enemy 2 times and " +
-                "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, 0, false));
+                                                                               "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0));
         
         abilities.add(new Attack_Ability("Relentless Strike (2)", 1.3 * 5.7, 0.3, 1, "Increases the Critical Rate for 2 turns " +
-                "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage.", 3, false,
+                                                                                     "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage.", 3, false,
                 false, false));
         
         //@Passive:Creation
         abilities.add(new Passive("Brawler's Will", "As your HP decreases, the damage inflicted to the enemy will increase and the damage you receive " +
-                "will decrease. The damage you receive will decrease by 20% additionally if you are under harmful effects."));
+                                                    "will decrease. The damage you receive will decrease by 20% additionally if you are under harmful effects."));
         
         super.setAbilities(abilities);
         
@@ -54,6 +61,7 @@ public class Trevor extends Monster
     
     public boolean nextTurn(Monster target, int abilityNum)
     {
+        //Apply crit rate before turn
         if (abilityNum == 2 && abilities.get(1).getTurnsRemaining() == 0)
         {
             this.addAppliedBuff(Buff.CRIT_RATE_UP, 2, this);
@@ -70,29 +78,26 @@ public class Trevor extends Monster
     
     public double dmgIncProtocol(double num)
     {
-        if (containsDebuff(Debuff.OBLIVION))
+        if (!this.passiveCanActivate())
         {
             return num;
         }
         
         //@Passive
+        //Increase damage based on current HP
         double ratio = (1.0 * this.getCurrentHp() / this.getMaxHp());
         return num + (num * ((1 - ratio) * 2));
     }
     
     public double dmgReductionProtocol(double num, boolean self)
     {
-        if (!self)
-        {
-            return num;
-        }
-        
-        if (this.containsDebuff(Debuff.OBLIVION))
+        if (!self || !this.passiveCanActivate())
         {
             return num;
         }
         
         //@Passive
+        //Reduce damage based on current HP and whether Trevor has any debuffs
         double ratio = (1.0 * this.getCurrentHp() / this.getMaxHp());
         num -= (num * ((1 - ratio) * 0.75));
         

@@ -1,8 +1,9 @@
 package Stats.Buffs;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class is used to create all Threats
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Threat extends Buff
 {
@@ -34,7 +35,6 @@ public class Threat extends Buff
     public void decreaseTurn()
     {
     }
-    
     
     /**
      * Formats the Threat into a readable String

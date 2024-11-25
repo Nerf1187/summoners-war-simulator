@@ -6,13 +6,13 @@ import Stats.Debuffs.*;
 import java.util.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * The parent class for all Buffs and Debuffs
+ *
+ * @author Anthony (Tony) Youssef
  */
-
 public class Stat
 {
-    public static int NULL = -1, BERSERK = 0, TOTEM = 1, MAGIC_SPHERE = 2, MACARON_SHIELD = 3;
+    public static int NULL = -1, BERSERK = 0, TOTEM = 1, MAGIC_SPHERE = 2, MACARON_SHIELD = 3, THUNDERER = 4;
     //Rune sub-stats
     public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC = 11;
     
@@ -41,6 +41,8 @@ public class Stat
     }
     
     /**
+     * Gets the Stats number
+     *
      * @return The Stats number
      */
     public int getStatNum()
@@ -67,6 +69,8 @@ public class Stat
     }
     
     /**
+     * Gets the number of turns remaining for the Stat
+     *
      * @return The number of turns remaining for the Stat
      */
     public int getNumTurns()
@@ -92,7 +96,7 @@ public class Stat
      */
     public boolean equals(Stat stat)
     {
-        return (stat.otherStatNum == otherStatNum) && (stat.otherStatNum != -1);
+        return (stat.otherStatNum == this.otherStatNum) && (stat.otherStatNum != -1);
     }
     
     /**
@@ -102,18 +106,20 @@ public class Stat
      */
     public String toString()
     {
-        String s = "";
-        switch (otherStatNum)
+        return switch (otherStatNum)
         {
-            case 0 -> s = "Berserk (" + getNumTurns() + " turns remaining)";
-            case 1 -> s = "Totems (" + numOfSpecialEffects + ")";
-            case 2 -> s = "Magic Sphere (" + numOfSpecialEffects + ")";
-            case 3 -> s = "Macaron Shield";
-        }
-        return s;
+            case 0 -> "Berserk (" + getNumTurns() + " turns remaining)";
+            case 1 -> "Totems (" + numOfSpecialEffects + ")";
+            case 2 -> "Magic Sphere (" + numOfSpecialEffects + ")";
+            case 3 -> "Macaron Shield";
+            case 4 -> "Thunderer (" + getNumTurns() + " turns remaining)";
+            default -> "";
+        };
     }
     
     /**
+     * Gets the number of special effects this Stat has
+     *
      * @return The number of special effects this Stat has
      */
     public int getNumOfSpecialEffects()
@@ -138,8 +144,9 @@ public class Stat
     {
         try
         {
-            System.out.printf("%sBuffs:%s%s%sDebuffs:%s%n%n", ConsoleColors.BLUE, ConsoleColors.RESET, statSpacing("Buffs:".length()), ConsoleColors.RED
-                    , ConsoleColors.RESET);
+            //Print the beginning message
+            System.out.printf("%sBuffs:%s%s%sDebuffs:%s%n%n", ConsoleColors.BLUE, ConsoleColors.RESET, statSpacing("Buffs:".length()), ConsoleColors.RED, ConsoleColors.RESET);
+            //Read from the buff and debuff keys
             Scanner readBuffs = new Scanner(Objects.requireNonNull(Buff.class.getResourceAsStream("Buff key.csv")));
             Scanner readDebuffs = new Scanner(Objects.requireNonNull(Debuff.class.getResourceAsStream("Debuff key.csv")));
             String buffName;
@@ -148,7 +155,7 @@ public class Stat
             String debuffDescription;
             while (readBuffs.hasNextLine() || readDebuffs.hasNextLine())
             {
-                //Get next buff to print
+                //Get the next buff to print
                 String[] buff = readBuffs.nextLine().split(",");
                 for (int i = 0; i < buff.length; i++)
                 {
@@ -157,13 +164,13 @@ public class Stat
                 
                 try
                 {
-                    //Get next debuff to print
+                    //Get the next debuff to print
                     String[] debuff = readDebuffs.nextLine().split(",");
                     for (int i = 0; i < debuff.length; i++)
                     {
                         debuff[i] = debuff[i].replaceAll(";", ",");
                     }
-                    //Get each part of the buff and debuff
+                    //Get the name and description of the buff and debuff
                     buffName = buff[1];
                     int buffNameHolder = buffName.length();
                     buffDescription = buff[3];
@@ -177,36 +184,38 @@ public class Stat
                         throw new NoSuchElementException();
                     }
                     
-                    //Print part of the buff description on the next line if it is too long
+                    //Print part of the buff description on the next line if it is too long (More than 95 characters)
                     if (buffDescription.length() > 95)
                     {
                         String s = "";
                         int count = 0;
                         boolean breakLine = false;
-                        for (int j = 0; j < buffDescription.length(); j++)
+                        for (int i = 0; i < buffDescription.length(); i++)
                         {
-                            if (j != 0 && j % 70 == 0)
+                            //New line every 70ish characters
+                            if (i != 0 && i % 70 == 0)
                             {
                                 breakLine = true;
                             }
-                            if (breakLine && buffDescription.charAt(j) == ' ')
+                            //Break the line only on whitespace
+                            if (breakLine && buffDescription.charAt(i) == ' ')
                             {
-                                for (int k = 0; k < buffName.length() + 1; k++)
+                                //Indent the next line
+                                for (int j = 0; j < buffName.length() + 1; j++)
                                 {
                                     s += " ";
                                 }
-                                
                                 
                                 breakLine = false;
                                 lastLineBreak = count;
                             }
                             count++;
                         }
-                        System.out.printf("%s%s:%s %s%s%s%s:%s %s%s\n%s%s%s\n\n", ConsoleColors.BLUE, buffName, ConsoleColors.CYAN,
-                                buffDescription.substring(0, lastLineBreak), ConsoleColors.RED,
-                                statSpacing(buffName.length() + 2 + buffDescription.substring(0, lastLineBreak).length()), debuffName,
-                                ConsoleColors.YELLOW, debuffDescription, ConsoleColors.CYAN, s, buffDescription.substring(lastLineBreak),
-                                ConsoleColors.RESET);
+                        //Print each buff and debuff description. (1 each per line)
+                        //Format:
+                        //<buff name>: <buff description>    <debuff name>: <debuff description>
+                        System.out.printf("%s%s:%s %s%s%s%s:%s %s%s\n%s%s%s\n\n", ConsoleColors.BLUE, buffName, ConsoleColors.CYAN, buffDescription.substring(0, lastLineBreak), ConsoleColors.RED,
+                                statSpacing(buffName.length() + 2 + buffDescription.substring(0, lastLineBreak).length()), debuffName, ConsoleColors.YELLOW, debuffDescription, ConsoleColors.CYAN, s, buffDescription.substring(lastLineBreak), ConsoleColors.RESET);
                     }
                     //Print the stat descriptions normally
                     else
@@ -220,6 +229,7 @@ public class Stat
                 {
                     buffName = buff[1];
                     buffDescription = buff[3];
+                    //Don't print the stat if it has no description
                     if (!buffDescription.equals("null"))
                     {
                         System.out.printf("%s%s:%s %s%s%n%n", ConsoleColors.BLUE, buffName, ConsoleColors.CYAN, buffDescription, ConsoleColors.RESET);
@@ -227,7 +237,7 @@ public class Stat
                 }
             }
         }
-        catch (Throwable e)
+        catch (Exception e)
         {
             throw new RuntimeException(e);
         }
@@ -236,13 +246,14 @@ public class Stat
     /**
      * Formats the spacing needed to print the stats correctly
      *
-     * @param length the length of the String already printed
-     * @return the correct number of spaces to print
+     * @param length The length of the String already printed
+     * @return The correct number of spaces to print
      */
     private static String statSpacing(int length)
     {
         String spaces = "";
         
+        //The number of spaces is equal to 100 minus the length of the String
         for (int i = 0; i < 100 - length; i++)
         {
             spaces += " ";

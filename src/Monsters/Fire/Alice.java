@@ -9,6 +9,9 @@ import Stats.Debuffs.*;
 import Stats.*;
 import java.util.*;
 
+/**
+ * Fire Macaron Guard
+ */
 public class Alice extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
@@ -17,6 +20,9 @@ public class Alice extends Monster
     private int currentSpd;
     private boolean dmgReductionActive = false;
     
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Alice()
     {
         super("Alice" + count, FIRE, 9_555, 900, 604, 101, 15, 50, 40, 0);
@@ -27,6 +33,11 @@ public class Alice extends Monster
         count++;
     }
     
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
     public Alice(String runeFileName)
     {
         this();
@@ -49,8 +60,8 @@ public class Alice extends Monster
         ArrayList<Buff> ability3Buffs = abilityBuffs(Buff.DEF_UP, 1);
         ArrayList<Integer> ability3BuffChances = abilityChances(100);
         abilities.add(new Ability("Macaron Shield (3)", 0, 0, 1,
-                "Decreases the damage that your allies take by 200% of your Defense until the next turn starts. You will gain immunity to inability effects and " +
-                        "have your Attack Speed decreased by 30%. In addition, increases the Defense of all allies for 1 turn.", ability3Buffs, ability3BuffChances, 3, false, false, false, true, false, false, 0));
+                "Increases the Defense of all allies for 1 turn and decreases the damage that your allies take by 200% of your Defense until the next turn starts. You will gain immunity to inability effects and have your Attack Speed at 100. you " +
+                "are not affected by the effects that change Attack Speed during this state.", ability3Buffs, ability3BuffChances, 3, false, false, false, true, false, false, 0));
         
         super.setAbilities(abilities);
     }
@@ -62,44 +73,34 @@ public class Alice extends Monster
         {
             return false;
         }
+        //Remove damage reduction
         setDmgReductionActive(false);
-        for (Monster mon : game.getNextMonsTeam().getMonsters())
-        {
-            mon.removeOtherStat(Stat.MACARON_SHIELD);
-        }
+        setCurrentSpd(maxSpd);
+        this.removeOtherStat(Stat.MACARON_SHIELD);
         
+        //Reset speed
         setCurrentSpd(getMaxSpd());
+        
         switch (abilityNum)
         {
-            case 2:
+            case 2 ->
             {
-                int minHP = -1;
-                int minIndex = -1;
-                
+                //Apply Defend to the lowest HP ally
                 Team next = game.getNextMonsTeam();
-                for (int i = 0; i < next.size(); i++)
-                {
-                    Monster m = next.get(i);
-                    if (m.getCurrentHp() < minHP)
-                    {
-                        minHP = m.getCurrentHp();
-                        minIndex = i;
-                    }
-                }
-                Monster m = next.get(minIndex);
+                Monster m = next.getMonsterWithLowestHpRatio();
                 m.addAppliedBuff(Buff.DEFEND, 3, this);
-                break;
             }
-            case 3:
+            case 3 ->
             {
+                //Activate damage reduction
                 setDmgReductionActive(true);
+                //Change speed
                 setCurrentSpd(100);
                 
-                applyToTeam(game.getNextMonsTeam(), m -> {
-                    Stat s = new Stat(Integer.MAX_VALUE);
-                    s.setStatNum(Stat.MACARON_SHIELD);
-                    m.addOtherStat(s);
-                });
+                //Add Macaron shield to other effects
+                Stat s = new Stat(Integer.MAX_VALUE);
+                s.setStatNum(Stat.MACARON_SHIELD);
+                this.addOtherStat(s);
             }
         }
         afterTurnProtocol(target, abilityNum != 3);
@@ -108,6 +109,7 @@ public class Alice extends Monster
     
     /**
      * Checks if Macaron Shield is active
+     *
      * @return True if Macaron Shield is active, false otherwise
      */
     public boolean dmgReductionIsActive()
@@ -117,6 +119,7 @@ public class Alice extends Monster
     
     /**
      * Sets the Macaron Shield status
+     *
      * @param dmgReductionActive The new status of Macaron Shield
      */
     public void setDmgReductionActive(boolean dmgReductionActive)
@@ -126,6 +129,7 @@ public class Alice extends Monster
     
     /**
      * Sets the current speed of the Monster
+     *
      * @param currentSpd The new current speed
      */
     public void setCurrentSpd(int currentSpd)
@@ -135,14 +139,16 @@ public class Alice extends Monster
     
     public void increaseAtkBar()
     {
+        //Use current speed instead of parent speed
         if (!this.isDead())
         {
-            increaseAtkBar((currentSpd + extraSpd - lessAtkSpd) * 0.2);
+            increaseAtkBar(currentSpd * 0.07);
         }
     }
     
     /**
      * Gets the max speed for the Monster
+     *
      * @return The max speed for the Monster
      */
     public int getMaxSpd()
@@ -152,11 +158,12 @@ public class Alice extends Monster
     
     public double dmgReductionProtocol(double dmg, boolean self)
     {
+        //Reduce damage if Macaron shield is active
         if (dmgReductionIsActive())
         {
             if (isPrint())
             {
-                System.out.println(ConsoleColors.GREEN + "Macaron Shield" + ConsoleColors.RESET);
+                System.out.printf("%sMacaron Shield%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
             }
             return dmg / (getDef() * 2);
         }
@@ -166,8 +173,50 @@ public class Alice extends Monster
     public void afterTurnProtocol(Object o, boolean attack)
     {
         super.afterTurnProtocol(o, attack);
-        removeDebuff(Debuff.STUN);
-        removeDebuff(Debuff.FREEZE);
-        removeDebuff(Debuff.SLEEP);
+        //Remove stun effects if Macaron shield is active
+        if (dmgReductionIsActive())
+        {
+            removeDebuff(Debuff.STUN);
+            removeDebuff(Debuff.FREEZE);
+            removeDebuff(Debuff.SLEEP);
+        }
+    }
+    
+    public void reset()
+    {
+        //Remove Macaron shield when resetting
+        dmgReductionActive = false;
+        this.removeOtherStat(Stat.MACARON_SHIELD);
+        super.reset();
+    }
+    
+    public void kill()
+    {
+        super.kill();
+        if (this.isDead())
+        {
+            dmgReductionActive = false;
+            this.removeOtherStat(Stat.MACARON_SHIELD);
+        }
+    }
+    
+    public Monster copy()
+    {
+        Alice save = (Alice) super.copy();
+        save.dmgReductionActive = this.dmgReductionActive;
+        save.currentSpd = this.currentSpd;
+        return save;
+    }
+    
+    public void paste(Monster save)
+    {
+        if (!(save instanceof Alice))
+        {
+            return;
+        }
+        
+        super.paste(save);
+        this.dmgReductionActive = ((Alice) save).dmgReductionActive;
+        this.currentSpd = ((Alice) save).currentSpd;
     }
 }

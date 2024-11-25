@@ -15,20 +15,20 @@ public class Attack_Ability extends Ability
     /**
      * Constructs a new Attack Ability.
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param hitsTeam            whether this ability targets everyone on the enemy team
-     * @throws BadArgumentLength if debuffs and debuffChances or buffs and buffChances are different lengths
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
+     * @throws BadArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense,
@@ -41,18 +41,18 @@ public class Attack_Ability extends Ability
     /**
      * Constructs a new Attack Ability with no buffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param hitsTeam            whether this ability targets everyone on the enemy team
-     * @throws BadArgumentLength if debuffs and debuffChances are different lengths
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
+     * @throws BadArgumentLength If debuffs and debuffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
@@ -64,22 +64,22 @@ public class Attack_Ability extends Ability
     /**
      * Constructs a new Attack Ability with no debuffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param ignore              an int to distinguish this constructor from another
-     * @param hitsTeam            whether this ability targets everyone on the enemy team
-     * @throws BadArgumentLength if buffs and buffChances are different lengths
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
+     * @param ignore              An int to distinguish this constructor from another
+     * @throws BadArgumentLength If buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
-            ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, int ignore, boolean hitsTeam)
+            ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam, int ignore)
     {
         super(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), buffs, buffChances, cooldown, true,
                 false, ignoresDefense, false, ignoresDmgReduction, hitsTeam);
@@ -88,23 +88,22 @@ public class Attack_Ability extends Ability
     /**
      * Constructs a new Attack Ability
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param hitsTeam            whether this ability targets everyone on the enemy team
-     * @param ignore              an int to distinguish this constructor from another
-     * @throws BadArgumentLength if debuffs and debuffChances or buffs and buffChances are different lengths
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
+     * @param ignore              An int to distinguish this constructor from another
+     * @throws BadArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
-    //Reverse buffs and debuffs in header
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense,
             boolean ignoresDmgReduction, boolean hitsTeam, int ignore)
@@ -116,17 +115,16 @@ public class Attack_Ability extends Ability
     /**
      * Constructs a new Attack Ability with no buffs or debuffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param cooldown            the cooldown of the ability
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param hitsTeam            whether this ability targets everyone on the enemy team
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
      */
-    //No buffs or debuffs
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, int cooldown,
             boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
     {

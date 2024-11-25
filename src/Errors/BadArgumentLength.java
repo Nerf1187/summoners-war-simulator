@@ -8,7 +8,7 @@ public class BadArgumentLength extends RuntimeException
     /**
      * Creates a new error
      *
-     * @param message the message to print when thrown
+     * @param message The message to print when thrown
      */
     public BadArgumentLength(String message)
     {

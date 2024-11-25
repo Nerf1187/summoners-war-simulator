@@ -4,6 +4,7 @@ import Errors.*;
 import Game.*;
 import Stats.Buffs.*;
 import Stats.Debuffs.*;
+import Stats.*;
 import java.util.*;
 
 /**
@@ -17,7 +18,7 @@ public class Ability
     private double dmg;
     private final double healingPercent;
     private final int maxCooldown, numOfActivations;
-    private int turnsRemaining = 0;
+    private int turnsRemaining = 0, numOfBeneficialEffectsToRemoveOverride = -1;
     protected String description;
     protected final String name;
     private final ArrayList<Debuff> debuffs;
@@ -30,29 +31,30 @@ public class Ability
     /**
      * Constructs a new Ability
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param targetsEnemy        whether the ability targets the enemy
-     * @param isPassive           whether this ability is a passive
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param targetsSelf         whether this ability targets self
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param targetsEnemy        Whether the ability targets the enemy
+     * @param isPassive           Whether this ability is a passive
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param targetsSelf         Whether this ability targets self
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
-     * @throws ConflictingArguments if targetsEnemy and targetsSelf are both true
-     * @throws BadArgumentLength    if debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws ConflictingArguments If targetsEnemy and targetsSelf are both true
+     * @throws BadArgumentLength    If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy,
             boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, boolean targetsAllTeam)
     {
+        //Check arguments are valid
         if (targetsEnemy && targetsSelf)
         {
             throw new ConflictingArguments(name + " can not target enemy and self");
@@ -66,6 +68,7 @@ public class Ability
             throw new BadArgumentLength("Buff size and buffs chance size not the same");
         }
         
+        //Set values
         this.dmg = multiplier;
         this.healingPercent = healingPercent;
         this.description = description;
@@ -98,29 +101,30 @@ public class Ability
         this.targetsSelf = targetsSelf;
         this.numOfActivations = numOfActivations;
         this.targetsAllTeam = targetsAllTeam;
+        //Set description
         descriptionWithLineBreaks();
     }
     
     /**
      * Constructs a new Ability with no debuffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param targetsEnemy        whether the ability targets the enemy
-     * @param isPassive           whether this ability is a passive
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param targetsEnemy        Whether the ability targets the enemy
+     * @param isPassive           Whether this ability is a passive
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param targetsSelf         whether this ability targets self
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param ignore              an int to distinguish this constructor from another
-     * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    if buffs and buffChances are different lengths
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param targetsSelf         Whether this ability targets self
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param ignore              An int to distinguish this constructor from another
+     * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
+     * @throws BadArgumentLength    If buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
@@ -133,22 +137,22 @@ public class Ability
     /**
      * Constructs a new Ability with no buffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param targetsEnemy        whether the ability targets the enemy
-     * @param isPassive           whether this ability is a passive
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param targetsSelf         whether this ability targets self
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param targetsEnemy        Whether the ability targets the enemy
+     * @param isPassive           Whether this ability is a passive
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param targetsSelf         Whether this ability targets self
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
-     * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    if debuffs and debuffChances are different lengths
+     * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
+     * @throws BadArgumentLength    If debuffs and debuffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
@@ -161,25 +165,25 @@ public class Ability
     /**
      * Constructs a new Ability
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param buffs               the buffs to apply to self when called
-     * @param buffChances         the chance that each buff will apply
-     * @param debuffs             the debuffs to apply to the target when called
-     * @param debuffChances       the chance that each debuff will apply
-     * @param cooldown            the cooldown of the ability
-     * @param targetsEnemy        whether the ability targets the enemy
-     * @param isPassive           whether this ability is a passive
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param buffs               The buffs to apply to self when called
+     * @param buffChances         The chance that each buff will apply
+     * @param debuffs             The debuffs to apply to the target when called
+     * @param debuffChances       The chance that each debuff will apply
+     * @param cooldown            The cooldown of the ability
+     * @param targetsEnemy        Whether the ability targets the enemy
+     * @param isPassive           Whether this ability is a passive
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param targetsSelf         whether this ability targets self
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
-     * @param ignore              an int to distinguish this constructor from another
-     * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    if debuffs and debuffChances or buffs and buffChances are not the same length
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param targetsSelf         Whether this ability targets self
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param ignore              An int to distinguish this constructor from another
+     * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
+     * @throws BadArgumentLength    if debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy,
@@ -192,19 +196,19 @@ public class Ability
     /**
      * Constructs a new Ability with no buffs or debuffs
      *
-     * @param name                the name of the monster
-     * @param multiplier          the attack multiplier (ex. 2.5)
-     * @param healingPercent      the percent of the max hp to heal (ex. 0.25)
-     * @param numOfActivations    the amount of times the ability activates when called
-     * @param description         the description to print
-     * @param cooldown            the cooldown of the ability
-     * @param targetsEnemy        whether the ability targets the enemy
-     * @param isPassive           whether this ability is a passive
-     * @param ignoresDefense      whether this ability ignores the targets defense
-     * @param targetsSelf         whether this ability targets self
-     * @param ignoresDmgReduction whether this ability ignores damage reduction effects
+     * @param name                The name of the monster
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param description         The description to print
+     * @param cooldown            The cooldown of the ability
+     * @param targetsEnemy        Whether the ability targets the enemy
+     * @param isPassive           Whether this ability is a passive
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param targetsSelf         Whether this ability targets self
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
-     * @throws ConflictingArguments if targetsEnemy and targetsSelf are true
+     * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, int cooldown, boolean targetsEnemy,
             boolean isPassive, boolean ignoresDefense, boolean targetsSelf, boolean ignoresDmgReduction, boolean targetsAllTeam)
@@ -226,26 +230,33 @@ public class Ability
      */
     private void descriptionWithLineBreaks()
     {
-        String s = "";
+        int offset = 0;
+        StringBuilder sb = new StringBuilder(description);
         boolean breakLine = false;
-        for (int i = 0; i < description.length(); i++)
+        //Create line breaks at the closest space character after 80 characters.
+        for (int i = 80; i < description.length(); i++)
         {
-            s += description.charAt(i);
-            if (i != 0 && i % 80 == 0)
+            //Flag new line break after 80 characters
+            if (i % 80 == 0)
             {
                 breakLine = true;
             }
+            //Line break at next space if flagged
             if (breakLine && description.charAt(i) == ' ')
             {
-                s += "\n\t\t\t";
+                sb.insert(i + offset, "\n\t\t\t");
+                offset += "\n\t\t\t".length();
+                i += 80;
                 breakLine = false;
             }
         }
-        description = s;
+        description = sb.toString();
     }
     
     /**
-     * @return the damage multiplier
+     * Gets the damage multiplier
+     *
+     * @return The damage multiplier
      */
     public double getDmgMultiplier()
     {
@@ -253,7 +264,9 @@ public class Ability
     }
     
     /**
-     * @return the healing multiplier
+     * Gets the healing multiplier
+     *
+     * @return The healing multiplier
      */
     public double getHealingPercent()
     {
@@ -261,7 +274,7 @@ public class Ability
     }
     
     /**
-     * @return whether this Ability ignores the targets defense
+     * @return True if the ability ignores the target's defense, false otherwise
      */
     public boolean ignoresDefense()
     {
@@ -269,7 +282,7 @@ public class Ability
     }
     
     /**
-     * @return whether this Ability targets the enemy
+     * @return True if the ability targets the enemy, false otherwise
      */
     public boolean targetsEnemy()
     {
@@ -277,7 +290,9 @@ public class Ability
     }
     
     /**
-     * @return the buffs for this Ability
+     * Gets the buffs for this Ability
+     *
+     * @return The buffs for this Ability
      */
     public ArrayList<Buff> getBuffs()
     {
@@ -285,7 +300,9 @@ public class Ability
     }
     
     /**
-     * @return the buff chances for this Ability
+     * Gets the buff chances for this Ability
+     *
+     * @return The buff chances for this Ability
      */
     public ArrayList<Integer> getBuffsChance()
     {
@@ -293,7 +310,9 @@ public class Ability
     }
     
     /**
-     * @return the debuffs for this Ability
+     * Gets the debuffs for this Ability
+     *
+     * @return The debuffs for this Ability
      */
     public ArrayList<Debuff> getDebuffs()
     {
@@ -301,19 +320,9 @@ public class Ability
     }
     
     /**
-     * Adds a new debuff to the Ability
+     * Gets the debuff chances for this Ability
      *
-     * @param debuff the debuff to add
-     * @param chance the chance that it is applied
-     */
-    public void addDebuff(Debuff debuff, int chance)
-    {
-        debuffs.add(debuff);
-        debuffsChance.add(chance);
-    }
-    
-    /**
-     * @return the debuff chances for this Ability
+     * @return The debuff chances for this Ability
      */
     public ArrayList<Integer> getDebuffsChance()
     {
@@ -321,7 +330,7 @@ public class Ability
     }
     
     /**
-     * @return whether the Ability is passive
+     * @return True if the Ability is passive, false otherwise
      */
     public boolean isPassive()
     {
@@ -329,9 +338,9 @@ public class Ability
     }
     
     /**
-     * Returns how many turns are left before the Ability can be used again
+     * Returns how many turns are left before the ability can be used again
      *
-     * @return how many turns are left
+     * @return How many turns before the ability can be used again
      */
     public int getTurnsRemaining()
     {
@@ -339,7 +348,7 @@ public class Ability
     }
     
     /**
-     * @return whether the Ability targets the self
+     * @return True if the Ability targets the self, false otherwise
      */
     public boolean targetsSelf()
     {
@@ -363,15 +372,30 @@ public class Ability
     }
     
     /**
+     * Gets the ability's max cooldown
+     *
+     * @return The ability's max cooldown
+     */
+    public int getMaxCooldown()
+    {
+        return maxCooldown;
+    }
+    
+    /**
      * Sets the cooldown to a given number
      *
-     * @param num the number to set the cooldown to
+     * @param num The number to set the cooldown to
      */
     public void setToNumTurns(int num)
     {
         turnsRemaining = num;
     }
     
+    /**
+     * Formats the ability into a readable String
+     *
+     * @return The formatted String
+     */
     public String toString()
     {
         String cooldown = (this.turnsRemaining != 0) ?
@@ -385,9 +409,9 @@ public class Ability
     /**
      * Formats the colors for {@link Ability#toString()}
      *
-     * @param hasSilence  whether the Monster has the silence debuff
-     * @param hasOblivion whether the Monster has the Oblivion debuff
-     * @return the formatted String
+     * @param hasSilence  Whether the Monster has the Silence debuff
+     * @param hasOblivion Whether the Monster has the Oblivion debuff
+     * @return The formatted String
      */
     public String toString(boolean hasSilence, boolean hasOblivion)
     {
@@ -396,6 +420,7 @@ public class Ability
         {
             if (maxCooldown != 0)
             {
+                //Gray out ability if it has a cooldown and the Monster is silenced
                 String cooldown = (this.turnsRemaining != 0) ? "Reusable in " + this.turnsRemaining + " turns, " : "";
                 String reusableIn = (this.turnsRemaining == 0) ? ConsoleColors.BLUE + " (Cooldown: " + maxCooldown + " turns)" : "";
                 s += (!passive) ?
@@ -407,20 +432,21 @@ public class Ability
         {
             if (passive)
             {
+                //Gray out ability if it is a passive and the Monster has Oblivion
                 String cooldown = (this.turnsRemaining != 0) ? "Reusable in " + this.turnsRemaining + " turns, " : "";
                 String reusableIn = (this.turnsRemaining == 0 && this.maxCooldown != 0) ? ConsoleColors.BLUE + " (Cooldown: " + maxCooldown + " turns)"
                         : "";
                 s += ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + name + " (Passive): " + cooldown + description + reusableIn + ConsoleColors.RESET;
             }
         }
-        return (s.isEmpty()) ? toString() : s;
+        return (s.isEmpty()) ? this.toString() : s;
     }
     
     /**
-     * Returns whether the Ability can be used this turn
+     * Checks if the Ability can be used this turn
      *
-     * @param hasSilence whether the Monster has the silence debuff
-     * @return whether the Ability can be used
+     * @param hasSilence Whether the Monster has the silence debuff
+     * @return Whether the Ability can be used
      */
     public boolean isViableAbility(boolean hasSilence)
     {
@@ -428,11 +454,13 @@ public class Ability
         {
             return maxCooldown == 0;
         }
-        return !passive && (turnsRemaining == 0);
+        return !passive && !(this instanceof Leader_Skill) && (turnsRemaining == 0);
     }
     
     /**
-     * @return the number of activations for the Ability
+     * Gets the number of activations for the Ability
+     *
+     * @return The number of activations for the Ability
      */
     public int getNumOfActivations()
     {
@@ -442,7 +470,7 @@ public class Ability
     /**
      * Sets the damage multiplier
      *
-     * @param num the double to set the multiplier to
+     * @param num The new damage multiplier
      */
     public void setDmgMultiplier(double num)
     {
@@ -452,8 +480,8 @@ public class Ability
     /**
      * Compares this Ability to another.
      *
-     * @param ability the Ability to compare
-     * @return true if the given Ability's name equals this Ability's name
+     * @param ability The Ability to compare
+     * @return True if the two abilities' names are the same, false otherwise
      */
     public boolean equals(Ability ability)
     {
@@ -461,7 +489,7 @@ public class Ability
     }
     
     /**
-     * @return whether the Ability ignores damage reduction effects
+     * @return True if the Ability ignores damage reduction effects, false otherwise
      */
     public boolean ignoresDmgReduction()
     {
@@ -470,10 +498,133 @@ public class Ability
     
     /**
      * Checks if the ability targets the entire team
+     *
      * @return True if the ability targets the entire team, false otherwise
      */
     public boolean targetsAllTeam()
     {
         return targetsAllTeam;
+    }
+    
+    /**
+     * Checks if the ability can apply the given buff
+     *
+     * @param buffNum The number of the buff to check for
+     * @return True if the ability can apply the buff, false otherwise
+     */
+    public boolean canApplyBuff(int buffNum)
+    {
+        return this.canApplyStat(new Buff(buffNum));
+    }
+    
+    /**
+     * Checks if the ability can apply the given debuff
+     *
+     * @param debuffNum The number of the debuff to check for
+     * @return True if the ability can apply the debuff, false otherwise
+     */
+    public boolean canApplyDebuff(int debuffNum)
+    {
+        return this.canApplyStat(new Debuff(debuffNum));
+    }
+    
+    /**
+     * Checks if the ability can apply the given buff or debuff
+     *
+     * @param s The buff or debuff to check for
+     * @return True if the ability can apply the buff or debuff, false otherwise
+     */
+    public boolean canApplyStat(Stat s)
+    {
+        return switch (s)
+        {
+            case Buff b ->
+            {
+                //Search the buffs array for the buff
+                for (Buff potentialBuff : buffs)
+                {
+                    if (potentialBuff.equals(b))
+                    {
+                        yield true;
+                    }
+                }
+                yield false;
+            }
+            case Debuff d ->
+            {
+                //Search the debuffs array for the debuff
+                for (Debuff potentialDebuff : debuffs)
+                {
+                    if (potentialDebuff.equals(d))
+                    {
+                        yield true;
+                    }
+                }
+                yield false;
+            }
+            default -> false;
+        };
+    }
+    
+    /**
+     * Counts approximately how many buffs the ability can remove with one call
+     *
+     * @return A number representing an approximation of how many debuffs the ability can remove (0-11)
+     */
+    public int getNumOfBeneficialEffectsToRemove()
+    {
+        if (this.numOfBeneficialEffectsToRemoveOverride != -1)
+        {
+            return this.numOfBeneficialEffectsToRemoveOverride;
+        }
+        
+        int sum = 0;
+        if (canApplyDebuff(Debuff.STRIP))
+        {
+            sum += 5;
+        }
+        if (canApplyBuff(Buff.BUFF_STEAL))
+        {
+            sum += 3;
+        }
+        if (canApplyDebuff(Debuff.REMOVE_BENEFICIAL_EFFECT))
+        {
+            sum += 2;
+        }
+        if (canApplyDebuff(Debuff.SHORTEN_BUFFS))
+        {
+            sum += 1;
+        }
+        return sum * this.numOfActivations;
+    }
+    
+    /**
+     * Set an override value for {@link Ability#getNumOfBeneficialEffectsToRemove()}. If the override is set, the linked method will return the override, otherwise it will continue calculating as normal.
+     * Use {@link Ability#resetBeneficialEffectRemoversOverride()} to reset and remove the override
+     * @param debuffNums The debuff numbers to use to calculate the override
+     */
+    public void addBeneficialEffectRemoversOverride(int... debuffNums)
+    {
+        int sum = 0;
+        for (int debuffNum : debuffNums)
+        {
+            sum += switch (debuffNum)
+            {
+                case Debuff.STRIP -> 5;
+                case Buff.BUFF_STEAL -> 3;
+                case Debuff.REMOVE_BENEFICIAL_EFFECT -> 2;
+                case Debuff.SHORTEN_BUFFS -> 1;
+                default -> 0;
+            };
+        }
+        this.numOfBeneficialEffectsToRemoveOverride = sum * this.numOfActivations;
+    }
+    
+    /**
+     * Resets the override value
+     */
+    public void resetBeneficialEffectRemoversOverride()
+    {
+        this.numOfBeneficialEffectsToRemoveOverride = -1;
     }
 }

@@ -2,12 +2,14 @@ package Runes;
 
 import Errors.*;
 import Monsters.*;
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
 /**
- * @author Anthony (Tony) Youssef
  * This class used to create and apply runes for Monsters
+ *
+ * @author Anthony (Tony) Youssef
  */
 public class Rune
 {
@@ -34,10 +36,13 @@ public class Rune
      */
     public Rune(int type, MainAttribute mainAttribute, int place, ArrayList<SubAttribute> subAttributes, Monster monster)
     {
+        //Make sure the type and place are within the correct range
         if (type > SEAL || type < 1 || place > 8 || place < 1)
         {
             throw new IndexOutOfBoundsException("Type must be between 1 and 24 inclusive and place must be between 1 and 8 inclusive");
         }
+        
+        //Make sure artifacts have the correct placement
         if (type == ELEMENTARTIFACT && place != 7)
         {
             throw new ConflictingArguments("Place must equal 7 for an element artifact");
@@ -46,6 +51,7 @@ public class Rune
         {
             throw new ConflictingArguments("Place must equal 8 for a type artifact");
         }
+        
         this.type = type;
         this.mainAttribute = mainAttribute;
         this.subAttributes = subAttributes;
@@ -74,14 +80,18 @@ public class Rune
      */
     public void apply()
     {
+        //Do nothing if the rune was already applied
         if (applied)
         {
             return;
         }
         
         applied = true;
+        
+        //Apply the main attribute
         applyAttribute(mainAttribute);
         
+        //Apply each sub-attribute
         for (SubAttribute sub : subAttributes)
         {
             applyAttribute(sub);
@@ -90,6 +100,7 @@ public class Rune
     
     /**
      * Applies the given rune attribute
+     *
      * @param attribute The attribute to apply
      */
     private void applyAttribute(MainAttribute attribute)
@@ -111,6 +122,8 @@ public class Rune
     }
     
     /**
+     * Gets the rune's type
+     *
      * @return The rune's type
      */
     public int getType()
@@ -142,6 +155,7 @@ public class Rune
     public String toString()
     {
         String s = numToType(type);
+        //Get the main attribute followed by ach sub-attribute on separate lines
         s += "\tMain Attribute:\n\t\t";
         s += mainAttribute + "\n\tSub Attributes:\n";
         for (SubAttribute sub : subAttributes)
@@ -161,7 +175,8 @@ public class Rune
     {
         try
         {
-            Scanner read = new Scanner(Objects.requireNonNull(Rune.class.getResourceAsStream("Rune key.csv")));
+            //Read the rune key and get the name of the requested set
+            Scanner read = new Scanner(new File("Rune key.csv"));
             while (read.hasNextLine())
             {
                 String[] line = read.nextLine().split(",");
@@ -186,27 +201,30 @@ public class Rune
     }
     
     /**
-     * Converts a given variable name into an attribute number
+     * Converts a given variable name into an attribute or set number (Help from StackOverflow)
      *
-     * @param str a String containing the variable name
+     * @param str A String containing the variable name
      * @return The attribute number with the given variable name if possible, -1 otherwise
      */
     public static int stringToNum(String str)
     {
+        //Convert the name to uppercase
         str = str.toUpperCase();
         int returnVal = -1;
         try
         {
+            //Get the number equivalent of the String
             Field f = Rune.class.getField(str);
-            Class type = f.getType();
+            Class<?> type = f.getType();
             if (type.toString().equals("int"))
             {
                 returnVal = f.getInt(new Rune());
             }
         }
+        //The given String is not a variable name
         catch (NoSuchFieldException | IllegalAccessException e)
         {
-            System.err.println(e);
+            System.out.println(str + " is not a rune set type or property");
             return -1;
         }
         
@@ -214,6 +232,8 @@ public class Rune
     }
     
     /**
+     * Gets the rune's main attribute
+     *
      * @return The rune's main attribute
      */
     public MainAttribute getMainAttribute()
@@ -232,7 +252,9 @@ public class Rune
     }
     
     /**
-     * @return the rune's sub attributes
+     * Gets the rune's sub attributes
+     *
+     * @return The rune's sub attributes
      */
     public ArrayList<SubAttribute> getSubAttributes()
     {

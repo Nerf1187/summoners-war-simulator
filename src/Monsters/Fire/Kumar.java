@@ -8,11 +8,17 @@ import Stats.Debuffs.*;
 import Stats.*;
 import java.util.*;
 
+/**
+ * Fire Beast Monk
+ */
 public class Kumar extends Monster
 {
     private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
+    /**
+     * Creates the Monster with the default rune set
+     */
     public Kumar()
     {
         super("Kumar" + count, FIRE, 13_005, 681, 593, 101, 15, 50, 15, 0);
@@ -21,6 +27,11 @@ public class Kumar extends Monster
         count++;
     }
     
+    /**
+     * Creates the Monster with the given rune file
+     *
+     * @param runeFileName The name of the rune file to use
+     */
     public Kumar(String runeFileName)
     {
         this();
@@ -32,7 +43,7 @@ public class Kumar extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.REMOVE_BENEFICIAL_EFFECT, 0, 1, Debuff.OBLIVION, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(75, 50);
         abilities.add(new Attack_Ability("Crushing Blow (1)", 1.3 * (1.1 + (0.18 * getMaxHp()) / getAtk()), 0, 1, "With an attack that always lands as a Critical Hit, removes 1 beneficial effect from the enemy with a 75% chance and grants Oblivion" +
-                " for 2 turns with a 50% chance. The damage increases according to your MAX HP.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
+                                                                                                                  " for 2 turns with a 50% chance. The damage increases according to your MAX HP.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
         
         ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.CLEANSE, 0);
         ArrayList<Integer> ability2BuffChances = abilityChances(100);
@@ -42,7 +53,7 @@ public class Kumar extends Monster
         ArrayList<Debuff> ability3Debuffs = abilityDebuffs(Debuff.SILENCE, 2, 0);
         ArrayList<Integer> ability3DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Trick of Fire (3)", 1.2 * ((0.29 * getMaxHp()) / getAtk()), 0, 1, "Attacks all enemies with a spell that summons the power of fire to Silence them for 2 turns with a 75% chance and removes the harmful " +
-                "effects granted on all allies. The damage is proportionate to your MAX HP.", ability3Debuffs, ability3DebuffChances, 4, false, false, true));
+                                                                                                            "effects granted on all allies. The damage is proportionate to your MAX HP.", ability3Debuffs, ability3DebuffChances, 4, false, false, true));
         
         abilities.add(new Leader_Skill(Stat.HP, 0.33, Monster.ALL));
         
@@ -52,6 +63,7 @@ public class Kumar extends Monster
     public boolean nextTurn(Monster target, int abilityNum)
     {
         int critRate = getCritRate();
+        //Force ability 1 to crit
         if (abilityNum == 1)
         {
             setCritRate(999_999);
@@ -66,15 +78,13 @@ public class Kumar extends Monster
         
         switch (abilityNum)
         {
-            case 2:
-            {
-                heal(this, abilities.get(1));
-            }
-            case 3:
-            {
-                applyToTeam(game.getNextMonsTeam(), Monster::cleanse);
-            }
+            //Heal self as well
+            case 2 -> heal(this, abilities.get(1));
+            //Cleanse all allied Monsters
+            case 3 -> applyToTeam(game.getNextMonsTeam(), Monster::cleanse);
         }
+        
+        //Reset crit rate
         setCritRate(critRate);
         super.afterTurnProtocol((abilityNum == 3) ? game.getOtherTeam() : target, abilityNum != 2);
         return true;

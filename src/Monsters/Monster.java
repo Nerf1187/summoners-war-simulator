@@ -3,10 +3,12 @@ package Monsters;
 import Abilities.*;
 import Errors.*;
 import Game.*;
+import Monsters.Fire.*;
 import Runes.*;
 import Stats.Buffs.*;
 import Stats.Debuffs.*;
 import Stats.*;
+import java.math.*;
 import java.util.*;
 
 import static Game.Main.scan;
@@ -16,7 +18,6 @@ import static Game.Main.scan;
  *
  * @author Anthony (Tony) Youssef
  */
-
 public class Monster
 {
     /**
@@ -24,36 +25,38 @@ public class Monster
      */
     public static HashMap<String, String> monsterNamesDatabase = new HashMap<>();
     
-    private static final int MAX_ATK_BAR_VALUE = 1_000;
+    /**
+     * Denotes the value for an attack bar to be full
+     */
+    public static final int MAX_ATK_BAR_VALUE = 1_000;
     private static boolean print = true;
+    
+    //Global elements
     public static final int FIRE = 0, WATER = 1, WIND = 2, LIGHT = 3, DARK = 4, ALL = 5;
+    private final int MAX_BOMBS = 3, MAX_DOT = 8;
     private String name;
+    
+    //Monster stats
     private int currentHp, maxHp, destroyedHp = 0, def, atk, spd, critRate, critDmg, resistance, accuracy;
     private final int element;
     protected static Game game = null;
     
-    /**
-     * Used when applying runes
-     */
+    //Used when applying runes
     private double tempMaxHp, tempDef, tempAtk;
     
-    /**
-     * Used to apply buffs/debuffs
-     */
+    //Used to apply buffs/debuffs
     private int extraAtk = 0, extraDef = 0, extraCritRate = 0, shield = 0;
     protected int extraSpd = 0;
     
-    /**
-     * Monster's base stats (unchanging)
-     */
+    //Monster's base stats (unchanging)
     private final int baseMaxHp, baseAtk, baseDef, baseSpd, baseCritRate, baseCritDmg, baseRes, baseAcc;
     private int extraGlancingRate, lessAtk, lessDef;
     protected int lessAtkSpd;
     private int abilityGlancingRateChange;
-    private int nomOfViolentRuneProcs = 0;
-    private double dmgDealtThisTurn;
+    private int numOfViolentRuneProcs = 0;
+    private double dmgDealtThisTurn, dmgTakenThisTurn;
     private double atkBar = 0;
-    private boolean dead = false, crit = false, glancing = false, wasCrit = false;
+    private boolean dead = false, crit = false, glancing = false, wasCrit = false, singleTargetAttack = false;
     private ArrayList<Buff> appliedBuffs = new ArrayList<>();
     private ArrayList<Debuff> appliedDebuffs = new ArrayList<>();
     private ArrayList<Stat> otherStats = new ArrayList<>();
@@ -69,17 +72,42 @@ public class Monster
      * @param def        The base defense of the Monster
      * @param attack     The base attack power of the Monster
      * @param speed      The base attack speed of the Monster
-     * @param critRate   The base critical hit rate of the Monster (as a percent)
-     * @param critDmg    The base critical damage amount of the Monster (as a percent)
+     * @param critRate   The base crit hit rate of the Monster (as a percent)
+     * @param critDmg    The base crit damage amount of the Monster (as a percent)
      * @param resistance The base resistance of the Monster (as a percent)
      * @param accuracy   The base accuracy of the Monster (as a percent)
      */
     public Monster(String name, int element, int hp, int def, int attack, int speed, int critRate, int critDmg, int resistance, int accuracy)
     {
+        //Make sure no Monster's speed is changed for testing
+        if (speed > 400)
+        {
+            System.out.printf("Speed must be less than 500: %s%n", name);
+            throw new RuntimeException("Speed must be less than 500: %s".formatted(name));
+        }
+        
+        //Monster info
         this.name = name;
         this.element = element;
+        
+        //Base stats
+        baseAtk = attack;
+        baseDef = def;
+        baseSpd = speed;
+        baseCritRate = critRate;
+        baseCritDmg = critDmg;
+        baseRes = resistance;
+        baseAcc = accuracy;
+        baseMaxHp = hp;
+        
+        //Temporary values for calculating rune effects
+        tempMaxHp = hp;
+        tempAtk = attack;
+        tempDef = def;
+        
+        //Final stats
         this.maxHp = hp;
-        currentHp = maxHp;
+        currentHp = hp;
         this.def = def;
         this.atk = attack;
         this.spd = speed;
@@ -87,17 +115,6 @@ public class Monster
         this.critDmg = critDmg;
         this.resistance = resistance;
         this.accuracy = accuracy;
-        baseAtk = atk;
-        baseDef = def;
-        baseSpd = spd;
-        baseCritRate = critRate;
-        baseCritDmg = critDmg;
-        baseRes = resistance;
-        baseAcc = accuracy;
-        baseMaxHp = maxHp;
-        tempMaxHp = maxHp;
-        tempAtk = atk;
-        tempDef = def;
     }
     
     /**
@@ -121,7 +138,7 @@ public class Monster
     /**
      * Checks whether the program is currently set to print to console
      *
-     * @return true if printing to the console is activated
+     * @return True if printing to the console is activated
      */
     public static boolean isPrint()
     {
@@ -131,7 +148,7 @@ public class Monster
     /**
      * Sets whether printing the console is activated (on by default
      *
-     * @param print true for on, false for off
+     * @param print True for on, false for off
      */
     public static void setPrint(boolean print)
     {
@@ -149,6 +166,8 @@ public class Monster
     }
     
     /**
+     * Gets the Monster's abilities
+     *
      * @return The Monster's abilities
      */
     public ArrayList<Ability> getAbilities()
@@ -163,6 +182,7 @@ public class Monster
      */
     public void setRunes(ArrayList<Rune> runes)
     {
+        //Create temporary values for rounding
         tempMaxHp = baseMaxHp;
         tempDef = baseDef;
         tempAtk = baseAtk;
@@ -173,14 +193,21 @@ public class Monster
         accuracy = baseAcc;
         
         this.runes = runes;
+        //Apply each rune
         for (Rune rune : runes)
         {
             rune.apply();
         }
+        
+        //Round each stat up
         tempMaxHp = Math.ceil(tempMaxHp);
         tempDef = Math.ceil(tempDef);
         tempAtk = Math.ceil(tempAtk);
+        
+        //Apply rune set effects
         applyRuneSetEffectsForBeginningOfGame();
+        
+        //Round stats up
         maxHp = (int) Math.ceil(tempMaxHp);
         def = (int) Math.ceil(tempDef);
         atk = (int) Math.ceil(tempAtk);
@@ -188,7 +215,9 @@ public class Monster
     }
     
     /**
-     * @return this Monster's runes
+     * Gets this Monster's runes
+     *
+     * @return This Monster's runes
      */
     public ArrayList<Rune> getRunes()
     {
@@ -206,6 +235,61 @@ public class Monster
     }
     
     /**
+     * Gives the name of the Monster with its associated number and element if desired
+     *
+     * @param withElement True if the elemental color is included
+     * @param withNumber  True if the Monster's number is included
+     * @return The Monster's name with its element and color if wanted
+     */
+    public String getName(boolean withElement, boolean withNumber)
+    {
+        if (!withElement)
+        {
+            if (withNumber)
+            {
+                //Return the name followed by ID number
+                return name;
+            }
+            String returnName = "";
+            //Remove the ID number and return the result
+            for (char c : name.toCharArray())
+            {
+                if (!(c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9' || c == '0' || c == '(' || c == ')'))
+                {
+                    returnName += c;
+                }
+            }
+            return returnName;
+        }
+        //Get the element color
+        String elementColor = switch (element)
+        {
+            case FIRE -> ConsoleColors.RED_BOLD_BRIGHT;
+            case WATER -> ConsoleColors.BLUE_BOLD_BRIGHT;
+            case WIND -> ConsoleColors.YELLOW_BOLD_BRIGHT;
+            case LIGHT -> ConsoleColors.WHITE_BOLD_BRIGHT;
+            case DARK -> ConsoleColors.PURPLE_BOLD_BRIGHT;
+            default -> "";
+        };
+        //Return the name with the element followed by the ID number
+        if (withNumber)
+        {
+            return elementColor + name + ConsoleColors.RESET;
+        }
+        String returnName = "";
+        //Remove the ID number from the name
+        for (char c : name.toCharArray())
+        {
+            if (!(c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9' || c == '0' || c == '(' || c == ')'))
+            {
+                returnName += c;
+            }
+        }
+        //Return the name with the element
+        return elementColor + returnName + ConsoleColors.RESET;
+    }
+    
+    /**
      * Change the Monster's resistance
      *
      * @param resistance The new resistance
@@ -216,6 +300,8 @@ public class Monster
     }
     
     /**
+     * Gets the Monster's current resistance
+     *
      * @return The Monster's current resistance
      */
     public int getResistance()
@@ -234,11 +320,23 @@ public class Monster
     }
     
     /**
+     * Gets the Monster's current accuracy
+     *
      * @return The Monster's current accuracy
      */
     public int getAccuracy()
     {
         return accuracy;
+    }
+    
+    /**
+     * Sets the Monster's attack power
+     *
+     * @param atk The Monster's new attack power
+     */
+    public void setAtk(double atk)
+    {
+        this.atk = (int) Math.ceil(atk);
     }
     
     /**
@@ -250,27 +348,13 @@ public class Monster
     }
     
     /**
+     * Gets the Monster's base attack
+     *
      * @return The Monster's base attack
      */
     public int getBaseAtk()
     {
         return baseAtk;
-    }
-    
-    /**
-     * @return The Monster's current defense stat (Does not include buffs/debuffs)
-     */
-    public int getDef()
-    {
-        return def;
-    }
-    
-    /**
-     * @return The Monster's base defense
-     */
-    public int getBaseDef()
-    {
-        return baseDef;
     }
     
     /**
@@ -284,9 +368,27 @@ public class Monster
     }
     
     /**
+     * @return The Monster's current defense stat (Does not include buffs/debuffs)
+     */
+    public int getDef()
+    {
+        return def;
+    }
+    
+    /**
+     * Gets the Monster's base defense
+     *
+     * @return The Monster's base defense
+     */
+    public int getBaseDef()
+    {
+        return baseDef;
+    }
+    
+    /**
      * Set the Monster's temporary max health
      *
-     * @param hp the Monster's new temporary max health
+     * @param hp The Monster's new temporary max health
      */
     public void setTempMaxHp(double hp)
     {
@@ -294,43 +396,9 @@ public class Monster
     }
     
     /**
-     * Set the Monster's temporary attack
+     * Gets the Monster's temporary max health
      *
-     * @param tempAtk the Monster's new temporary attack
-     */
-    public void setTempAtk(double tempAtk)
-    {
-        this.tempAtk = tempAtk;
-    }
-    
-    /**
-     * Set the Monster's temporary defense
-     *
-     * @param tempDef the Monster's new defense
-     */
-    public void setTempDef(double tempDef)
-    {
-        this.tempDef = tempDef;
-    }
-    
-    /**
-     * @return the Monster's temporary attack
-     */
-    public double getTempAtk()
-    {
-        return tempAtk;
-    }
-    
-    /**
-     * @return the Monster's temporary defense
-     */
-    public double getTempDef()
-    {
-        return tempDef;
-    }
-    
-    /**
-     * @return the Monster's temporary max health
+     * @return The Monster's temporary max health
      */
     public double getTempMaxHp()
     {
@@ -338,103 +406,53 @@ public class Monster
     }
     
     /**
-     * @return the Monster's element
+     * Set the Monster's temporary attack
+     *
+     * @param tempAtk The Monster's new temporary attack
+     */
+    public void setTempAtk(double tempAtk)
+    {
+        this.tempAtk = tempAtk;
+    }
+    
+    /**
+     * Gets the Monster's temporary attack
+     *
+     * @return The Monster's temporary attack
+     */
+    public double getTempAtk()
+    {
+        return tempAtk;
+    }
+    
+    /**
+     * Set the Monster's temporary defense
+     *
+     * @param tempDef The Monster's new defense
+     */
+    public void setTempDef(double tempDef)
+    {
+        this.tempDef = tempDef;
+    }
+    
+    /**
+     * Gets the Monster's temporary defense
+     *
+     * @return The Monster's temporary defense
+     */
+    public double getTempDef()
+    {
+        return tempDef;
+    }
+    
+    /**
+     * Gets the Monster's element
+     *
+     * @return The Monster's element
      */
     public int getElement()
     {
         return element;
-    }
-    
-    /**
-     * @return the Monster's current health
-     */
-    public int getCurrentHp()
-    {
-        return currentHp;
-    }
-    
-    /**
-     * @return the Monster's maximum health
-     */
-    public int getMaxHp()
-    {
-        return maxHp;
-    }
-    
-    /**
-     * @return the Monster's base maximum health
-     */
-    public int getBaseMaxHp()
-    {
-        return baseMaxHp;
-    }
-    
-    /**
-     * @return the Monster's current speed stat
-     */
-    public int getSpd()
-    {
-        return spd;
-    }
-    
-    /**
-     * @return the Monster's base speed
-     */
-    public int getBaseSpd()
-    {
-        return baseSpd;
-    }
-    
-    /**
-     * @return all current buffs on the Monster
-     */
-    public ArrayList<Buff> getAppliedBuffs()
-    {
-        return appliedBuffs;
-    }
-    
-    /**
-     * @return all current debuffs on the Monster
-     */
-    public ArrayList<Debuff> getAppliedDebuffs()
-    {
-        return appliedDebuffs;
-    }
-    
-    /**
-     * @return the Monster's current critical hit rate
-     */
-    public int getCritRate()
-    {
-        return critRate;
-    }
-    
-    /**
-     * Changes the Monster's critical hit rate
-     *
-     * @param critRate The Monster's new critical hit rate
-     */
-    public void setCritRate(double critRate)
-    {
-        this.critRate = (int) Math.ceil(critRate);
-    }
-    
-    /**
-     * Changes the Monster's critical damage
-     *
-     * @param critDmg The Monster's new critical damage
-     */
-    public void setCritDmg(double critDmg)
-    {
-        this.critDmg = (int) Math.ceil(critDmg);
-    }
-    
-    /**
-     * @return the Monster's current critical damage
-     */
-    public int getCritDmg()
-    {
-        return critDmg;
     }
     
     /**
@@ -448,12 +466,632 @@ public class Monster
     }
     
     /**
-     * Change the amount of destroyed health
+     * Gets the Monster's current health
      *
-     * @param amount The new amount of destroyed health
+     * @return The Monster's current health
+     */
+    public int getCurrentHp()
+    {
+        return currentHp;
+    }
+    
+    /**
+     * Sets the Monster's max Hp
+     *
+     * @param maxHp The Monster's new max Hp
+     */
+    public void setMaxHp(double maxHp)
+    {
+        this.maxHp = (int) Math.ceil(maxHp);
+    }
+    
+    /**
+     * Gets the Monster's maximum health
+     *
+     * @return The Monster's maximum health
+     */
+    public int getMaxHp()
+    {
+        return maxHp;
+    }
+    
+    /**
+     * Gets the Monster's base maximum health
+     *
+     * @return The Monster's base maximum health
+     */
+    public int getBaseMaxHp()
+    {
+        return baseMaxHp;
+    }
+    
+    /**
+     * Sets the Monster's attack speed
+     *
+     * @param spd The Monster's new attack speed
+     */
+    public void setSpd(double spd)
+    {
+        this.spd = (int) Math.ceil(spd);
+    }
+    
+    /**
+     * Gets the Monster's current speed stat
+     *
+     * @return The Monster's current speed stat
+     */
+    public int getSpd()
+    {
+        return spd;
+    }
+    
+    /**
+     * Gets the Monster's base speed
+     *
+     * @return The Monster's base speed
+     */
+    public int getBaseSpd()
+    {
+        return baseSpd;
+    }
+    
+    /**
+     * Changes the Monster's critical hit rate
+     *
+     * @param critRate The Monster's new critical hit rate
+     */
+    public void setCritRate(double critRate)
+    {
+        this.critRate = (int) Math.ceil(critRate);
+    }
+    
+    /**
+     * Gets the Monster's current critical hit rate
+     *
+     * @return The Monster's current critical hit rate
+     */
+    public int getCritRate()
+    {
+        return critRate;
+    }
+    
+    /**
+     * Changes the Monster's critical damage
+     *
+     * @param critDmg The Monster's new critical damage
+     */
+    public void setCritDmg(double critDmg)
+    {
+        this.critDmg = (int) Math.ceil(critDmg);
+    }
+    
+    /**
+     * Gets the Monster's current critical damage
+     *
+     * @return The Monster's current critical damage
+     */
+    public int getCritDmg()
+    {
+        return critDmg;
+    }
+    
+    /**
+     * Sets the altered glancing rate as determined by an ability
+     *
+     * @param abilityGlancingRateChange The new value
+     */
+    public void setAbilityGlancingRateChange(int abilityGlancingRateChange)
+    {
+        this.abilityGlancingRateChange = abilityGlancingRateChange;
+    }
+    
+    /**
+     * Sets the current Game in use
+     *
+     * @param g The new Game
+     */
+    public static void setGame(Game g)
+    {
+        game = g;
+    }
+    
+    /**
+     * Gets the current game in use
+     *
+     * @return The current game in use
+     */
+    public static Game getGame()
+    {
+        return game;
+    }
+    
+    /**
+     * Gets all current buffs on the Monster
+     *
+     * @return All current buffs on the Monster
+     */
+    public ArrayList<Buff> getAppliedBuffs()
+    {
+        return appliedBuffs;
+    }
+    
+    /**
+     * Gets all current debuffs on the Monster
+     *
+     * @return All current debuffs on the Monster
+     */
+    public ArrayList<Debuff> getAppliedDebuffs()
+    {
+        return appliedDebuffs;
+    }
+    
+    /**
+     * @return All Stats (not buff or debuffs) on the Monster
+     */
+    public ArrayList<Stat> getOtherStats()
+    {
+        return otherStats;
+    }
+    
+    /**
+     * Set the attack bar to a given amount
+     *
+     * @param num The amount to set the attack bar to
+     */
+    public void setAtkBar(int num)
+    {
+        atkBar = Math.max(num, 0);
+    }
+    
+    /**
+     * Gets the current attack bar value
+     *
+     * @return The current attack bar value
+     */
+    public double getAtkBar()
+    {
+        return atkBar;
+    }
+    
+    /**
+     * Marks the Monster as alive (false) or dead (true)
+     *
+     * @param isDead The new dead state of the Monster
+     */
+    public void setDead(boolean isDead)
+    {
+        dead = isDead;
+    }
+    
+    /**
+     * Checks if the Monster is dead
+     *
+     * @return True if the Monster has zero health, false otherwise
+     */
+    public boolean isDead()
+    {
+        if (this.currentHp <= 0)
+        {
+            //Check for Endure buff
+            if (this.containsBuff(Buff.ENDURE))
+            {
+                this.currentHp = 1;
+            }
+            //Check for Soul Protection buff
+            if (this.containsBuff(Buff.SOUL_PROTECTION))
+            {
+                //Revive Monster with 30% HP
+                currentHp = (int) (this.maxHp * 0.3);
+                removeBuff(Buff.SOUL_PROTECTION);
+            }
+        }
+        return this.currentHp <= 0;
+    }
+    
+    /**
+     * Resets all extra stat effects
+     */
+    private void resetStatEffects()
+    {
+        extraAtk = 0;
+        lessAtk = 0;
+        extraDef = 0;
+        lessDef = 0;
+        extraCritRate = 0;
+        extraGlancingRate = 0;
+        extraSpd = 0;
+        lessAtkSpd = 0;
+    }
+    
+    /**
+     * Sets {@link Monster#monsterNamesDatabase}
+     */
+    public static void setDatabase()
+    {
+        //Read from the database file
+        Scanner read = new Scanner(Objects.requireNonNull(Monster.class.getResourceAsStream("Monster database.csv")));
+        while (read.hasNextLine())
+        {
+            String line = read.nextLine();
+            //Skip empty lines
+            if (line.isEmpty())
+            {
+                continue;
+            }
+            //Split the line between the Monster's name and element
+            String[] monAndElement = line.split(",");
+            //Add the info to the database variable
+            monsterNamesDatabase.put(monAndElement[0], monAndElement[1]);
+        }
+        //Close the reader
+        read.close();
+    }
+    
+    /**
+     * Gets an ArrayList containing a new instance of every Monster
+     *
+     * @return An ArrayList containing a new instance of every Monster
+     */
+    public static ArrayList<Monster> getMonstersFromDatabase()
+    {
+        //Set the database if it is empty
+        if (monsterNamesDatabase.isEmpty())
+        {
+            setDatabase();
+        }
+        ArrayList<Monster> allMons = new ArrayList<>();
+        
+        //Add a new instance of each Monster in the database
+        monsterNamesDatabase.forEach((name, _) -> allMons.add(createNewMonFromName(name)));
+        
+        return allMons;
+    }
+    
+    /**
+     * Gets the Monster's support abilities that apply multiple buffs
+     *
+     * @return The Monster's support abilities that apply multiple buffs
+     */
+    public ArrayList<Ability> getSupportAbilitiesWithMultipleBuffs()
+    {
+        ArrayList<Ability> returnList = new ArrayList<>();
+        for (Ability ability : abilities)
+        {
+            //Check if the ability applies more than 2 buffs
+            if (ability.getBuffs().size() >= 2)
+            {
+                returnList.add(ability);
+            }
+        }
+        return returnList;
+    }
+    
+    /**
+     * Gets the Monster's attack abilities
+     *
+     * @return The Monster's attack abilities
+     */
+    public ArrayList<Ability> getAttackAbilities()
+    {
+        ArrayList<Ability> returnList = new ArrayList<>();
+        for (Ability ability : abilities)
+        {
+            //Check if the ability targets the enemy
+            if (ability.targetsEnemy())
+            {
+                returnList.add(ability);
+            }
+        }
+        return returnList;
+    }
+    
+    /**
+     * Gets how much damage this Monster has dealt this turn
+     *
+     * @return How much damage this Monster has dealt this turn
+     */
+    public double getDmgDealtThisTurn()
+    {
+        return dmgDealtThisTurn;
+    }
+    
+    /**
+     * Gets how much damage this Monster has taken this turn
+     *
+     * @return How much damage this Monster has taken this turn
+     */
+    public double getDmgTakenThisTurn()
+    {
+        return dmgTakenThisTurn;
+    }
+    
+    /**
+     * Calculates the current health ratio of the Monster
+     *
+     * @return The ratio of current health to max health of the Monster (0-100)
+     */
+    public double getHpRatio()
+    {
+        //Get the HP ratio
+        double ratio = 100.0 * currentHp / maxHp;
+        //Round the number and return the result
+        return switch (ratio)
+        {
+            //Do nothing if the ratio is 0 or 100
+            case 0.0, 100.0 -> ratio;
+            //Round to 2 decimal places if the number is between 10 and 100
+            case double i when i >= 10.0 -> BigDecimal.valueOf(ratio).setScale(2, RoundingMode.HALF_UP).doubleValue();
+            //Round to 3 decimal places if the number is between 0 and 10
+            default -> BigDecimal.valueOf(ratio).setScale(3, RoundingMode.HALF_UP).doubleValue();
+        };
+    }
+    
+    /**
+     * Finds the index of the given buff
+     *
+     * @param buff The buff to find
+     * @return The index of the provided buff
+     */
+    public int getBuffIndex(Buff buff)
+    {
+        //Search through the array and return the index of the requested buff
+        for (int i = 0; i < appliedBuffs.size(); i++)
+        {
+            if (appliedBuffs.get(i).equals(buff))
+            {
+                return i;
+            }
+        }
+        //Return -1 if not found
+        return -1;
+    }
+    
+    /**
+     * Finds the index of the buff with the given number
+     *
+     * @param num The buff number to search for
+     * @return The index of the buff with the given number
+     */
+    public int getBuffIndex(int num)
+    {
+        return this.getBuffIndex(new Buff(num));
+    }
+    
+    /**
+     * Finds the index of the given debuff
+     *
+     * @param debuff The debuff to find
+     * @return The index of the provided debuff. -1 if it is not found
+     */
+    public int getDebuffIndex(Debuff debuff)
+    {
+        //Search through the array and return the index of the requested buff
+        for (int i = 0; i < appliedDebuffs.size(); i++)
+        {
+            if (appliedDebuffs.get(i).equals(debuff))
+            {
+                return i;
+            }
+        }
+        //Return -1 if not found
+        return -1;
+    }
+    
+    /**
+     * Returns the index of the debuff with the given debuff number
+     *
+     * @param debuff The number of the debuff to search for
+     * @return The index of the debuff with the given debuff number. -1 if it is not found
+     */
+    public int getDebuffIndex(int debuff)
+    {
+        return getDebuffIndex(new Debuff(debuff, 0, 0));
+    }
+    
+    /**
+     * Returns the Ability associated with the given number if there is one
+     *
+     * @param num The Ability's number (The element number NOT the index number)
+     * @return The Ability associated with the given number if there is one, returns null otherwise
+     */
+    public Ability getAbility(int num)
+    {
+        //Make sure the input number is within the range
+        if (num > abilities.size() || num < 1)
+        {
+            return null;
+        }
+        //Return the ability
+        return abilities.get(num - 1);
+    }
+    
+    /**
+     * Gets each ability that can be used this turn
+     *
+     * @return A list of viable ability numbers
+     */
+    public ArrayList<Integer> getViableAbilityNumbers()
+    {
+        ArrayList<Integer> returnArray = new ArrayList<>();
+        //Search through each ability for ones that can be used this turn
+        for (int i = 0; i < abilities.size(); i++)
+        {
+            Ability ability = abilities.get(i);
+            if (ability.isViableAbility(this.containsDebuff(Debuff.SILENCE)))
+            {
+                returnArray.add(i + 1);
+            }
+        }
+        //Return the list of numbers whose corresponding ability can be used
+        return returnArray;
+    }
+    
+    /**
+     * Gets the Monster's Team support abilities if it has one
+     *
+     * @return The Monster's Team support abilities if it has one
+     */
+    public ArrayList<Heal_Ability> getTeamSupportAbilities()
+    {
+        ArrayList<Heal_Ability> returnList = new ArrayList<>();
+        //Search through the abilities for instances of Heal Abilities
+        for (Ability ability : abilities)
+        {
+            if (ability instanceof Heal_Ability ha)
+            {
+                //Add the Heal Ability
+                returnList.add(ha);
+            }
+        }
+        //Return the list of abilities
+        return returnList;
+    }
+    
+    /**
+     * Gets the Monster's abilities that target itself
+     *
+     * @return The Monster's abilities that target itself
+     */
+    public ArrayList<Ability> getSelfSupportAbilities()
+    {
+        ArrayList<Ability> returnList = new ArrayList<>();
+        //Search through the array for abilities that target this
+        for (Ability ability : abilities)
+        {
+            if (ability.targetsSelf() && !(ability instanceof Passive))
+            {
+                returnList.add(ability);
+            }
+        }
+        //Return the list of abilities
+        return returnList;
+    }
+    
+    /**
+     * @return The Defend buff on the Monster if there is one, returns <code>null</code> otherwise
+     */
+    private Defend getDefend()
+    {
+        //Search through the array for a Defend buff
+        for (Buff b : appliedBuffs)
+        {
+            if (b instanceof Defend d)
+            {
+                return (d);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * @return The Shield buff on the Monster if there is one, otherwise returns a new shield with zero health and zero turns remaining
+     */
+    private Shield getShield()
+    {
+        //Search through the array for a Shield buff
+        for (Buff b : appliedBuffs)
+        {
+            if (b instanceof Shield s)
+            {
+                return s;
+            }
+        }
+        //Return a blank Shield if one was not found
+        return new Shield(0, 0);
+    }
+    
+    /**
+     * @return The DecAtkBar on the Monster if it has one, otherwise returns a new DecAtkBar with a value of zero
+     */
+    private DecAtkBar getDecAtkBar()
+    {
+        //Search through the array for a DecAtkBar debuff
+        for (Debuff d : appliedDebuffs)
+        {
+            if (d instanceof DecAtkBar dec)
+            {
+                return (dec);
+            }
+        }
+        //return a blank DecAtkBar if there is one was not found
+        return new DecAtkBar(0);
+    }
+    
+    /**
+     * @return The Provoke debuff on a Monster if there is one, returns <code>null</code> otherwise
+     */
+    public Provoke getProvoke()
+    {
+        //Search through the array for a Provoke Debuff
+        for (Debuff debuff : appliedDebuffs)
+        {
+            if (debuff instanceof Provoke p)
+            {
+                return (p);
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Returns the Monster's name and abilities in a readable form
+     *
+     * @return The formatted String
+     */
+    @Override
+    public String toString()
+    {
+        String s = "";
+        //Get the Monster's name with its ID and element
+        s += "%s:\n".formatted(getName(true, true));
+        //Add each ability except for leader skills
+        for (Ability ability : abilities)
+        {
+            if (ability instanceof Leader_Skill)
+            {
+                continue;
+            }
+            s += "\t %s\n\n".formatted(ability.toString(containsDebuff(Debuff.SILENCE), containsDebuff(Debuff.OBLIVION)));
+        }
+        return s;
+    }
+    
+    /**
+     * Formats the Monster into a shorter readable String.
+     * <pre>
+     * Format:
+     * name (&lt;HP&gt;, &lt;Attack Bar&gt;)
+     *      Buffs: [&lt;Current buffs&gt;]
+     *      Debuffs: [&lt;Current debuffs&gt;]
+     *      Other Effects: [&lt;Any other effects&gt;] (&lt;Place in team&gt;) </pre>
+     *
+     * @param withElement True if the method should return the Monster's name with its element, false otherwise
+     * @return The shorter formatted String
+     */
+    public String shortToString(boolean withElement)
+    {
+        //Get the Monster's name
+        String name = withElement ? getName(true, true) : this.name;
+        //Get the Monster's HP and attack bar ratios
+        String healthPercent = getHpRatio() + "";
+        String atkBarPercent = 100.0 * atkBar / MAX_ATK_BAR_VALUE + "";
+        
+        //Format the String and return the result
+        return """
+                %s%s (Hp = %s%%%s, Attack Bar = %s%%)%s
+                \t\tBuffs: %s%s
+                \t\tDebuffs: %s%s
+                \t\tOther Effects: %s%s""".formatted(name, ConsoleColors.GREEN, healthPercent.substring(0, healthPercent.indexOf(".") + 2), ConsoleColors.CYAN, atkBarPercent.substring(0, atkBarPercent.indexOf(".") + 2), ConsoleColors.BLUE, appliedBuffs, ConsoleColors.RED, appliedDebuffs, ConsoleColors.PURPLE, otherStats, ConsoleColors.RESET);
+    }
+    
+    /**
+     * Destroy an amount of HP
+     *
+     * @param amount The new amount to destroy
      */
     public void destroyHp(int amount)
     {
+        //Max destroyed HP is 60% of max HP
         destroyedHp = (destroyedHp + amount > maxHp * 0.6) ? (int) (maxHp * 0.6) : destroyedHp + amount;
     }
     
@@ -466,42 +1104,62 @@ public class Monster
      */
     public void addAppliedBuff(int num, int turns, Monster caster)
     {
+        //Increase the number of turns by one if this is the caster
         if (caster.equals(this) && turns > 0)
         {
             turns++;
         }
+        //Make sure the buff is not a shield
         if (num == Buff.SHIELD)
         {
             throw new RuntimeException("Please use the other addAppliedBuff method for shields");
         }
         
-        if (containsBuff(num))
+        //Check if the Monster already has the buff
+        if (this.containsBuff(num))
         {
-            //Continuous healing can stack with itself, no other buff can.
-            if (num != Buff.RECOVERY && num != Buff.THREAT && num != Buff.DEFEND)
+            switch (num)
             {
-                if (appliedBuffs.get(getBuffIndex(new Buff(num, 1))).getNumTurns() < turns)
+                //Continuous healing can stack with itself, no other buff can.
+                case Buff.RECOVERY -> appliedBuffs.add(new Buff(num, turns));
+                case Buff.THREAT ->
                 {
-                    removeBuff(new Buff(num, 1));
-                    appliedBuffs.add(new Buff(num, turns));
+                    //Apply the new Threat if and only if its turns active is longer than the one already applied
+                    if (appliedBuffs.get(getBuffIndex(new Buff(num, 1))).getNumTurns() < turns)
+                    {
+                        removeBuff(num);
+                        appliedBuffs.add(new Threat(turns));
+                    }
+                }
+                case Buff.DEFEND ->
+                {
+                    //Apply the new Defend if and only if its turns active is longer than the one already applied
+                    if (appliedBuffs.get(getBuffIndex(new Buff(num, 1))).getNumTurns() < turns)
+                    {
+                        removeBuff(num);
+                        appliedBuffs.add(new Defend(turns, caster));
+                    }
+                }
+                default ->
+                {
+                    //Apply the new buff if and only if its turns active is longer than the one already applied
+                    if (appliedBuffs.get(getBuffIndex(num)).getNumTurns() < turns)
+                    {
+                        removeBuff(num);
+                        appliedBuffs.add(new Buff(num, turns));
+                    }
                 }
             }
-            else if (num == Buff.RECOVERY)
+        }
+        else //Newly applied buff
+        {
+            switch (num)
             {
-                appliedBuffs.add(new Buff(Buff.RECOVERY, turns));
+                //Special cases
+                case Buff.THREAT -> appliedBuffs.add(new Threat(turns));
+                case Buff.DEFEND -> appliedBuffs.add(new Defend(turns, caster));
+                default -> appliedBuffs.add(new Buff(num, turns));
             }
-        }
-        else if (num == Buff.THREAT)
-        {
-            appliedBuffs.add(new Threat(turns));
-        }
-        else if (num == Buff.DEFEND)
-        {
-            appliedBuffs.add(new Defend(turns, caster));
-        }
-        else
-        {
-            appliedBuffs.add(new Buff(num, turns));
         }
     }
     
@@ -516,6 +1174,7 @@ public class Monster
     private void addAppliedBuff(int num, double chance, int turns, Monster caster)
     {
         int random = new Random().nextInt(101);
+        //Apply the buff with chance%
         if (random <= chance)
         {
             addAppliedBuff(num, turns, caster);
@@ -530,36 +1189,42 @@ public class Monster
      */
     public void addAppliedBuff(Buff buff, Monster caster)
     {
-        if (buff instanceof Shield possibleShield)
+        switch (buff)
         {
-            if (possibleShield.getAmount() == 0)
+            //Check if the buff is a shield
+            case Shield possibleShield ->
             {
-                return;
-            }
-            if (hasShield())
-            {
-                if (getShield().getAmount() > possibleShield.getAmount())
+                //Do nothing if the shield has no health
+                if (possibleShield.getAmount() == 0)
                 {
                     return;
                 }
-                else if (getShield().getAmount() == possibleShield.getAmount())
+                if (hasShield())
                 {
-                    if (getShield().getNumTurns() > possibleShield.getNumTurns())
+                    //Apply the new shield if it has more health than the current one
+                    if (getShield().getAmount() > possibleShield.getAmount() || getShield().getAmount() == possibleShield.getAmount() && getShield().getNumTurns() > possibleShield.getNumTurns())
                     {
                         return;
                     }
+                    else //Remove the old shield
+                    {
+                        appliedBuffs.remove(getShield());
+                        shield = 0;
+                    }
                 }
-                else
-                {
-                    appliedBuffs.remove(getShield());
-                    shield = 0;
-                }
+                appliedBuffs.add(possibleShield);
             }
-            appliedBuffs.add(possibleShield);
-        }
-        else
-        {
-            addAppliedBuff(buff.getBuffNum(), buff.getNumTurns(), caster);
+            case IncAtkBar amount ->
+            {
+                //Increase the attack bar
+                this.increaseAtkBarByPercent(amount.getAmount());
+                this.removeBuff(amount);
+            }
+            case null ->
+            {
+            }
+            //Apply the new buff
+            default -> addAppliedBuff(buff.getBuffNum(), buff.getNumTurns(), caster);
         }
     }
     
@@ -573,6 +1238,7 @@ public class Monster
     public void addAppliedBuff(Buff buff, double chance, Monster caster)
     {
         int random = new Random().nextInt(101);
+        //Apply the buff with chance%
         if (random <= chance)
         {
             addAppliedBuff(buff, caster);
@@ -580,7 +1246,7 @@ public class Monster
     }
     
     /**
-     * Adds a new debuff to the Monster (Assumes debuff does not go through immunity)
+     * Adds a new debuff to the Monster (Assumes the debuff does not go through immunity)
      *
      * @param num    The debuff number to add
      * @param turns  The number of turns it is active
@@ -588,8 +1254,8 @@ public class Monster
      */
     private void addAppliedDebuff(int num, int turns, Monster caster)
     {
-        int resRate = new Random().nextInt(101);
-        if (resRate <= Math.max(15, Math.min(resistance, 100) - Math.min(accuracy, 100)))
+        //Resistance check
+        if (caster.resistanceCheck(this))
         {
             if (print)
             {
@@ -597,13 +1263,17 @@ public class Monster
             }
             return;
         }
-        if (containsDebuff(num))
+        //Check if the Monster already has the debuff
+        if (this.containsDebuff(num))
         {
+            //Bomb and DOT can stack
+            //Provoke cannot be overridden
             if (num != Debuff.BOMB && num != Debuff.CONTINUOUS_DMG && num != Debuff.PROVOKE)
             {
+                //Add the buff its turns are more than the one already applied
                 if (appliedDebuffs.get(getDebuffIndex(num)).getNumTurns() < turns)
                 {
-                    removeDebuff(num);
+                    this.removeDebuff(num);
                     appliedDebuffs.add(new Debuff(num, turns, 0));
                 }
             }
@@ -611,30 +1281,28 @@ public class Monster
             {
                 if (num == Debuff.BOMB)
                 {
-                    if (countDebuff(Debuff.BOMB) < 2)
+                    //Check for the number of bomb stacks
+                    if (countDebuff(Debuff.BOMB) < MAX_BOMBS)
                     {
                         appliedDebuffs.add(new Debuff(Debuff.BOMB, turns, 0));
                     }
                 }
                 else
                 {
-                    
-                    if (countDebuff(Debuff.CONTINUOUS_DMG) < 6)
+                    //Check for the number of DOT stacks
+                    if (countDebuff(Debuff.CONTINUOUS_DMG) < MAX_DOT)
                     {
-                        appliedDebuffs.add(new Debuff(
-                                Debuff.CONTINUOUS_DMG, turns, 0));
+                        appliedDebuffs.add(new Debuff(Debuff.CONTINUOUS_DMG, turns, 0));
                     }
                 }
             }
         }
+        //Add new Provoke
         else if (num == Debuff.PROVOKE)
         {
             appliedDebuffs.add(new Provoke(turns, caster));
         }
-        /*else if (num == Debuff.DEC_ATK_BAR)
-        {
-            appliedDebuffs.add(new DecAtkBar())
-        }*/
+        //Add the debuff
         else
         {
             appliedDebuffs.add(new Debuff(num, turns, 0));
@@ -642,24 +1310,28 @@ public class Monster
     }
     
     /**
-     * Adds a new debuff to the Monster that ignores resistance
+     * Adds a new debuff to the Monster that ignores resistance (Still checks for immunity buff)
      *
      * @param debuff The debuff to add
      * @param caster The Monster who gave it
      */
     public void addGuaranteedAppliedDebuff(Debuff debuff, Monster caster)
     {
+        //Add the caster to the debuff
         debuff.setCaster(caster);
-        if (containsBuff(new Buff(Buff.IMMUNITY, 1)) && !debuff.goesThroughImmunity())
+        //Do nothing if this has immunity and the debuff does not go through immunity
+        if (this.containsBuff(Buff.IMMUNITY) && !debuff.goesThroughImmunity())
         {
             return;
         }
         int num = debuff.getDebuffNum();
         int turns = debuff.getNumTurns();
-        if (containsDebuff(num))
+        if (this.containsDebuff(num))
         {
+            //Bomb and DOT can stack, provoke cannot be overridden
             if (num != Debuff.BOMB && num != Debuff.CONTINUOUS_DMG && num != Debuff.PROVOKE)
             {
+                //Add the debuff if it has more turns than the one already applied
                 if (appliedDebuffs.get(getDebuffIndex((num))).getNumTurns() < turns)
                 {
                     removeDebuff(num);
@@ -670,36 +1342,38 @@ public class Monster
             {
                 if (num == Debuff.BOMB)
                 {
-                    if (countDebuff(Debuff.BOMB) < 2)
+                    //Check for the number of bomb stacks
+                    if (countDebuff(Debuff.BOMB) < MAX_BOMBS)
                     {
                         appliedDebuffs.add(debuff);
                     }
                 }
                 else
                 {
-                    
-                    if (countDebuff(Debuff.CONTINUOUS_DMG) < 10)
+                    //Check for the number of DOT stacks
+                    if (countDebuff(Debuff.CONTINUOUS_DMG) < MAX_DOT)
                     {
                         appliedDebuffs.add(debuff);
                     }
                 }
             }
         }
+        //Add a new Provoke
         else if (num == Debuff.PROVOKE)
         {
             appliedDebuffs.add(new Provoke(turns, caster));
         }
-        else
+        else //Add the new debuff
         {
             appliedDebuffs.add(debuff);
         }
     }
     
     /**
-     * Adds a new debuff to the Monster that ignores resistance
+     * Adds a new debuff to the Monster that ignores resistance (Still checks for immunity buff)
      *
      * @param debuff The number of the debuff to add
-     * @param turns The number of turns to apply the debuff
+     * @param turns  The number of turns to apply the debuff
      * @param caster The Monster who gave it
      */
     public void addGuaranteedAppliedDebuff(int debuff, int turns, Monster caster)
@@ -711,20 +1385,22 @@ public class Monster
      * Adds a new debuff to the Monster (Assumes debuff does not go through immunity
      *
      * @param num    The debuff number to add
-     * @param chance The chance the debuff will be applied
+     * @param chance The chance the debuff will be applied (0-100)
      * @param turns  The number of turns it is active
      * @param caster The Monster who gave it
      */
     public void addAppliedDebuff(int num, double chance, int turns, Monster caster)
     {
-        if (containsBuff(new Buff(Buff.IMMUNITY, 1)))
+        //Check for immunity buff
+        if (this.containsBuff(Buff.IMMUNITY))
         {
             if (print)
             {
-                System.out.println(ConsoleColors.GREEN + "Immunity!" + ConsoleColors.RESET);
+                System.out.printf("%sImmunity!%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
             }
             return;
         }
+        //Resistance check
         int random = new Random().nextInt(101);
         if (random <= chance)
         {
@@ -740,8 +1416,21 @@ public class Monster
      */
     public void addAppliedDebuff(Debuff debuff, Monster caster)
     {
-        if (debuff instanceof DecAtkBar)
+        //Check for DecAtkBar and Shorten_Debuff
+        if (debuff instanceof DecAtkBar || debuff instanceof Shorten_Buff)
         {
+            //Resistance check
+            int resRate = new Random().nextInt(101);
+            if (resRate <= Math.max(15, Math.min(resistance, 100) - Math.min(accuracy, 100)))
+            {
+                if (print)
+                {
+                    System.out.println("Resisted!");
+                }
+                return;
+            }
+            
+            //Add the debuff
             appliedDebuffs.add(debuff);
             return;
         }
@@ -752,19 +1441,21 @@ public class Monster
      * Adds a new debuff to the Monster
      *
      * @param debuff The debuff to add
-     * @param chance The chance it will apply
+     * @param chance The chance it will apply (0-100)
      * @param caster The Monster who gave it
      */
     public void addAppliedDebuff(Debuff debuff, double chance, Monster caster)
     {
-        if (containsBuff(new Buff(Buff.IMMUNITY, 1)) && !debuff.goesThroughImmunity())
+        //Immunity check
+        if (this.containsBuff(Buff.IMMUNITY) && !debuff.goesThroughImmunity())
         {
             if (print)
             {
-                System.out.println(ConsoleColors.GREEN + "Immunity!" + ConsoleColors.RESET);
+                System.out.printf("%sImmunity!%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
             }
             return;
         }
+        //Apply the debuff with chance%
         int random = new Random().nextInt(101);
         if (random <= chance)
         {
@@ -779,6 +1470,7 @@ public class Monster
      */
     public void removeDebuff(Debuff debuff)
     {
+        //Search through the array for all instances of the debuff
         for (int i = appliedDebuffs.size() - 1; i >= 0; i--)
         {
             if (appliedDebuffs.get(i).equals(debuff))
@@ -805,6 +1497,7 @@ public class Monster
      */
     public void removeBuff(Buff buff)
     {
+        //Search through the array for all instances of the buff
         for (int i = appliedBuffs.size() - 1; i >= 0; i--)
         {
             if (appliedBuffs.get(i).equals(buff))
@@ -825,53 +1518,6 @@ public class Monster
     }
     
     /**
-     * Finds the index of the given buff
-     *
-     * @param buff The buff to find
-     * @return the index of the provided buff
-     */
-    public int getBuffIndex(Buff buff)
-    {
-        for (int i = 0; i < appliedBuffs.size(); i++)
-        {
-            Buff b = appliedBuffs.get(i);
-            if (buff.equals(b))
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * Finds the index of the given debuff
-     *
-     * @param debuff The debuff to find
-     * @return the index of the provided debuff. -1 if it is not found
-     */
-    public int getDebuffIndex(Debuff debuff)
-    {
-        for (int i = 0; i < appliedDebuffs.size(); i++)
-        {
-            if (appliedDebuffs.get(i).equals(debuff))
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-    
-    /**
-     * Returns the index of the debuff with the given debuff number
-     * @param debuff The number of the debuff to search for
-     * @return The index of the debuff with the given debuff number. -1 if it is not found
-     */
-    public int getDebuffIndex(int debuff)
-    {
-        return getDebuffIndex(new Debuff(debuff, 0, 0));
-    }
-    
-    /**
      * Counts the number of instances of the given buff are on the Monster
      *
      * @param buff The buff to count
@@ -880,6 +1526,7 @@ public class Monster
     public int countBuff(Buff buff)
     {
         int count = 0;
+        //Search through the array for all instances of the buff
         for (Buff b : appliedBuffs)
         {
             if (b.equals(buff))
@@ -898,7 +1545,7 @@ public class Monster
      */
     public int countBuff(int buff)
     {
-        return countBuff(new Buff(buff, 1));
+        return countBuff(new Buff(buff));
     }
     
     /**
@@ -910,6 +1557,7 @@ public class Monster
     public int countDebuff(Debuff debuff)
     {
         int count = 0;
+        //Search through the array for all instances of the debuff
         for (Debuff d : appliedDebuffs)
         {
             if (d.equals(debuff))
@@ -928,40 +1576,7 @@ public class Monster
      */
     public int countDebuff(int debuff)
     {
-        return countDebuff(new Debuff(debuff, 1, 0));
-    }
-    
-    /**
-     * Checks if the Monster is dead
-     *
-     * @return true if the Monster has 0 health, false otherwise
-     */
-    public boolean isDead()
-    {
-        if (this.currentHp <= 0)
-        {
-            if (this.containsBuff(Buff.ENDURE))
-            {
-                this.currentHp = 1;
-            }
-            if (this.containsBuff(Buff.SOUL_PROTECTION))
-            {
-                currentHp = (int) (maxHp * 0.3);
-                removeBuff(Buff.SOUL_PROTECTION);
-            }
-        }
-        return this.currentHp <= 0;
-        //return dead;
-    }
-    
-    /**
-     * Marks the Monster as alive (false) or dead (true)
-     *
-     * @param isDead The new dead state of the Monster
-     */
-    public void setDead(boolean isDead)
-    {
-        dead = isDead;
+        return countDebuff(new Debuff(debuff));
     }
     
     /**
@@ -969,13 +1584,17 @@ public class Monster
      *
      * @param multiplier The ability multiplier
      * @param target     The Monster being attacked
-     * @return the base damage to deal for this turn
+     * @return The base damage to deal for this turn
      */
     public int calculateBaseDamage(double multiplier, Monster target)
     {
+        //Attack * Multiplier
         double dmg = ((atk + extraAtk - lessAtk) * multiplier);
-        int critRate = (target.containsBuff(new Buff(Buff.CRIT_RESIST_UP, 1))) ? (int) (this.critRate * 0.7) : this.critRate;
+        
+        //Calculate crit rate
+        int critRate = (target.containsBuff(Buff.CRIT_RESIST_UP)) ? (int) (this.critRate * 0.7) : this.critRate;
         String elementRelation = Team.elementalRelationship(element, target.element);
+        //Change crit rate based on the elemental relationship
         int critChanceChange = 0;
         if (elementRelation.equals(ConsoleColors.GREEN_BACKGROUND))
         {
@@ -988,33 +1607,19 @@ public class Monster
         //Crit
         if (new Random().nextInt(101) <= (critRate + extraCritRate - extraGlancingRate + critChanceChange))
         {
-            dmg *= (1 + (1.0 * (this.critDmg) / 100));
-            if (elementRelation.equals(ConsoleColors.GREEN_BACKGROUND))
-            {
-                dmg *= 1.17;
-            }
-            else if (elementRelation.equals(ConsoleColors.RED_BACKGROUND))
-            {
-                dmg *= 0.83;
-            }
+            //Current dmg * 1.critDmg
+            dmg *= (1 + ((this.critDmg) / 100.0));
             crit = true;
         }
-        
         //Glancing
         else if (new Random().nextInt(101) <= (30 + extraGlancingRate - critChanceChange + abilityGlancingRateChange))
         {
+            //Current dmg * 0.7
             dmg *= 0.7;
-            if (elementRelation.equals(ConsoleColors.GREEN_BACKGROUND))
-            {
-                dmg *= 1.15;
-            }
-            else if (elementRelation.equals(ConsoleColors.RED_BACKGROUND))
-            {
-                dmg *= 0.85;
-            }
             glancing = true;
         }
-        return Math.max(50, new Random().nextInt((int) dmg - 50, (int) dmg + 50));
+        //Random damage within range of calculation
+        return Math.max(1, new Random().nextInt((int) dmg - 100, (int) dmg + 100));
     }
     
     /**
@@ -1024,6 +1629,7 @@ public class Monster
      */
     public double calculateBaseDmgReduction()
     {
+        //1,000 / (1140 +3.5d)
         return (1_000 / (1_140 + 3.5 * (def + extraDef - lessDef)));
     }
     
@@ -1035,14 +1641,18 @@ public class Monster
      */
     public void dealDmg(double dmg, boolean ignoresDmgReduction)
     {
+        //Deal damage to the shield
         if (!ignoresDmgReduction)
         {
             shield -= (int) Math.ceil(dmg);
+            getShield().decreaseShieldHealth((int) Math.ceil(dmg));
         }
+        //Deal damage directly to the HP
         else
         {
             currentHp -= (int) Math.ceil(dmg);
         }
+        //Remove the shield if it has no health left and apply the leftover damage to the HP
         if (shield < 0)
         {
             removeBuff(Buff.SHIELD);
@@ -1052,22 +1662,24 @@ public class Monster
     }
     
     /**
-     * Increases the attack bar by the default amount (1/5 of the Monster's attack speed) if the Monster is alive, does nothing otherwise
+     * Increases the attack bar by the default amount (7% of the Monster's attack speed) if the Monster is alive, does nothing otherwise
      */
     public void increaseAtkBar()
     {
+        //Do nothing if the Monster is dead
         if (dead)
         {
             atkBar = 0;
             return;
         }
-        atkBar += (spd + extraSpd - lessAtkSpd) * 0.2;
+        //Increase the attack bar by 7% of the speed
+        atkBar += (spd + extraSpd - lessAtkSpd) * 0.07;
     }
     
     /**
      * Checks if the Monster has a full attack bar
      *
-     * @return true if the Monster has a full attack bar, false otherwise
+     * @return True if the Monster has a full attack bar, false otherwise
      */
     public boolean hasFullAtkBar()
     {
@@ -1075,146 +1687,85 @@ public class Monster
     }
     
     /**
-     * @return The current attack bar value
-     */
-    public double getAtkBar()
-    {
-        return atkBar;
-    }
-    
-    /**
      * Increases the attack bar by a given amount
      *
-     * @param num the amount to increase the attack bar
+     * @param num The amount to increase the attack bar
      */
     public void increaseAtkBar(double num)
     {
-        atkBar += Math.max(num, 10);
+        atkBar += Math.max(num, 0);
     }
     
     /**
      * Increases the attack bar by a given amount
      *
-     * @param num The percent to increase the attack bar
+     * @param num The percent to increase the attack bar (0-100)
      */
     public void increaseAtkBarByPercent(int num)
     {
-        atkBar += (int) Math.ceil(MAX_ATK_BAR_VALUE * (num / 100.0));
+        //Prevent the attack bar from going negative
+        atkBar += (int) Math.max(Math.ceil(MAX_ATK_BAR_VALUE * (num / 100.0)), 0);
     }
     
     /**
-     * Set the attack bar to a given amount
+     * Decreases the attack bar by a given amount
      *
-     * @param num the amount to set the attack bar to
+     * @param num The percent to decrease the attack bar (0-100)
      */
-    public void setAtkBar(int num)
+    public void decreaseAtkBarByPercent(int num)
     {
-        atkBar = Math.max(num, 0);
-    }
-    
-    /**
-     * Gives the name of the Monster with its associated number and element if desired
-     *
-     * @param withElement true if the elemental color is included
-     * @param withNumber  true if the Monster's number is included
-     * @return the Monster's name with its element and color if wanted
-     */
-    public String getName(boolean withElement, boolean withNumber)
-    {
-        if (!withElement)
-        {
-            if (withNumber)
-            {
-                return name;
-            }
-            String returnName = "";
-            for (char c : name.toCharArray())
-            {
-                if (!(c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9' || c == '0' || c == '(' || c == ')'))
-                {
-                    returnName += c;
-                }
-            }
-            return returnName;
-        }
-        String elementColor = "";
-        switch (element)
-        {
-            case 0 -> elementColor = ConsoleColors.RED_BOLD_BRIGHT;
-            case 1 -> elementColor = ConsoleColors.BLUE_BOLD_BRIGHT;
-            case 2 -> elementColor = ConsoleColors.YELLOW_BOLD_BRIGHT;
-            case 3 -> elementColor = ConsoleColors.WHITE_BOLD_BRIGHT;
-            case 4 -> elementColor = ConsoleColors.PURPLE_BOLD_BRIGHT;
-        }
-        if (withNumber)
-        {
-            return elementColor + name + ConsoleColors.RESET;
-        }
-        String returnName = "";
-        for (char c : name.toCharArray())
-        {
-            if (!(c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9' || c == '0' || c == '(' || c == ')'))
-            {
-                returnName += c;
-            }
-        }
-        return elementColor + returnName + ConsoleColors.RESET;
+        increaseAtkBarByPercent(-num);
     }
     
     /**
      * Checks if the given ability number is valid to use
      *
      * @param abilityNum The ability number to check
-     * @return true if the ability associated with the given number can be used on this turn, false otherwise
+     * @return True if the ability associated with the given number can be used on this turn, false otherwise
      */
     public boolean abilityIsValid(int abilityNum)
     {
-        if (abilities.get(abilityNum - 1).isPassive())
-        {
-            return false;
-        }
-        return abilities.get(abilityNum - 1).getTurnsRemaining() <= 0;
+        abilityNum--;
+        return abilityNum >= 0 && abilityNum < abilities.size() && !abilities.get(abilityNum).isPassive() && !(abilities.get(abilityNum) instanceof Leader_Skill) && abilities.get(abilityNum).getTurnsRemaining() <= 0;
     }
     
     /**
      * Checks if the given ability is valid to use
      *
      * @param ability The ability to check
-     * @return true if the given ability can be used on this turn, false otherwise
+     * @return True if the given ability can be used on this turn, false otherwise
      */
     public boolean abilityIsValid(Ability ability)
     {
-        if (ability.isPassive())
-        {
-            return false;
-        }
-        return ability.getTurnsRemaining() <= 0;
+        return !ability.isPassive() && !(ability instanceof Leader_Skill) && ability.getTurnsRemaining() <= 0;
     }
     
     /**
      * Checks if the given target can be attacked/healed
      *
-     * @param next          The Monster whose turn it is
      * @param target        The targeted Monster to check
-     * @param enemyIsTarget true if target and next are on opposite teams, false otherwise
-     * @return true if the given target can be attacked/healed
+     * @param enemyIsTarget True if target and acting Monster are on opposite teams, false otherwise
+     * @return True if the given target can be attacked/healed
      */
-    public boolean targetIsValid(Monster next, Monster target, boolean enemyIsTarget)
+    public boolean targetIsValid(Monster target, boolean enemyIsTarget)
     {
-        Provoke p = next.getProvoke();
-        if (p != null && enemyIsTarget)
+        //Provoke check
+        Provoke p = this.getProvoke();
+        if (p != null)
         {
             return p.getCaster().equals(target);
         }
+        //Check if the Monster is dead
         if (target.isDead())
         {
             return false;
         }
-        for (Monster other : Auto_Play.getOther().getMonsters())
+        //Check the other team for any Threat buffs
+        for (Monster other : game.getOtherTeam().getMonsters())
         {
-            if (other.hasThreat() && enemyIsTarget)
+            if (other.hasThreat() && enemyIsTarget && target.equals(other))
             {
-                return target.equals(other);
+                return true;
             }
         }
         return true;
@@ -1225,80 +1776,77 @@ public class Monster
      *
      * @param target     The targeted Monster
      * @param abilityNum The ability number to use
-     * @return true if the turn completed successfully, false otherwise
+     * @return True if the turn completed successfully, false otherwise
      */
     public boolean nextTurn(Monster target, int abilityNum)
     {
         abilityNum--;
+        //Check if the Monster is dead
         if (this.isDead())
         {
             return false;
         }
-        extraAtk = 0;
-        extraDef = 0;
-        extraCritRate = 0;
-        extraSpd = 0;
-        shield = 0;
+        
+        
+        //Get chosen ability
         Ability a = abilities.get(abilityNum);
-        if (target.equals(this) && a.targetsEnemy())
+        
+        //Make sure the ability and targets are valid
+        if (!targetIsValid(target, a.targetsEnemy()) || !abilityIsValid(a))
         {
             return false;
         }
-        if (target.isDead())
+        
+        resetStatEffects();
+        
+        //Make sure the ability's cooldown is over
+        if (a.getTurnsRemaining() == 0)
         {
-            return false;
-        }
-        if (a.isPassive())
-        {
-            return false;
+            //Reset the attack bar
+            atkBar = 0;
+            if ((a.targetsEnemy()))
+            {
+                if (a.targetsAllTeam()) //Attack the entire team
+                {
+                    attackTeam(game.getOtherTeam(), a);
+                }
+                else //Attack a single target
+                {
+                    attack(target, a, false);
+                }
+            }
+            else //Heal Ability
+            {
+                if (a.targetsAllTeam()) //Heal the entire team
+                {
+                    healTeam(game.getNextMonsTeam(), a);
+                }
+                else //Heal a single target
+                {
+                    heal(target, a);
+                }
+            }
+            //Set the ability to its max cooldown
+            a.setToMaxCooldown();
         }
         else
         {
-            if (a.getTurnsRemaining() == 0)
+            //Print an error message
+            if (print)
             {
-                atkBar = 0;
-                if ((a.targetsEnemy()))
-                {
-                    if (a.targetsAllTeam())
-                    {
-                        attackTeam(game.getOtherTeam(), a);
-                    }
-                    else
-                    {
-                        attack(target, a, false);
-                    }
-                }
-                else
-                {
-                    if (a.targetsAllTeam())
-                    {
-                        healTeam(game.getNextMonsTeam(), a);
-                    }
-                    else
-                    {
-                        heal(target, a);
-                    }
-                }
-                a.setToMaxCooldown();
+                System.out.printf("Ability on cooldown (%d turns remaining)\n", a.getTurnsRemaining());
             }
-            else
-            {
-                if (print)
-                {
-                    System.out.printf("Ability on cooldown (%d turns remaining)\n", a.getTurnsRemaining());
-                }
-                return false;
-            }
+            return false;
         }
         
         //Cleanse
-        if (containsBuff(Buff.CLEANSE))
+        if (this.containsBuff(Buff.CLEANSE))
         {
             cleanse();
         }
         
         //Apply shield
-        if (hasShield() && shield == 0)
+        if (this.hasShield() && shield == 0)
         {
             shield = getShield().getAmount();
         }
@@ -1316,6 +1864,7 @@ public class Monster
      */
     protected void attack(Monster target, Ability ability, boolean isCounter, int count)
     {
+        this.singleTargetAttack = true;
         if (print)
         {
             System.out.println("\n");
@@ -1324,54 +1873,50 @@ public class Monster
         //Make sure booleans do not conflict with each other
         if (Game.canCounter() && isCounter)
         {
-            throw new ConflictingArguments(getName(true, true) + ": canCounter and isCounter can not both be true");
+            throw new ConflictingArguments("%s: canCounter and isCounter can not both be true".formatted(getName(true, true)));
         }
         
-        //Calculate and deal damage
+        //Apply stat effects
         applyBeginningOfTurnBuffs();
         applyBeginningOfTurnDebuffs();
-        if (currentHp <= 0)
-        {
-            currentHp = 0;
-            dead = true;
-            crit = false;
-            glancing = false;
-            return;
-        }
+        
+        //Mak sure the Monster is not stunned
         if (isStunned())
         {
             return;
         }
+        
+        //Calculate base damage
         double finalDmg = calculateBaseDamage(ability.getDmgMultiplier(), target);
         
-        //Multiplies dmg by dmg reduction
+        //Multiply the base damage by the base damage reduction
         finalDmg *= (ability.ignoresDefense()) ? new Monster(target.element).calculateBaseDmgReduction() : target.calculateBaseDmgReduction();
         
-        String ignoreDef = (ability.ignoresDefense()) ? ConsoleColors.RED + "Ignore Defense! " + ConsoleColors.RESET : " ";
+        String ignoreDef = (ability.ignoresDefense()) ? "%sIgnore Defense! %s".formatted(ConsoleColors.RED, ConsoleColors.RESET) : " ";
         
-        //Branding
+        //Brand
         if (target.containsDebuff(Debuff.BRAND))
         {
             finalDmg *= 1.25;
         }
         
         //Invincibility
-        if (!ability.ignoresDmgReduction() && target.containsBuff(new Buff(Buff.INVINCIBILITY, 1)))
+        if (!ability.ignoresDmgReduction() && target.containsBuff(Buff.INVINCIBILITY))
         {
             finalDmg = 0;
             if (print)
             {
-                System.out.print(target.getName(true, true) + " has invincibility!\n");
+                System.out.printf("%s has invincibility!\n", target.getName(true, true));
             }
         }
         
-        //Reduces damage if the method call is a counter
+        //Reduce damage if the attack is a counter
         if (isCounter)
         {
             finalDmg *= 0.7;
         }
         
-        //Accounts for reflected damage
+        //Reflect damage if the target has the Reflect buff
         if (target.containsBuff(Buff.REFLECT))
         {
             dealDmg(finalDmg * 0.3, false);
@@ -1382,22 +1927,27 @@ public class Monster
             finalDmg *= 0.7;
         }
         
-        //Checks for Defend buff
+        //Defend buff
         boolean defend = false;
         Monster tempTarget = target;
         if (!ability.ignoresDmgReduction() && target.hasDefend())
         {
             if (print)
             {
-                System.out.println(ConsoleColors.BLUE + "Defend! " + ConsoleColors.RESET);
+                System.out.printf("%sDefend! %s%n", ConsoleColors.BLUE, ConsoleColors.RESET);
             }
-            target = target.getDefend().getCaster();
-            finalDmg /= 2;
-            defend = true;
-            tempTarget = target;
+            Defend def = target.getDefend();
+            if (def != null)
+            {
+                //Change target and reduce damage
+                target = def.getCaster();
+                finalDmg /= 2;
+                defend = true;
+                tempTarget = target;
+            }
         }
         
-        //Reduces damage if target has Threat
+        //Reduce damage if target has Threat
         if (target.hasThreat())
         {
             finalDmg *= 0.85;
@@ -1407,36 +1957,41 @@ public class Monster
         target.removeDebuff(Debuff.SLEEP);
         tempTarget.removeDebuff(Debuff.SLEEP);
         
+        //Apply damage reduction
         if (!ability.ignoresDmgReduction())
         {
             finalDmg = game.getOtherTeam().dmgReduction(game.getOtherTeam(), finalDmg, target);
         }
+        
+        //Activate damage increasing passive if there is one
         finalDmg = dmgIncProtocol(finalDmg);
         
         //Deal damage to target
         tempTarget.dealDmg(finalDmg, ability.ignoresDmgReduction());
         dmgDealtThisTurn += finalDmg;
+        target.dmgTakenThisTurn += finalDmg;
         
-        //Print damage dealt
+        //Print crit or glancing hit messages
         if (crit)
         {
             if (print)
             {
-                System.out.print(ConsoleColors.GREEN + "Critical hit! " + ConsoleColors.RESET);
+                System.out.printf("%sCritical hit! %s", ConsoleColors.GREEN, ConsoleColors.RESET);
             }
         }
         if (glancing)
         {
             if (print)
             {
-                System.out.print(ConsoleColors.YELLOW + "Glancing hit! " + ConsoleColors.RESET);
+                System.out.printf("%sGlancing hit! %s", ConsoleColors.YELLOW, ConsoleColors.RESET);
             }
         }
         
+        //Print damage dealt
         if (print)
         {
-            System.out.printf("%s%s%s dealt %s damage to %s.\n%s", ignoreDef, getName(true, true), ConsoleColors.PURPLE,
-                    numWithCommas((int) finalDmg), tempTarget.getName(true, true), ConsoleColors.RESET);
+            System.out.printf("%s%s%s dealt %,d damage to %s.\n%s", ignoreDef, getName(true, true), ConsoleColors.PURPLE,
+                    (int) finalDmg, tempTarget.getName(true, true), ConsoleColors.RESET);
         }
         
         target.wasCrit = crit;
@@ -1444,22 +1999,23 @@ public class Monster
         crit = false;
         glancing = false;
         
-        selfAfterHitProtocol(target);
+        //After hit passive
+        this.selfAfterHitProtocol(target, this.abilities.indexOf(ability) + 1);
         
         //Vampire Buff
         if (containsBuff(Buff.VAMPIRE) && !containsDebuff(Debuff.UNRECOVERABLE))
         {
-            setCurrentHp((int) (currentHp + (0.2 * finalDmg)));
+            this.setCurrentHp((int) (currentHp + (0.2 * finalDmg)));
         }
         
-        //Apply buffs to self if Monster does not have beneficial effect block debuff
-        if (!containsDebuff(Debuff.BLOCK_BENEFICIAL_EFFECTS))
+        //Apply buffs to self if Monster does not have the beneficial effect block debuff
+        if (!this.containsDebuff(Debuff.BLOCK_BENEFICIAL_EFFECTS))
         {
             ArrayList<Buff> buffs = ability.getBuffs();
             ArrayList<Integer> buffsChance = ability.getBuffsChance();
             for (int i = 0; i < buffs.size(); i++)
             {
-                addAppliedBuff(buffs.get(i), buffsChance.get(i), this);
+                this.addAppliedBuff(buffs.get(i), buffsChance.get(i), this);
             }
         }
         
@@ -1485,32 +2041,32 @@ public class Monster
         }
         
         //Seal Rune
-        if (numOfSets(Rune.SEAL) > 2 && !containsDebuff(Debuff.SEAL))
+        if (this.numOfSets(Rune.SEAL) > 2 && !this.containsDebuff(Debuff.SEAL))
         {
             double chance = 25;
             if (glancing)
             {
                 chance /= 2;
             }
-            target.addAppliedDebuff(Debuff.SEAL, chance * numOfSets(Rune.SEAL), 1, this);
+            target.addAppliedDebuff(Debuff.SEAL, chance * this.numOfSets(Rune.SEAL), 1, this);
         }
         
         //Decrease Atk Bar
         if (target.hasDecAtkBar())
         {
             DecAtkBar dec = target.getDecAtkBar();
-            target.setAtkBar((int) (target.getAtkBar() - dec.getAmount() * 10));
+            target.decreaseAtkBarByPercent(dec.getAmount());
             target.removeDebuff(dec);
             if (print)
             {
-                System.out.println(ConsoleColors.RED + "Decreased Attack bar by " + dec.getAmount() + "%!" + ConsoleColors.RESET);
+                System.out.printf("%sDecreased %s's Attack bar by %d%%!%s%n", ConsoleColors.RED, target.getName(true, true), dec.getAmount(), ConsoleColors.RESET);
             }
         }
         
         //Buff steal
-        if (containsBuff(new Buff(Buff.BUFF_STEAL, 1)))
+        if (this.containsBuff(Buff.BUFF_STEAL))
         {
-            stealBuff(target);
+            this.stealBuff(target);
         }
         
         //Remove beneficial effect
@@ -1523,28 +2079,38 @@ public class Monster
         //Strip
         if (target.containsDebuff(Debuff.STRIP))
         {
-            target.extraAtk = 0;
-            target.extraDef = 0;
-            target.extraCritRate = 0;
-            target.extraSpd = 0;
-            target.shield = 0;
-            target.appliedBuffs = new ArrayList<>();
+            this.removeBuff(Buff.THREAT);
+            while (!this.appliedBuffs.isEmpty())
+            {
+                this.decreaseStatCooldowns();
+            }
+        }
+        
+        //Shorten beneficial effect
+        if (target.containsDebuff(Debuff.SHORTEN_BUFFS))
+        {
+            Shorten_Buff sb = (Shorten_Buff) target.getAppliedDebuffs().get(target.getDebuffIndex(Debuff.SHORTEN_BUFFS));
+            for (Buff buff : target.getAppliedBuffs())
+            {
+                buff.decreaseTurn(sb.getAmount());
+            }
         }
         
         //Remove harmful effect
-        if (containsBuff(new Buff(Buff.REMOVE_DEBUFF, 1)))
+        if (this.containsBuff(Buff.REMOVE_DEBUFF))
         {
-            removeRandomDebuff();
-            removeBuff(Buff.REMOVE_DEBUFF);
+            this.removeRandomDebuff();
+            this.removeBuff(Buff.REMOVE_DEBUFF);
         }
         
+        //Target after hit passive
         target.targetAfterHitProtocol(this);
         if (!tempTarget.equals(target))
         {
             tempTarget.targetAfterHitProtocol(this);
         }
         
-        //Check if target is now dead
+        //Check if the target is now dead
         if (tempTarget.getCurrentHp() <= 0)
         {
             tempTarget.kill();
@@ -1554,32 +2120,30 @@ public class Monster
         //Vampire Rune
         if (!containsDebuff(Debuff.UNRECOVERABLE) && !containsDebuff(Debuff.SEAL))
         {
-            setCurrentHp((int) Math.ceil((currentHp + (finalDmg * 0.35 * numOfSets(Rune.VAMPIRE)))));
+            this.setCurrentHp((int) Math.ceil((currentHp + (finalDmg * 0.35 * numOfSets(Rune.VAMPIRE)))));
         }
         
         //Destroy Rune
         if (numOfSets(Rune.DESTROY) > 0 && !containsDebuff(Debuff.SEAL))
         {
-            int percentToDestroy = 0;
-            for (int i = 0; i < numOfSets(Rune.DESTROY); i++)
-            {
-                percentToDestroy += 4;
-            }
+            //Max 4% of target's max HP per Destroy set
+            int percentToDestroy = 4 * numOfSets(Rune.DESTROY);
+            
+            //30% of damage dealt
             double amountToDestroy = 0.3 * finalDmg;
-            if (amountToDestroy > maxHp * (1.0 * percentToDestroy / 100))
+            if (amountToDestroy > maxHp * (percentToDestroy / 100.0))
             {
-                amountToDestroy = maxHp * (1.0 * percentToDestroy / 100);
+                amountToDestroy = maxHp * (percentToDestroy / 100.0);
             }
-            destroyHp((int) amountToDestroy);
+            this.destroyHp((int) Math.ceil(amountToDestroy));
         }
         
         //Nemesis Rune
         if (tempTarget.numOfSets(Rune.NEMESIS) > 0 && !tempTarget.containsDebuff(Debuff.SEAL))
         {
-            if (finalDmg >= 0.07 * target.maxHp)
-            {
-                tempTarget.atkBar += 10 * (4 * tempTarget.numOfSets(Rune.NEMESIS));
-            }
+            double dmgPercent = finalDmg / target.getMaxHp();
+            double atkBarPercentIncrease = 0.04 * numOfSets(Rune.NEMESIS) * dmgPercent / 0.07;
+            this.increaseAtkBarByPercent((int) Math.ceil(atkBarPercentIncrease));
         }
         
         //Despair Rune
@@ -1593,17 +2157,21 @@ public class Monster
             target.addAppliedDebuff(Debuff.STUN, chance, 1, this);
         }
         
+        //Attack again if the ability is a multi-hit
         if (count < ability.getNumOfActivations())
         {
-            attack(target, ability, isCounter, count + 1);
+            this.attack(target, ability, isCounter, count + 1);
+            return;
         }
         
+        //Activate after turn functions if the attack was a counter
         if (isCounter)
         {
-            afterTurnProtocol(target, true, true);
+            this.afterTurnProtocol(target, true, true);
         }
         
-        if (defend)
+        //Counter if the target had the Defend buff
+        if (defend && !isCounter)
         {
             tempTarget.counter(this);
         }
@@ -1618,15 +2186,21 @@ public class Monster
      */
     public void attack(Monster target, Ability ability, boolean isCounter)
     {
+        //Make sure the Monster is not dead
+        if (currentHp <= 0)
+        {
+            this.kill();
+            return;
+        }
+        
         attack(target, ability, isCounter, 1);
         
-        //heals self if the ability heals based off damage done
+        //Heal self if the ability heals based off damage done
         setCurrentHp(currentHp + (int) (dmgDealtThisTurn * ability.getHealingPercent()));
     }
     
     /**
-     * The Monster's basic attack command. This method assumes the attack is not a counter and will execute all functions that are necessary during the
-     * Monster's turn
+     * The Monster's basic attack command. This method assumes the attack is not a counter and will execute all functions that are necessary during the Monster's turn
      *
      * @param target  The target Monster to attack
      * @param ability The ability to attack with
@@ -1638,16 +2212,19 @@ public class Monster
     
     /**
      * Attacks the entire team
-     * @param target The team to attack
+     *
+     * @param target  The team to attack
      * @param ability The ability to attack with
      */
     public void attackTeam(Team target, Ability ability)
     {
+        this.singleTargetAttack = false;
+        //Attack each Monster
         for (Monster monster : target.getMonsters())
         {
             if (!monster.isDead())
             {
-                attack(monster, ability, false);
+                this.attack(monster, ability, false);
             }
         }
     }
@@ -1661,13 +2238,21 @@ public class Monster
      */
     private void heal(Monster target, Ability ability, int count)
     {
+        //Check if the target is dead
+        if (target.isDead())
+        {
+            return;
+        }
+        
         for (Buff buff : ability.getBuffs())
         {
             if (buff.getBuffNum() == Buff.REMOVE_DEBUFF)
             {
+                //Remove a random debuff
                 target.removeRandomDebuff();
                 target.removeBuff(Buff.REMOVE_DEBUFF);
             }
+            //Cleanse the target
             if (buff.getBuffNum() == Buff.CLEANSE)
             {
                 target.cleanse();
@@ -1675,14 +2260,9 @@ public class Monster
             }
         }
         
-        if (target.isDead())
-        {
-            return;
-        }
-        
-        //Heals if target does not have unrecoverable and is not dead
+        //Heal the target if they do not have unrecoverable
         double healAmount = 0;
-        if (!target.containsDebuff(Debuff.UNRECOVERABLE) && !target.dead)
+        if (!target.containsDebuff(Debuff.UNRECOVERABLE))
         {
             healAmount = ability.getHealingPercent() * target.maxHp;
             target.currentHp += (int) Math.ceil(healAmount);
@@ -1692,16 +2272,15 @@ public class Monster
             }
         }
         
-        
+        //Print heal message
         if (print && healAmount > 0)
         {
-            System.out.printf("%sHealed %s%s for %d health.%s\n", ConsoleColors.GREEN, target.getName(true, true),
-                    ConsoleColors.GREEN, (int) healAmount, ConsoleColors.RESET);
+            System.out.printf("%sHealed %s%s for %d health.%s\n", ConsoleColors.GREEN, target.getName(true, true), ConsoleColors.GREEN, (int) healAmount, ConsoleColors.RESET);
         }
         
         
-        //Apply buffs to target if target does not have beneficial effect blocker
-        if (!target.containsDebuff(Debuff.BLOCK_BENEFICIAL_EFFECTS) && !target.dead)
+        //Apply buffs to the target if they do not have Beneficial Effect Blocker
+        if (!target.containsDebuff(Debuff.BLOCK_BENEFICIAL_EFFECTS))
         {
             ArrayList<Buff> buffs = ability.getBuffs();
             ArrayList<Integer> buffsChance = ability.getBuffsChance();
@@ -1721,11 +2300,14 @@ public class Monster
             for (int i = buffs.size() - 1; i >= 0; i--)
             {
                 Buff buff = buffs.get(i);
+                //Remove the buff it has no turns left
                 if (buff.getNumTurns() <= 0)
                 {
                     target.removeBuff(buff);
                     continue;
                 }
+                
+                //Increase the number of turns left by 1
                 buff.setNumTurns(buff.getNumTurns() + 1);
             }
             target.removeBuff(Buff.EXTEND_BUFF);
@@ -1738,7 +2320,10 @@ public class Monster
             for (int i = debuffs.size() - 1; i >= 0; i--)
             {
                 Debuff debuff = debuffs.get(i);
+                //Decrease the number of turns left by 1
                 debuff.setNumTurns(debuff.getNumTurns() - 1);
+                
+                //Remove the debuff if it has no turns left
                 if (debuff.getNumTurns() <= 0)
                 {
                     target.removeDebuff(debuff);
@@ -1747,6 +2332,7 @@ public class Monster
             target.removeBuff(Buff.SHORTEN_DEBUFF);
         }
         
+        //Heal again if the ability heals multiple times
         if (count < ability.getNumOfActivations())
         {
             heal(target, ability, count + 1);
@@ -1766,11 +2352,13 @@ public class Monster
     
     /**
      * Heals the entire team
-     * @param target The team to heal
+     *
+     * @param target  The team to heal
      * @param ability The ability to use
      */
     public void healTeam(Team target, Ability ability)
     {
+        //Heal each Monster
         for (Monster monster : target.getMonsters())
         {
             if (!monster.isDead())
@@ -1782,11 +2370,13 @@ public class Monster
     
     /**
      * Applies a function to every alive Monster on a team
+     *
      * @param team The team to apply to
      * @param func The function to apply
      */
     public void applyToTeam(Team team, Function func)
     {
+        //Apply the function to the team
         for (Monster monster : team.getMonsters())
         {
             if (!monster.isDead())
@@ -1803,8 +2393,10 @@ public class Monster
      */
     private void afterAttackProtocol(Monster target)
     {
+        //Target's attacked passive
         target.attacked(this);
         
+        //Remove any buffs with no turns left
         for (int i = target.appliedBuffs.size() - 1; i >= 0; i--)
         {
             Buff buff = target.appliedBuffs.get(i);
@@ -1814,6 +2406,7 @@ public class Monster
             }
         }
         
+        //Remove any debuffs with no turns left
         for (int i = target.appliedDebuffs.size() - 1; i >= 0; i--)
         {
             Debuff debuff = target.appliedDebuffs.get(i);
@@ -1823,6 +2416,7 @@ public class Monster
             }
         }
         
+        //Remove any other stats with no turns left
         for (int i = target.otherStats.size() - 1; i >= 0; i--)
         {
             Stat stat = target.otherStats.get(i);
@@ -1832,19 +2426,14 @@ public class Monster
             }
         }
         
+        //Check if the target or self are dead
         if (this.currentHp <= 0)
         {
-            this.currentHp = 0;
-            this.dead = true;
-            this.crit = false;
-            this.glancing = false;
+            this.kill();
         }
         if (target.currentHp <= 0)
         {
-            target.currentHp = 0;
-            target.dead = true;
-            target.crit = false;
-            target.glancing = false;
+            target.kill();
         }
     }
     
@@ -1858,6 +2447,7 @@ public class Monster
     {
         if (attack)
         {
+            //Do after turn function for each Monster
             for (Monster target : targetMons)
             {
                 afterAttackProtocol(target);
@@ -1885,30 +2475,19 @@ public class Monster
      * @param o         The Monster(s) that were targeted. This object should be an ArrayList<Monster>, a Team, or a Monster
      * @param isCounter True if this turn was a counter, false otherwise
      * @param attack    True if this turn was an attack turn, false otherwise
-     * @throws ConflictingArguments if Object o is not an ArrayList, a Team, or a Monster
+     * @throws ConflictingArguments If Object o is not an <code>ArrayList&lt;Monster&gt;</code>, a Team, or a Monster
      */
     public void afterTurnProtocol(Object o, boolean isCounter, boolean attack)
     {
-        if (!(o instanceof Team || o instanceof ArrayList<?> || o instanceof Monster))
+        switch (o)
         {
-            throw new ConflictingArguments("Object must be an ArrayList, a Team, or a Monster");
+            case Team t -> afterTurnProtocol(t.getMonsters(), attack);
+            case ArrayList<?> a -> afterTurnProtocol((ArrayList<Monster>) a, attack);
+            case Monster m -> afterTurnProtocol(m, attack);
+            default -> throw new ConflictingArguments("Object must be an ArrayList, a Team, or a Monster");
         }
         
-        if (o instanceof Team)
-        {
-            afterTurnProtocol(((Team) o).getMonsters(), attack);
-        }
-        
-        else if (o instanceof ArrayList<?>)
-        {
-            afterTurnProtocol((ArrayList<Monster>) o, attack);
-        }
-        
-        else
-        {
-            afterTurnProtocol((Monster) o, attack);
-        }
-        
+        //Decrease effect and ability cooldowns
         if (!isCounter)
         {
             decreaseStatCooldowns();
@@ -1918,32 +2497,46 @@ public class Monster
             }
         }
         
+        //Reset damage dealt this turn
         dmgDealtThisTurn = 0;
         
         //Violent Rune
+        boolean vioProcced = false;
         if (numOfSets(Rune.VIOLENT) > 0 && Game.canCounter() && !containsDebuff(Debuff.SEAL))
         {
+            //Prevent counters
             Game.setCanCounter(false);
             int random = new Random().nextInt(101);
+            //Base
             double extraTurnChance = 22;
-            for (int i = 0; i < nomOfViolentRuneProcs; i++)
+            //Decrease proc chance for each time the rune was activated
+            for (int i = 0; i < numOfViolentRuneProcs; i++)
             {
                 extraTurnChance *= 0.55;
             }
-            if (random <= extraTurnChance)
+            if (random <= Math.ceil(extraTurnChance))
             {
-                this.atkBar = 2000;
+                //Give the Monster an extra turn
+                this.atkBar = 99_000;
+                vioProcced = true;
+                numOfViolentRuneProcs++;
+                //Print a message for the extra turn
                 if (print)
                 {
-                    System.out.println(ConsoleColors.GREEN + "Extra Turn!" + ConsoleColors.RESET);
+                    System.out.printf("%sExtra Turn!%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
                 }
             }
-            else
+            else //Reset vio procs
             {
-                nomOfViolentRuneProcs = 0;
+                numOfViolentRuneProcs = 0;
             }
         }
         Game.setCanCounter(true);
+        //Increase every Monster's attack bar if Violent rune was not procced and the turn was not a counter
+        if (!isCounter && !vioProcced)
+        {
+            game.increaseAtkBar();
+        }
     }
     
     /**
@@ -1951,46 +2544,39 @@ public class Monster
      *
      * @param o      The Monster(s) that were targeted. This object should be an ArrayList<Monster>, a Team, or a Monster
      * @param attack True if this turn was an attack turn, false otherwise
-     * @throws ConflictingArguments if Object o is not an ArrayList, a Team, or a Monster
+     * @throws ConflictingArguments If Object o is not an ArrayList, a Team, or a Monster
      */
     public void afterTurnProtocol(Object o, boolean attack)
     {
         afterTurnProtocol(o, false, attack);
     }
     
+    /**
+     * Attempts to steal a random buff from the target Monster and applies it to this
+     *
+     * @param target The target Monster
+     */
     protected void stealBuff(Monster target)
     {
-        stealBuff(target, target.removeRandomBuff());
-    }
-    
-    protected void stealBuff(Monster target, Buff stolen)
-    {
-        int resRate = new Random().nextInt(101);
-        if (resRate <= Math.max(15, Math.min(resistance, 100) - Math.min(accuracy, 100)))
+        //Steal a random buff
+        Buff stolen = target.removeRandomBuff();
+        
+        //Make sure the stolen buff isn't Defend or Null
+        //Defend buffs can't be stolen
+        if (stolen.getBuffNum() != Buff.DEFEND && stolen.getBuffNum() != Buff.NULL)
         {
-            if (print)
-            {
-                System.out.println(ConsoleColors.GREEN + "Resisted!" + ConsoleColors.RESET);
-            }
-            if (stolen.getBuffNum() == Buff.DEFEND)
-            {
-                stolen = new Buff(Buff.NULL, 1);
-            }
-            
-            if (!stolen.equals(new Buff(Buff.NULL, 1)))
-            {
-                addAppliedBuff(stolen.getBuffNum(), stolen.getNumTurns(), this);
-            }
-            else
-            {
-                target.atkBar = Math.max(0, target.atkBar - 500);
-                atkBar += 500;
-            }
+            addAppliedBuff(stolen.getBuffNum(), stolen.getNumTurns(), this);
         }
     }
     
+    /**
+     * Attempts to steal all buffs from the target and apply them to this
+     *
+     * @param target The target to try and steal from
+     */
     protected void stealAllBuffs(Monster target)
     {
+        //Steal all buffs on the target Monster
         for (int j = target.getAppliedBuffs().size() - 1; j >= 0; j--)
         {
             stealBuff(target);
@@ -1998,54 +2584,11 @@ public class Monster
     }
     
     /**
-     * Returns the Monster's name and abilities in a readable form
-     *
-     * @return The formatted String
-     */
-    @Override
-    public String toString()
-    {
-        String s = "";
-        s += getName(true, true) + ":\n";
-        for (Ability ability : abilities)
-        {
-            if (ability instanceof Leader_Skill)
-            {
-                continue;
-            }
-            s += "\t " + ability.toString(containsDebuff(Debuff.SILENCE), containsDebuff(Debuff.OBLIVION)) + "\n\n";
-        }
-        return s;
-    }
-    
-    /**
-     * <pre>
-     * Formats the Monster into a shorter readable String. Format:
-     * name (hp, attack bar)
-     *      Buffs
-     *      Debuffs
-     *      Other Effects (place in team) </pre>
-     *
-     * @param withElement true if the method should return the Monster's name with its element, false otherwise
-     * @return The shorter formatted String
-     */
-    public String shortToString(boolean withElement)
-    {
-        String name = withElement ? getName(true, true) : this.name;
-        String healthPercent = String.valueOf((1.0 * currentHp / maxHp) * 100);
-        String atkBarPercent = String.valueOf(atkBar / 10);
-        
-        return name + ConsoleColors.GREEN + " (Hp = " + healthPercent.substring(0, healthPercent.indexOf(".") + 2) + "%" + ConsoleColors.CYAN +
-                ", Attack Bar = " + (atkBarPercent.substring(0, atkBarPercent.indexOf(".") + 2)) + "%)" + ConsoleColors.BLUE + "\n\t\tBuffs: " +
-                appliedBuffs + ConsoleColors.RED + "\n\t\tDebuffs: " + appliedDebuffs + ConsoleColors.PURPLE + "\n\t\tOther Effects: " + otherStats
-                + ConsoleColors.RESET;
-    }
-    
-    /**
      * Applies all buffs on the Monster that are relevant to the turn
      */
     private void applyBeginningOfTurnBuffs()
     {
+        //Look for attack, defense, crit rate, or speed up buffs
         for (Buff buff : appliedBuffs)
         {
             switch (buff.getBuffNum())
@@ -2063,6 +2606,7 @@ public class Monster
      */
     private void applyBeginningOfTurnDebuffs()
     {
+        //Look for attack, defense, or attack speed down, and for glancing rate up
         for (Debuff debuff : appliedDebuffs)
         {
             switch (debuff.getDebuffNum())
@@ -2076,14 +2620,17 @@ public class Monster
     }
     
     /**
-     * Decreases the time remaining on all buffs and debuffs by one turn each (Except Threat)
+     * Decreases the time remaining on all buffs and debuffs by one turn each (Except Threat). Removes any buffs and debuffs with zero turns remaining
      */
     public void decreaseStatCooldowns()
     {
         for (int i = appliedBuffs.size() - 1; i >= 0; i--)
         {
             Buff buff = appliedBuffs.get(i);
+            //Decrease the turn if it's not a Threat
             buff.decreaseTurn();
+            
+            //Reset extra stat values if the buff has no turns left
             if (buff.getNumTurns() <= 0)
             {
                 switch (buff.getBuffNum())
@@ -2101,7 +2648,9 @@ public class Monster
         for (int i = appliedDebuffs.size() - 1; i >= 0; i--)
         {
             Debuff debuff = appliedDebuffs.get(i);
+            //Decrease the debuffs turns left
             debuff.decreaseTurn();
+            //Remove extra stat values if the debuff has no turns left
             if (debuff.getNumTurns() <= 0)
             {
                 switch (debuff.getDebuffNum())
@@ -2217,18 +2766,30 @@ public class Monster
     }
     
     /**
-     * Removes a random Buff if there is at least one Buff on the Monster, does nothing otherwise
+     * Removes a random Buff if there is at least one Buff on the Monster, returns a NULL buff otherwise
      *
      * @return The buff that was removed
      */
     public Buff removeRandomBuff()
     {
-        if (appliedBuffs.isEmpty())
+        //Return a null buff if there are no buffs to remove
+        if (this.appliedBuffs.isEmpty())
         {
             return new Buff(Buff.NULL, 0);
         }
+        //Get a random buff
         int rand = new Random().nextInt(appliedBuffs.size());
-        return appliedBuffs.remove(rand);
+        Buff buff = this.appliedBuffs.remove(rand);
+        //Reset extra stat values if needed
+        switch (buff.getBuffNum())
+        {
+            case Buff.ATK_UP -> extraAtk = 0;
+            case Buff.DEF_UP -> extraDef = 0;
+            case Buff.CRIT_RATE_UP -> extraCritRate = 0;
+            case Buff.ATK_SPD_UP -> extraSpd = 0;
+            case Buff.SHIELD -> shield = 0;
+        }
+        return buff;
     }
     
     /**
@@ -2238,12 +2799,23 @@ public class Monster
      */
     public Debuff removeRandomDebuff()
     {
+        //Return a null buff if there are no debuffs to remove
         if (appliedDebuffs.isEmpty())
         {
-            return new Debuff(-1, 0, 0);
+            return new Debuff(Debuff.NULL, 0, 0);
         }
+        //Get a random debuff
         int rand = new Random().nextInt(appliedDebuffs.size());
-        return appliedDebuffs.remove(rand);
+        Debuff debuff = appliedDebuffs.remove(rand);
+        //Reset extra stat values if needed
+        switch (debuff.getDebuffNum())
+        {
+            case Debuff.GLANCING_HIT_UP -> extraGlancingRate = 0;
+            case Debuff.DEC_ATK -> lessAtk = 0;
+            case Debuff.DEC_DEF -> lessDef = 0;
+            case Debuff.DEC_ATK_SPD -> lessAtkSpd = 0;
+        }
+        return debuff;
     }
     
     /**
@@ -2254,22 +2826,6 @@ public class Monster
     public void addOtherStat(Stat stat)
     {
         otherStats.add(stat);
-    }
-    
-    /**
-     * @return How much damage this Monster has dealt this turn
-     */
-    public double getDmgDealtThisTurn()
-    {
-        return dmgDealtThisTurn;
-    }
-    
-    /**
-     * @return All Stats (not buff or debuffs) on the Monster
-     */
-    public ArrayList<Stat> getOtherStats()
-    {
-        return otherStats;
     }
     
     /**
@@ -2301,36 +2857,6 @@ public class Monster
     }
     
     /**
-     * Sets the Monster's max Hp
-     *
-     * @param maxHp The Monster's new max Hp
-     */
-    public void setMaxHp(double maxHp)
-    {
-        this.maxHp = (int) Math.ceil(maxHp);
-    }
-    
-    /**
-     * Sets the Monster's attack power
-     *
-     * @param atk The Monster's new attack power
-     */
-    public void setAtk(double atk)
-    {
-        this.atk = (int) Math.ceil(atk);
-    }
-    
-    /**
-     * Sets the Monster's attack speed
-     *
-     * @param spd The Monster's new attack speed
-     */
-    public void setSpd(double spd)
-    {
-        this.spd = (int) Math.ceil(spd);
-    }
-    
-    /**
      * Checks if the Monster is stunned on this turn. (If the Monster is slept, frozen, or stunned)
      *
      * @return True if the Monster is stunned, false otherwise
@@ -2348,7 +2874,7 @@ public class Monster
     public int cleanse()
     {
         int size = appliedDebuffs.size();
-        appliedDebuffs = new ArrayList<>();
+        appliedDebuffs.clear();
         return size;
     }
     
@@ -2364,25 +2890,11 @@ public class Monster
     }
     
     /**
-     * Returns the Ability associated with the given number if there is one
-     *
-     * @param num the Ability's number
-     * @return The Ability associated with the given number if there is one, returns null otherwise
-     */
-    public Ability getAbility(int num)
-    {
-        if (num > abilities.size() || num < 1)
-        {
-            return null;
-        }
-        return abilities.get(num - 1);
-    }
-    
-    /**
      * Checks if the Monster has no health left and does not have any Buffs that prevent death. If so, kills the Monster.
      */
     public void kill()
     {
+        //Do nothing if the Monster still has health left
         if (currentHp > 0)
         {
             return;
@@ -2393,26 +2905,32 @@ public class Monster
         {
             currentHp = 1;
         }
-        
-        //Protect soul
+        //Soul Protection
         else if (containsBuff(Buff.SOUL_PROTECTION))
         {
             currentHp = (int) (maxHp * 0.3);
             removeBuff(new Buff(13, 1));
         }
-        else
+        else //Kill the Monster
         {
             currentHp = 0;
+            //Remove all buffs and debuffs
             while (!appliedBuffs.isEmpty() || !appliedDebuffs.isEmpty())
             {
                 decreaseStatCooldowns();
             }
+            //Reset attack bar
             atkBar = 0;
             dead = true;
+            glancing = false;
+            crit = false;
+            //Print a kill message
             if (print)
             {
-                System.out.println(ConsoleColors.RED_BOLD_BRIGHT + name + " died!\n" + ConsoleColors.RESET);
+                System.out.printf("%s%s died!\n%s%n", ConsoleColors.RED_BOLD_BRIGHT, name, ConsoleColors.RESET);
             }
+            
+            //Remove any Provokes on the other team if the caster was self
             Team other = game.getOtherTeam();
             for (int i = 0; i < other.size(); i++)
             {
@@ -2437,11 +2955,13 @@ public class Monster
      */
     public static ArrayList<Buff> abilityBuffs(int... args)
     {
+        //Make sure the argument length is valid
         if (args.length % 2 != 0)
         {
-            throw new BadArgumentLength("Bad argument length: " + args.length);
+            throw new BadArgumentLength("Bad argument length: %d".formatted(args.length));
         }
         
+        //Format the args into buffs
         ArrayList<Buff> buffs = new ArrayList<>();
         for (int i = 0; i < args.length; i += 2)
         {
@@ -2458,11 +2978,13 @@ public class Monster
      */
     public ArrayList<Debuff> abilityDebuffs(int... args)
     {
+        //Make sure the argument length is valid
         if (args.length % 3 != 0)
         {
-            throw new BadArgumentLength("Bad argument length: " + args.length);
+            throw new BadArgumentLength("Bad argument length: %d".formatted(args.length));
         }
         
+        //Format the args into debuffs
         ArrayList<Debuff> debuffs = new ArrayList<>();
         for (int i = 0; i < args.length; i += 3)
         {
@@ -2481,6 +3003,7 @@ public class Monster
      */
     public static ArrayList<Integer> abilityChances(int... args)
     {
+        //Add each number passed into the array
         ArrayList<Integer> chances = new ArrayList<>();
         for (int i : args)
         {
@@ -2501,46 +3024,20 @@ public class Monster
     }
     
     /**
-     * Calculates the current health ratio of the Monster
-     *
-     * @return The ratio of current health to max health of the Monster (current hp / max hp)
-     */
-    public double getHpRatio()
-    {
-        String temp = 100.0 * currentHp / maxHp + "";
-        String s;
-        int place = 4;
-        if (temp.length() > 4 && !temp.equals("100.0"))
-        {
-            s = temp.substring(0, 4);
-        }
-        else
-        {
-            s = temp;
-        }
-        place++;
-        while (!Team.stringHasNumOtherThanZero(s) && place < temp.length())
-        {
-            s = temp.substring(0, place);
-            place++;
-        }
-        return Double.parseDouble(s);
-    }
-    
-    /**
      * Activates passive abilities that are triggered when attacked (ex. Miho)
      *
      * @param attacker The attacking Monster
      */
     public void attacked(Monster attacker)
     {
-        if (hasThreat())
+        //Decrease the turns remaining on Threat if the attack was a single target attack
+        if (this.hasThreat() && attacker.singleTargetAttack)
         {
             for (Buff b : appliedBuffs)
             {
-                if (b instanceof Threat)
+                if (b instanceof Threat t)
                 {
-                    b.decreaseTurn(1);
+                    t.decreaseTurn(1);
                 }
             }
         }
@@ -2553,11 +3050,11 @@ public class Monster
             {
                 System.out.println("Counter!");
             }
-            counter(attacker);
+            this.counter(attacker);
         }
         
         //Revenge Rune
-        if (numOfSets(Rune.REVENGE) > 0 && Game.canCounter() && !isStunned() && !isStunned() && !containsDebuff(Debuff.SEAL))
+        if (numOfSets(Rune.REVENGE) > 0 && Game.canCounter() && !isStunned() && !containsDebuff(Debuff.SEAL))
         {
             Game.setCanCounter(false);
             int random = new Random().nextInt(101);
@@ -2567,7 +3064,7 @@ public class Monster
                 {
                     System.out.println("Counter! (Revenge Rune)");
                 }
-                counter(attacker);
+                this.counter(attacker);
             }
         }
     }
@@ -2579,11 +3076,13 @@ public class Monster
      */
     private void counter(Monster attacker)
     {
+        //Do nothing if the Monster can't counter
         if (!Game.canCounter())
         {
             return;
         }
         Game.setCanCounter(false);
+        //Save the Monster's current stat and ability numbers
         ArrayList<Buff> targetBuffs = new ArrayList<>(appliedBuffs);
         ArrayList<Debuff> targetDebuffs = new ArrayList<>(appliedDebuffs);
         ArrayList<Stat> targetOtherEffects = new ArrayList<>(otherStats);
@@ -2595,8 +3094,10 @@ public class Monster
             targetAbilityCooldowns.add(ability.getTurnsRemaining());
         }
         
-        nextTurn(attacker, 1);
+        //Counter the attacker
+        this.nextTurn(attacker, 1);
         
+        //Reset all stat and ability numbers
         appliedBuffs = targetBuffs;
         appliedDebuffs = targetDebuffs;
         otherStats = targetOtherEffects;
@@ -2625,26 +3126,9 @@ public class Monster
     }
     
     /**
-     * @return The Provoke debuff on a Monster if there is one
-     */
-    public Provoke getProvoke()
-    {
-        Team other = game.getOtherTeam();
-        for (Debuff debuff : appliedDebuffs)
-        {
-            for (int i = 0; i < other.size(); i++)
-            {
-                if (debuff instanceof Provoke)
-                {
-                    return ((Provoke) debuff);
-                }
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * @return True if Monster has a Threat buff
+     * Checks if the Monster has a Threat buff
+     *
+     * @return True if the Monster has a Threat buff, false otherwise
      */
     public boolean hasThreat()
     {
@@ -2659,7 +3143,9 @@ public class Monster
     }
     
     /**
-     * @return True if the Monster has a Defend buff
+     * Checks if the Monster has a Defend buff
+     *
+     * @return True if the Monster has a Defend buff, false otherwise
      */
     private boolean hasDefend()
     {
@@ -2674,7 +3160,9 @@ public class Monster
     }
     
     /**
-     * @return True if the Monster has a shield
+     * Checks if the Monster has a shield buff
+     *
+     * @return True if the Monster has a shield, false otherwise
      */
     private boolean hasShield()
     {
@@ -2689,22 +3177,9 @@ public class Monster
     }
     
     /**
-     * @return The Shield buff on the Monster if there is one
-     */
-    private Shield getShield()
-    {
-        for (Buff b : appliedBuffs)
-        {
-            if (b instanceof Shield)
-            {
-                return (Shield) b;
-            }
-        }
-        return new Shield(0, 0);
-    }
-    
-    /**
-     * @return True if the Monster has a DecAtkBar debuff
+     * Checks if the Monster has a DecAtkBar debuff
+     *
+     * @return True if the Monster has a DecAtkBar debuff, false otherwise
      */
     private boolean hasDecAtkBar()
     {
@@ -2719,54 +3194,9 @@ public class Monster
     }
     
     /**
-     * @return The DecAtkBar on the Monster if it has one
-     */
-    private DecAtkBar getDecAtkBar()
-    {
-        for (Debuff d : appliedDebuffs)
-        {
-            if (d instanceof DecAtkBar)
-            {
-                return ((DecAtkBar) d);
-            }
-        }
-        return new DecAtkBar(0);
-    }
-    
-    /**
-     * @return The Defend buff on the Monster if there is one
-     */
-    private Defend getDefend()
-    {
-        for (Buff b : appliedBuffs)
-        {
-            if (b instanceof Defend)
-            {
-                return ((Defend) b);
-            }
-        }
-        return new Defend(1, this);
-    }
-    
-    /**
-     * @return A list of viable ability numbers
-     */
-    public ArrayList<Integer> getViableAbilityNumbers()
-    {
-        ArrayList<Integer> returnArray = new ArrayList<>();
-        for (int i = 0; i < abilities.size(); i++)
-        {
-            Ability ability = abilities.get(i);
-            if (ability.isViableAbility(containsDebuff(Debuff.SILENCE)))
-            {
-                returnArray.add(i + 1);
-            }
-        }
-        return returnArray;
-    }
-    
-    /**
-     * @return True if the Monster was hit with a crit this turn
+     * Checks if the monster was hit by a crit this turn
+     *
+     * @return True if the Monster was hit with a crit this turn, false otherwise
      */
     public boolean wasCrit()
     {
@@ -2776,35 +3206,36 @@ public class Monster
     /**
      * Prints the Monsters stats followed by its abilities and runes
      */
-    public void printWithStats()
+    public void printWithDetails()
     {
-        
+        //Print stats and effects
         if (print)
         {
-            System.out.printf("%s: %sHp: %s %s+%s; %sAttack: %s %s+%s; %sDefense: %s %s+%s; %sSpeed: %d %s+%d; %sCrit rate: %d%%; %sCrit damage: %d%%; " +
-                            "%sResistance: %d%%; Accuracy: %s%d%%%s\n\n", getName(true, false), ConsoleColors.GREEN,
-                    numWithCommas(baseMaxHp), ConsoleColors.GREEN_BOLD_BRIGHT, numWithCommas(maxHp - baseMaxHp), ConsoleColors.RED, numWithCommas(baseAtk),
-                    ConsoleColors.RED_BOLD_BRIGHT, numWithCommas(atk - baseAtk), ConsoleColors.YELLOW, numWithCommas(baseDef),
-                    ConsoleColors.YELLOW_BOLD_BRIGHT, numWithCommas(def - baseDef), ConsoleColors.CYAN, baseSpd, ConsoleColors.CYAN_BOLD_BRIGHT,
+            System.out.printf("%s: %sHp: %,d %s+%,d; %sAttack: %,d %s+%,d; %sDefense: %,d %s+%,d; %sSpeed: %d %s+%d; %sCrit rate: %d%%; %sCrit damage: %d%%; %sResistance: %d%%; Accuracy: %s%d%%%s\n\n", getName(true, false), ConsoleColors.GREEN,
+                    baseMaxHp, ConsoleColors.GREEN_BOLD_BRIGHT, maxHp - baseMaxHp, ConsoleColors.RED, baseAtk,
+                    ConsoleColors.RED_BOLD_BRIGHT, atk - baseAtk, ConsoleColors.YELLOW, baseDef,
+                    ConsoleColors.YELLOW_BOLD_BRIGHT, def - baseDef, ConsoleColors.CYAN, baseSpd, ConsoleColors.CYAN_BOLD_BRIGHT,
                     spd - baseSpd, ConsoleColors.BLUE, critRate, ConsoleColors.PURPLE, critDmg, ConsoleColors.RESET, Math.min(resistance, 100),
                     (accuracy >= 100) ? ConsoleColors.RED : "", Math.min(accuracy, 100), ConsoleColors.RESET);
         }
+        //Print each ability
         for (Ability ability : abilities)
         {
             if (print)
             {
-                System.out.println("\t " + ability.toString(containsDebuff(Debuff.SILENCE), containsDebuff(Debuff.OBLIVION)) + "\n\n");
+                System.out.printf("\t %s\n\n%n", ability.toString(containsDebuff(Debuff.SILENCE), containsDebuff(Debuff.OBLIVION)));
             }
         }
         
-        
+        //Print each rune type
         if (runes != null)
         {
             if (print)
             {
-                System.out.println(ConsoleColors.PURPLE_BOLD_BRIGHT + "Rune sets:");
+                System.out.printf("%sRune sets:%n", ConsoleColors.PURPLE_BOLD_BRIGHT);
             }
             ArrayList<Integer> runeTypes = new ArrayList<>();
+            //Get the rune types
             for (Rune rune : runes)
             {
                 runeTypes.add(rune.getType());
@@ -2812,6 +3243,7 @@ public class Monster
             ArrayList<String> types = new ArrayList<>();
             while (!runeTypes.isEmpty())
             {
+                //Count the number of each set
                 int integer = runeTypes.getLast();
                 for (int i = runeTypes.size() - 1; i >= 0; i--)
                 {
@@ -2824,105 +3256,25 @@ public class Monster
                 {
                     continue;
                 }
-                types.add(Rune.numToType(integer) + " x" + numOfSets(integer));
+                //Format the number of sets
+                types.add("%s x%d".formatted(Rune.numToType(integer), numOfSets(integer)));
             }
             Collections.reverse(types);
+            
+            //Print the rune sets
             for (String string : types)
             {
                 if (print)
                 {
-                    System.out.print("\t" + string + "\t");
+                    System.out.printf("\t%s\t", string);
                 }
             }
         }
         
         if (print)
         {
-            System.out.println(ConsoleColors.RESET + "\n");
+            System.out.printf("%s\n\n", ConsoleColors.RESET);
         }
-    }
-    
-    /**
-     * Puts commas into a number in the standard convention (ex. 1,000; 10,000,000)
-     *
-     * @param num The number to style
-     * @return The number with commas
-     */
-    public static String numWithCommas(int num)
-    {
-        return numWithCommas((long) num);
-    }
-    
-    /**
-     * Puts commas into a number in the standard convention (ex. 1,000; 10,000,000)
-     *
-     * @param num The number to style
-     * @return The number with commas (as a String)
-     */
-    public static String numWithCommas(long num)
-    {
-        String s = num + "";
-        int count = s.length() - 1;
-        String newString = "";
-        for (int i = 0; i < s.length(); i++)
-        {
-            newString += s.charAt(i);
-            if (count % 3 == 0 && count != 0)
-            {
-                newString += ",";
-            }
-            count--;
-        }
-        return newString;
-    }
-    
-    /**
-     * Puts commas into a number in the standard convention (ex. 1,000; 10,000,000)
-     *
-     * @param num The number to style
-     * @return The number with commas
-     */
-    public static String numWithCommas(float num)
-    {
-        String decimals = (num + "").substring((num + "").indexOf("."));
-        String withCommas = numWithCommas((int) num);
-        return withCommas + decimals;
-    }
-    
-    /**
-     * Puts commas into a number in the standard convention (ex. 1,000; 10,000,000)
-     *
-     * @param num The number to style
-     * @return The number with commas
-     */
-    public static String numWithCommas(double num)
-    {
-        if ((long) num == num || (int) num == num)
-        {
-            return numWithCommas((long) num);
-        }
-        
-        return numWithCommas((float) num);
-    }
-    
-    /**
-     * Formats a list of numbers into an ArrayList of SubAttributes
-     *
-     * @param args The number to format. Format: attribute number, amount
-     * @return The ArrayList of SubAttributes
-     */
-    public static ArrayList<SubAttribute> runeSubs(int... args)
-    {
-        ArrayList<SubAttribute> subs = new ArrayList<>();
-        if (args.length % 2 == 1)
-        {
-            throw new BadArgumentLength("Var args must be even");
-        }
-        for (int i = 0; i < args.length - 1; i += 2)
-        {
-            subs.add(new SubAttribute(args[i], args[i + 1]));
-        }
-        return subs;
     }
     
     /**
@@ -2930,24 +3282,27 @@ public class Monster
      */
     private void applyRuneSetEffectsForBeginningOfGame()
     {
+        //Apply set effects
         tempMaxHp = applyEffect(Rune.ENERGY, tempMaxHp, baseMaxHp, 0.15);
         tempAtk = applyEffect(Rune.FATAL, tempAtk, baseAtk, 0.35);
-        spd = (int) applyEffect(Rune.SWIFT, spd, baseSpd, 0.25);
+        spd = (int) Math.ceil(applyEffect(Rune.SWIFT, spd, baseSpd, 0.25));
         tempDef = applyEffect(Rune.GUARD, tempDef, baseDef, 0.15);
         critRate += (12 * numOfSets(Rune.BLADE));
         accuracy += (20 * numOfSets(Rune.FOCUS));
         resistance += (20 * numOfSets(Rune.ENDURE));
         critDmg += (40 * numOfSets(Rune.RAGE));
+        
+        //Add immunity for each set of Will
         if (numOfSets(Rune.WILL) > 0)
         {
-            addAppliedBuff(Buff.IMMUNITY, numOfSets(Rune.WILL), new Monster());
+            this.addAppliedBuff(Buff.IMMUNITY, numOfSets(Rune.WILL), this);
         }
     }
     
     /**
-     * This method should only be used for effects that increase a stat multiplicatively. Applies a rune's main effect.
+     * This method should only be used for effects that increase a stat multiplicatively (ex. Energy). Applies a rune's main effect.
      *
-     * @param setNum   The Rune set number to check for amount of sets
+     * @param setNum   The Rune set number to count
      * @param tempStat The current temporary value of the affected stat
      * @param baseStat The base value of the affected stat
      * @param amt      The decimal to multiply the base stat by
@@ -2955,10 +3310,11 @@ public class Monster
      */
     private double applyEffect(int setNum, double tempStat, double baseStat, double amt)
     {
+        //Add the base stat multiplied by amt for each set of the rune
+        //Math.ceil is calculated once for each set
         for (int i = 0; i < numOfSets(setNum); i++)
         {
-            tempStat += baseStat * amt;
-            tempStat = Math.ceil(tempStat);
+            tempStat += Math.ceil(baseStat * amt);
         }
         return tempStat;
     }
@@ -2971,11 +3327,14 @@ public class Monster
      */
     private int countNumOfEffectRunes(int type)
     {
+        //Do nothing if the runes haven't been set yet
         if (runes == null)
         {
             return 0;
         }
         int count = 0;
+        
+        //Count the number of the rune type
         for (Rune rune : runes)
         {
             count += (type == rune.getType()) ? 1 : 0;
@@ -2991,15 +3350,18 @@ public class Monster
      */
     public int numOfSets(int type)
     {
+        //Fatal, Swift, Vampire, Despair, Violent, and Rage runes need 4 to count as a set
         if (countNumOfEffectRunes(type) >= 4 && (type == Rune.FATAL || type == Rune.SWIFT || type == Rune.VAMPIRE || type == Rune.DESPAIR || type == Rune.VIOLENT || type == Rune.RAGE))
         {
             return 1;
         }
+        //Artifacts only need 1 to count as a set
         if (type == Rune.ELEMENTARTIFACT || type == Rune.TYPEARTIFACT)
         {
             return countNumOfEffectRunes(type);
         }
         
+        //Every other rune needs 2 to count as a set
         return countNumOfEffectRunes(type) / 2;
     }
     
@@ -3013,17 +3375,18 @@ public class Monster
      */
     public void beforeTurnProtocol(Monster nextMon, boolean self, boolean enemyTurn, boolean hasOblivion)
     {
+        //Make sure the booleans are not colliding
         if (self && enemyTurn)
         {
-            throw new ConflictingArguments("self and enemyTurn cannot both be true");
+            throw new ConflictingArguments("self and enemyTurn cannot both be true: " + getName(true, true));
         }
     }
     
     /**
-     * Is overridden in certain Monsters to reduce their damage taken
+     * Checks for passives that reduce the damage taken by the Monster and calculates the new damage if needed
      *
      * @param num  The current damage to take
-     * @param self true if this is the current Monster, false otherwise
+     * @param self True if this is the current Monster, false otherwise
      * @return The updated damage to take
      */
     public double dmgReductionProtocol(double num, boolean self)
@@ -3032,7 +3395,7 @@ public class Monster
     }
     
     /**
-     * Is overridden in certain Monsters to increase the damage they deal
+     * Checks for passives the increase the damage given by the Monster and calculates the new damage if needed
      *
      * @param num The current damage to deal
      * @return The updated damage to deal
@@ -3043,12 +3406,13 @@ public class Monster
     }
     
     /**
-     * Overridden in certain Monsters to activate the passive abilities that are triggered after they are hit
+     * Activates passive abilities that are triggered after a Monster is hit
      *
      * @param attacker The attacking Monster
      */
     public void targetAfterHitProtocol(Monster attacker)
     {
+        //Remove any buffs with no turns remaining
         for (int i = this.appliedBuffs.size() - 1; i >= 0; i--)
         {
             Buff buff = this.appliedBuffs.get(i);
@@ -3058,6 +3422,7 @@ public class Monster
             }
         }
         
+        //Remove any debuffs with no turns remaining
         for (int i = this.appliedDebuffs.size() - 1; i >= 0; i--)
         {
             Debuff debuff = this.appliedDebuffs.get(i);
@@ -3067,6 +3432,7 @@ public class Monster
             }
         }
         
+        //Remove any other effects with no turns remaining
         for (int i = this.otherStats.size() - 1; i >= 0; i--)
         {
             Stat stat = this.otherStats.get(i);
@@ -3078,22 +3444,13 @@ public class Monster
     }
     
     /**
-     * Overridden in certain Monsters to activate the passive abilities that are triggered after hit of an attack
+     * Activates passive abilities that are triggered after a Monster attacks a target
      *
-     * @param target The target Monster of the attack
+     * @param target     The target Monster of the attack
+     * @param abilityNum The chosen ability number
      */
-    public void selfAfterHitProtocol(Monster target)
+    public void selfAfterHitProtocol(Monster target, int abilityNum)
     {
-    }
-    
-    /**
-     * Sets the altered glancing rate as determined by an ability
-     *
-     * @param abilityGlancingRateChange The new value
-     */
-    public void setAbilityGlancingRateChange(int abilityGlancingRateChange)
-    {
-        this.abilityGlancingRateChange = abilityGlancingRateChange;
     }
     
     /**
@@ -3103,30 +3460,15 @@ public class Monster
      */
     public boolean hasTeamSupportAbility()
     {
+        //Check if there is an ability that targets allies and targets the entire team
         for (Ability ability : abilities)
         {
-            if (!ability.targetsEnemy() && !ability.targetsSelf())
+            if (!ability.targetsEnemy() && !ability.targetsSelf() && ability.targetsAllTeam())
             {
                 return true;
             }
         }
         return false;
-    }
-    
-    /**
-     * @return The Monster's Team support abilities if it has one
-     */
-    public ArrayList<Heal_Ability> getTeamSupportAbilities()
-    {
-        ArrayList<Heal_Ability> returnList = new ArrayList<>();
-        for (Ability ability : abilities)
-        {
-            if (ability instanceof Heal_Ability)
-            {
-                returnList.add((Heal_Ability) ability);
-            }
-        }
-        return returnList;
     }
     
     /**
@@ -3136,6 +3478,7 @@ public class Monster
      */
     public boolean hasSelfSupportAbility()
     {
+        //Check for an ability that targets self
         for (Ability ability : abilities)
         {
             if (ability.targetsSelf())
@@ -3147,28 +3490,13 @@ public class Monster
     }
     
     /**
-     * @return The Monster's abilities that target itself
-     */
-    public ArrayList<Ability> getSelfSupportAbilities()
-    {
-        ArrayList<Ability> returnList = new ArrayList<>();
-        for (Ability ability : abilities)
-        {
-            if (ability.targetsSelf() && !(ability instanceof Passive))
-            {
-                returnList.add(ability);
-            }
-        }
-        return returnList;
-    }
-    
-    /**
      * Checks if the Monster has a support ability that applies multiple buffs
      *
      * @return True if the Monster has a support ability that applies multiple buffs, false otherwise
      */
     public boolean hasSupportAbilityWithMultipleBuffs()
     {
+        //Check for an ability that applies at least 2 buffs
         for (Ability ability : abilities)
         {
             if (ability.getBuffs().size() >= 2)
@@ -3180,71 +3508,50 @@ public class Monster
     }
     
     /**
-     * @return The Monster's support abilities that apply multiple buffs
-     */
-    public ArrayList<Ability> getSupportAbilitiesWithMultipleBuffs()
-    {
-        ArrayList<Ability> returnList = new ArrayList<>();
-        for (Ability ability : abilities)
-        {
-            if (ability.getBuffs().size() >= 2)
-            {
-                returnList.add(ability);
-            }
-        }
-        return returnList;
-    }
-    
-    /**
-     * @return The Monster's attack abilities
-     */
-    public ArrayList<Ability> getAttackAbilities()
-    {
-        ArrayList<Ability> returnList = new ArrayList<>();
-        for (Ability ability : abilities)
-        {
-            if (ability.targetsEnemy())
-            {
-                returnList.add(ability);
-            }
-        }
-        return returnList;
-    }
-    
-    /**
-     * @return The number of debuffs that increase the Monster's damage taken (brand/decrease defense)
-     */
-    public int getNumOfDmgTakenIncreasingDebuffs()
-    {
-        return countDebuff(Debuff.BRAND) + countDebuff(Debuff.DEC_DEF);
-    }
-    
-    /**
      * Resets the Monster to its state after applying runes
      */
     public void reset()
     {
+        //Remove buffs and debuffs (other effects are removed in child classes
+        removeBuff(Buff.THREAT);
         while (!appliedBuffs.isEmpty() || !appliedDebuffs.isEmpty())
         {
             decreaseStatCooldowns();
         }
-        otherStats = new ArrayList<>();
         
+        //Reset ability cooldowns
         for (Ability ability : abilities)
         {
             ability.setToNumTurns(0);
         }
+        
+        //Reset stats
         destroyedHp = 0;
         currentHp = maxHp;
         atkBar = 0;
         dead = false;
+        abilityGlancingRateChange = 0;
+        dmgDealtThisTurn = 0;
+        dmgTakenThisTurn = 0;
+        crit = false;
+        wasCrit = false;
+        glancing = false;
+        
+        //Apply immunity for each Will set
+        if (this.numOfSets(Rune.WILL) > 0)
+        {
+            this.addAppliedBuff(Buff.IMMUNITY, numOfSets(Rune.WILL), new Monster());
+        }
     }
     
     /**
-     * @return True if the Monster has a leader skill
+     * Checks if the Monster has a leader skill
+     *
+     * @return True if the Monster has a leader skill, false otherwise
      */
     public boolean hasLeaderSkill()
     {
+        //Check for a leader skill
         for (Ability ability : abilities)
         {
             if (ability instanceof Leader_Skill)
@@ -3262,10 +3569,13 @@ public class Monster
      */
     public void applyLeaderSkill(Team applyToTeam)
     {
-        if (!hasLeaderSkill())
+        //Do nothing if the Monster has no leader skill to apply
+        if (!this.hasLeaderSkill())
         {
             return;
         }
+        
+        //Apply the leader skill to the team
         for (Ability ability : abilities)
         {
             if (ability instanceof Leader_Skill skill)
@@ -3276,75 +3586,34 @@ public class Monster
     }
     
     /**
-     * Sets the current Game in use
-     *
-     * @param g The new Game
-     */
-    public static void setGame(Game g)
-    {
-        game = g;
-    }
-    
-    /**
-     * @return The current game in use
-     */
-    public static Game getGame()
-    {
-        return game;
-    }
-    
-    /**
      * Gets a Monster name from the user and prints a detailed description of the Monster
      */
     public static void inspect()
     {
         String inputInspect;
+        //Get the Monster to inspect
         do
         {
             System.out.println("Which monster do you want to inspect?");
             inputInspect = scan.nextLine();
         }
         while (!stringIsMonsterName(inputInspect));
+        
+        //Get the rune set number
         int runeSetNum = Main.getRuneSetNum();
-        try
+        
+        //Try to create the Monster
+        Monster m = createNewMonFromName(inputInspect, Math.abs(runeSetNum));
+        
+        //Print the Monster's details
+        if (m != null)
         {
-            inputInspect = inputInspect.replaceAll(" ", "_");
-            inputInspect = toProperName(inputInspect);
-            String element = monsterNamesDatabase.get(inputInspect.replaceAll("_", " "));
-            String name = "Monsters." + element + "." + inputInspect;
-            Class<?> c = Class.forName(name);
-            if (runeSetNum == -1)
-            {
-                ((Monster) c.getDeclaredConstructor().newInstance()).printWithStats();
-            }
-            else
-            {
-                try
-                {
-                    ((Monster) c.getDeclaredConstructor(String.class).newInstance(inputInspect + runeSetNum + ".csv")).printWithStats();
-                }
-                catch (NoSuchMethodException ignored)
-                {
-                }
-            }
-            if (runeSetNum != -1)
-            {
-                scan.nextLine();
-            }
+            m.printWithDetails();
         }
-        catch (NoSuchMethodException e)
+        //Java is weird
+        if (runeSetNum != -1)
         {
-            System.out.println("Error, this monster does not have a constructor to assign a custom rune set");
-            inspect();
-        }
-        catch (ClassNotFoundException e)
-        {
-            System.out.println("Oops! Rune set not found.");
-            inspect();
-        }
-        catch (Throwable e)
-        {
-            throw new RuntimeException(e);
+            scan.nextLine();
         }
     }
     
@@ -3353,7 +3622,7 @@ public class Monster
      *
      * @param s    The name of the Monster to look for
      * @param mons The list of Monsters to look in
-     * @return true if the ArrayList contains a Monster whose name equals the provided String, false otherwise.
+     * @return True if the ArrayList contains a Monster whose name equals the provided String, false otherwise.
      */
     public static boolean stringIsMonsterName(String s, ArrayList<Monster> mons)
     {
@@ -3372,15 +3641,25 @@ public class Monster
      * {@link Monster#stringIsMonsterName(String, ArrayList)} with {@link Monster#monsterNamesDatabase}
      *
      * @param s The name to look for
-     * @return true if the name is in the monster database
+     * @return True if the name is in the monster database, false otherwise
      */
     public static boolean stringIsMonsterName(String s)
     {
+        //Do nothing if the given name is null
+        if (s == null)
+        {
+            return false;
+        }
+        //Replace underscores with spaces
+        s = s.replace("_", " ");
+        
+        //Fill the database if it is empty
         if (monsterNamesDatabase.isEmpty())
         {
             setDatabase();
         }
         
+        //Search the database for the given name
         for (String string : monsterNamesDatabase.keySet())
         {
             if (string.equalsIgnoreCase(s))
@@ -3394,25 +3673,29 @@ public class Monster
     /**
      * Formats the given String into a String readable by the program
      *
-     * @param name the String to format
-     * @return the formatted String
+     * @param name The String to format
+     * @return The formatted String
      */
     public static String toProperName(String name)
     {
         String returnName = "";
+        //Replace all spaces with underscores
         name = name.replaceAll(" ", "_");
+        //Format the name similar to titlecase
         for (int i = 0; i < name.length(); i++)
         {
             String character = String.valueOf(name.charAt(i));
+            //Capitalize the first letter
             if (i == 0)
             {
                 returnName += character.toUpperCase();
             }
+            //Capitalize letters after an underscore
             else if (name.charAt(i - 1) == '_')
             {
                 returnName += character.toUpperCase();
             }
-            else
+            else //Add the character to the formatted string
             {
                 returnName += character;
             }
@@ -3421,116 +3704,70 @@ public class Monster
     }
     
     /**
-     * Sets {@link Monster#monsterNamesDatabase}
-     */
-    public static void setDatabase()
-    {
-        Scanner read = new Scanner(Objects.requireNonNull(Monster.class.getResourceAsStream("Monster database.csv")));
-        while (read.hasNextLine())
-        {
-            String line = read.nextLine();
-            if (line.isEmpty())
-            {
-                continue;
-            }
-            String[] monAndElement = line.split(",");
-            monsterNamesDatabase.put(monAndElement[0], monAndElement[1]);
-        }
-        read.close();
-    }
-    
-    /**
-     * @return An ArrayList containing an instance of every Monster
-     */
-    public static ArrayList<Monster> getMonstersFromDatabase()
-    {
-        if (monsterNamesDatabase.isEmpty())
-        {
-            setDatabase();
-        }
-        ArrayList<Monster> allMons = new ArrayList<>();
-        
-        for (String name : Monster.monsterNamesDatabase.keySet())
-        {
-            String element = Monster.monsterNamesDatabase.get(name);
-            name = name.replaceAll(" ", "_");
-            try
-            {
-                Class<?> c = Class.forName("Monsters." + element + "." + name);
-                allMons.add((Monster) c.getDeclaredConstructor().newInstance());
-            }
-            catch (Throwable e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        
-        return allMons;
-    }
-    
-    /**
-     * A recursive algorithm to choose the best ability for the Monster to use. Chooses support Ability if there is a Monster on the same Team with low
+     * A recursive algorithm to choose the best ability for the Monster to use.
+     * Chooses a support Ability if there is a Monster on the same Team with low
      * health or the Ability applies multiple buffs.
      *
-     * @param next          The Monster to choose the Ability from
-     * @param highestAtkBar The Team with the Monster whose turn it is
-     * @param abilities     The set of abilities that can be chosen
-     * @param firstCall     True if this call is the first time it is called (from outside the method)
-     * @return the ability's number on the monster
+     * @param next       The acting Monster
+     * @param actingTeam The Team with the acting Monster
+     * @param abilities  The set of abilities that can be chosen
+     * @param firstCall  True if this call is the first time it is called (from outside the method)
+     * @return The ability's number on the monster
      */
-    public int chooseAbilityNum(Monster next, Team highestAtkBar, ArrayList<Ability> abilities, boolean firstCall)
+    public int chooseAbilityNum(Monster next, Team actingTeam, ArrayList<Ability> abilities, boolean firstCall)
     {
+        //Remove abilities that can't be called on this turn
         if (firstCall)
         {
             ArrayList<Integer> viableNums = next.getViableAbilityNumbers();
             ArrayList<Ability> modifiedAbilities = new ArrayList<>();
             for (int i = 0; i < abilities.size(); i++)
             {
-                if (viableNums.contains(i) && abilities.get(i).getTurnsRemaining() <= 0 && !(abilities.get(i) instanceof Passive))
+                if (viableNums.contains(i))
                 {
                     modifiedAbilities.add(abilities.get(i));
                 }
             }
-            return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+            return chooseAbilityNum(next, actingTeam, modifiedAbilities, false);
         }
+        
         int numOfLowHealthTeammates = 0;
         boolean teammateWithLowHealth = false;
         boolean multipleTeammatesWithLowHealth;
         //Check for low health teammates
-        for (Monster mon : highestAtkBar.getMonsters())
+        for (Monster mon : actingTeam.getMonsters())
         {
-            if (mon.equals(next))
-            {
-                continue;
-            }
             if (mon.getHpRatio() <= 50.0)
             {
                 numOfLowHealthTeammates++;
                 teammateWithLowHealth = true;
             }
         }
-        multipleTeammatesWithLowHealth = numOfLowHealthTeammates >= 2;
+        multipleTeammatesWithLowHealth = (numOfLowHealthTeammates >= 2);
         
-        //Choose a team support ability
+        //Choose a team support ability if an ally needs healing
         if (teammateWithLowHealth && next.hasTeamSupportAbility())
         {
             ArrayList<Heal_Ability> supportAbilities = new ArrayList<>();
+            //Get the Monster's support abilities
             for (Ability ability : abilities)
             {
-                if (ability instanceof Heal_Ability && next.getTeamSupportAbilities().contains((Heal_Ability) ability))
+                if (ability instanceof Heal_Ability h && next.getTeamSupportAbilities().contains(h))
                 {
-                    supportAbilities.add((Heal_Ability) ability);
+                    supportAbilities.add(h);
                 }
             }
             Collections.reverse(supportAbilities);
             for (int i = supportAbilities.size() - 1; i >= 0; i--)
             {
                 Heal_Ability ability = supportAbilities.get(i);
+                //Remove abilities on cooldown
                 if (ability.getTurnsRemaining() > 0)
                 {
                     supportAbilities.remove(ability);
                     continue;
                 }
+                //Use a single target support if possible and if only one ally needs healing
                 if (ability.targetsAllTeam() && !multipleTeammatesWithLowHealth && supportAbilities.size() > 1)
                 {
                     supportAbilities.remove(ability);
@@ -3539,7 +3776,9 @@ public class Monster
             Collections.reverse(supportAbilities);
             if (!supportAbilities.isEmpty())
             {
+                //Attempt to use the last support ability in the list
                 Ability a = supportAbilities.getLast();
+                //Retry choosing if the ability is not usable
                 if (!next.abilityIsValid(a))
                 {
                     ArrayList<Ability> modifiedAbilities = new ArrayList<>();
@@ -3550,7 +3789,7 @@ public class Monster
                             modifiedAbilities.add(ab);
                         }
                     }
-                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                    return chooseAbilityNum(next, actingTeam, modifiedAbilities, false);
                 }
                 return next.getAbilities().indexOf(a) + 1;
             }
@@ -3560,13 +3799,16 @@ public class Monster
         if (next.hasSelfSupportAbility())
         {
             ArrayList<Ability> selfAbilities = new ArrayList<>();
-            for (Ability value : abilities)
+            //Get abilities that target self
+            for (Ability a : abilities)
             {
-                if (next.getSelfSupportAbilities().contains(value))
+                if (next.getSelfSupportAbilities().contains(a))
                 {
-                    selfAbilities.add(value);
+                    selfAbilities.add(a);
                 }
             }
+            
+            //Remove unusable abilities
             for (int i = selfAbilities.size() - 1; i >= 0; i--)
             {
                 Ability ability = selfAbilities.get(i);
@@ -3578,7 +3820,9 @@ public class Monster
             
             if (!selfAbilities.isEmpty())
             {
+                //Attempt to use the last ability in the list
                 Ability a = selfAbilities.getLast();
+                //Retry choosing if the ability can't be used
                 if (!next.abilityIsValid(a))
                 {
                     ArrayList<Ability> modifiedAbilities = new ArrayList<>();
@@ -3589,24 +3833,26 @@ public class Monster
                             modifiedAbilities.add(ab);
                         }
                     }
-                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                    return chooseAbilityNum(next, actingTeam, modifiedAbilities, false);
                 }
                 return next.getAbilities().indexOf(a) + 1;
             }
         }
         
-        //Choose heal ability with multiple buffs
+        //Choose a Heal ability with multiple buffs
         if (next.hasSupportAbilityWithMultipleBuffs())
         {
             ArrayList<Ability> supportAbilities = new ArrayList<>();
-            for (Ability value : abilities)
+            //Get all Heal abilities with multiple buffs
+            for (Ability a : abilities)
             {
-                if (next.getSupportAbilitiesWithMultipleBuffs().contains(value))
+                if (next.getSupportAbilitiesWithMultipleBuffs().contains(a))
                 {
-                    supportAbilities.add(value);
+                    supportAbilities.add(a);
                 }
             }
             
+            //Remove unusable abilities
             for (int i = supportAbilities.size() - 1; i >= 0; i--)
             {
                 Ability ability = supportAbilities.get(i);
@@ -3618,7 +3864,9 @@ public class Monster
             
             if (!supportAbilities.isEmpty())
             {
+                //Attempt to use the last ability in the list
                 Ability a = supportAbilities.getLast();
+                //Retry choosing if the ability can't be used
                 if (!next.abilityIsValid(a))
                 {
                     ArrayList<Ability> modifiedAbilities = new ArrayList<>();
@@ -3629,7 +3877,7 @@ public class Monster
                             modifiedAbilities.add(ab);
                         }
                     }
-                    return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                    return chooseAbilityNum(next, actingTeam, modifiedAbilities, false);
                 }
                 return next.getAbilities().indexOf(a) + 1;
             }
@@ -3637,13 +3885,16 @@ public class Monster
         
         //Choose attack ability
         ArrayList<Ability> otherAbilities = new ArrayList<>();
-        for (Ability value : abilities)
+        //Get all attack abilities
+        for (Ability a : abilities)
         {
-            if (next.getAttackAbilities().contains(value))
+            if (next.getAttackAbilities().contains(a))
             {
-                otherAbilities.add(value);
+                otherAbilities.add(a);
             }
         }
+        
+        //Remove unusable abilities
         for (int i = otherAbilities.size() - 1; i >= 0; i--)
         {
             Ability ability = otherAbilities.get(i);
@@ -3655,7 +3906,9 @@ public class Monster
         
         if (!otherAbilities.isEmpty())
         {
+            //Attempt to use the last ability in the list
             Ability a = otherAbilities.getLast();
+            //Retry choosing if the ability can't be used
             if (!next.abilityIsValid(a))
             {
                 ArrayList<Ability> modifiedAbilities = new ArrayList<>();
@@ -3666,7 +3919,7 @@ public class Monster
                         modifiedAbilities.add(ab);
                     }
                 }
-                return chooseAbilityNum(next, highestAtkBar, modifiedAbilities, false);
+                return chooseAbilityNum(next, actingTeam, modifiedAbilities, false);
             }
             return next.getAbilities().indexOf(a) + 1;
         }
@@ -3678,38 +3931,222 @@ public class Monster
     /**
      * Determines if a monster can be healed
      *
-     * @return true if the monster can be healed, false otherwise
+     * @return True if the monster can be healed, false otherwise
      */
     public boolean canHeal()
     {
-        return !(containsDebuff(Debuff.UNRECOVERABLE) || isDead());
+        return !this.containsDebuff(Debuff.UNRECOVERABLE) && !this.isDead();
+    }
+    
+    /**
+     * Creates a new Monster given another of the same class
+     *
+     * @param mon The Monster to create a new instance of
+     * @return A new Monster of the same class
+     */
+    public static Monster createNewMonFromMon(Monster mon)
+    {
+        return createNewMonFromName(mon.getName(false, false));
     }
     
     /**
      * Creates a new Monster given its name. Uses the default rune set
      *
      * @param name The name of the Monster
-     * @return A new Monster with the given name. Ex. inputting "Loren" will return a new Loren instance
+     * @return A new Monster with the given name. Ex: inputting "Loren" will return a new Loren instance with rune set 1
      */
     public static Monster createNewMonFromName(String name)
     {
+        return createNewMonFromName(name, 1);
+    }
+    
+    /**
+     * Creates a new Monster given its name.
+     *
+     * @param name       The name of the Monster
+     * @param runeSetNum The rune set number to use
+     * @return A new Monster with the given name. Ex: inputting ("Loren", 2) will return a new Loren instance with rune set 2
+     */
+    public static Monster createNewMonFromName(String name, int runeSetNum)
+    {
+        //Fill the database if it's empty
         if (monsterNamesDatabase.isEmpty())
         {
             setDatabase();
         }
+        //Replace spaces with underscores
         name = name.replaceAll(" ", "_");
+        //Convert the name into a readable format
         name = toProperName(name);
+        
+        //Create a temp name to get from the database
         String temp = name.replaceAll("_", " ");
         String element = monsterNamesDatabase.get(temp);
-        String className = "Monsters." + element + "." + name;
+        
+        //Get the Monster's element
+        String className = "Monsters.%s.%s".formatted(element, name);
         try
         {
+            //Get the Monster's class and try to create a new instance
             Class<?> c = Class.forName(className);
-            return (Monster) c.getConstructor().newInstance();
+            Monster m = (Monster) c.getConstructor(String.class).newInstance("%s%d.csv".formatted(name, runeSetNum));
+            //Return null if the Monster could not be created properly, otherwise return the Monster
+            return m.getRunes() == null ? null : m;
+        }
+        catch (ClassNotFoundException e) //The Monster could not be created properly
+        {
+            System.err.println("Can not create Monster");
+            scan.nextLine();
+            System.out.println();
+            return null;
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            return null;
         }
+    }
+    
+    /**
+     * Calculates how much damage each continuous damage Debuff does as a percentage of health
+     *
+     * @return The percentage of health to damage
+     */
+    public static double continuousDmgAmount()
+    {
+        //Base DOT damage is 5% of max HP
+        double returnAmount = 0.05;
+        Team t1 = game.getNextMonsTeam(), t2 = game.getOtherTeam();
+        for (int i = 0; i < t1.size(); i++)
+        {
+            //@Passive (Sath)
+            //Double the damage if there is a Sath passive active
+            if ((t1.get(i) instanceof Sath && !t1.get(i).isDead() && !t1.get(i).passiveCanActivate()) ||
+                (t2.get(i) instanceof Sath && !t2.get(i).isDead() && !t2.get(i).passiveCanActivate()))
+            {
+                returnAmount *= 2.0;
+                break;
+            }
+        }
+        
+        return returnAmount;
+    }
+    
+    /**
+     * Applies continuous damage to the Monster
+     */
+    public void applyContinuousDmg()
+    {
+        this.setCurrentHp((int) Math.ceil((this.getCurrentHp() - (this.getMaxHp() * continuousDmgAmount()))));
+        //Print DOT dmg message
+        if (print)
+        {
+            System.out.printf("DOT Applied, %s took %,d%n", this.getName(true, true), (int) (this.getMaxHp() * (continuousDmgAmount())));
+        }
+    }
+    
+    /**
+     * Checks if the Monster's passive ability can be triggered
+     *
+     * @return True if the passive can be triggered, false otherwise
+     */
+    public boolean passiveCanActivate()
+    {
+        return (!this.containsDebuff(Debuff.OBLIVION));
+    }
+    
+    /**
+     * Applies the resistance check using a randomly generated number. Uses the target's resistance and self's accuracy
+     *
+     * @param target The target Monster
+     * @return True if the random the randomly generated number is lower than the target's resistance minus self's accuracy (Minimum 15%), false otherwise
+     */
+    protected boolean resistanceCheck(Monster target)
+    {
+        return new Random().nextInt(101) < Math.max(15, Math.min(target.resistance, 100) - Math.min(this.accuracy, 100));
+    }
+    
+    /**
+     * Copies the changeable attributes of a Monster into a new object
+     *
+     * @return A new Monster with the same attributes as the original
+     */
+    public Monster copy()
+    {
+        //TODO finish push pop and have Raoq use them for ability 2
+        Monster save = createNewMonFromName(this.getName(false, false));
+        
+        save.currentHp = this.currentHp;
+        save.destroyedHp = this.destroyedHp;
+        save.extraAtk = this.extraAtk;
+        save.lessAtk = this.lessAtk;
+        save.lessDef = this.lessDef;
+        save.lessAtkSpd = this.lessAtkSpd;
+        save.extraDef = this.extraDef;
+        save.extraCritRate = this.extraCritRate;
+        save.extraGlancingRate = this.extraGlancingRate;
+        save.extraSpd = this.extraSpd;
+        save.shield = this.shield;
+        save.numOfViolentRuneProcs = this.numOfViolentRuneProcs;
+        save.atkBar = this.atkBar;
+        save.dead = this.dead;
+        
+        ArrayList<Buff> buffs = new ArrayList<>();
+        this.getAppliedBuffs().forEach(b -> buffs.add(new Buff(b.getBuffNum(), b.getNumTurns())));
+        
+        ArrayList<Debuff> debuffs = new ArrayList<>();
+        this.getAppliedDebuffs().forEach(d -> {
+            debuffs.add(new Debuff(d.getDebuffNum(), d.getNumTurns(), 0));
+            debuffs.getLast().setCaster(d.getCaster());
+        });
+        
+        ArrayList<Stat> otherEffects = new ArrayList<>();
+        this.otherStats.forEach(s -> {
+            otherEffects.add(new Stat(s.getNumTurns()));
+            otherEffects.getLast().setStatNum(s.getStatNum());
+        });
+        
+        for (int i = 0; i < this.abilities.size(); i++)
+        {
+            save.abilities.get(i).setToNumTurns(this.abilities.get(i).getTurnsRemaining());
+        }
+        
+        save.appliedBuffs = buffs;
+        save.appliedDebuffs = debuffs;
+        save.otherStats = otherEffects;
+        
+        return save;
+    }
+    
+    /**
+     * Pastes a Monster's changeable attributes onto self
+     *
+     * @param save The Monster to paste the attributes from
+     */
+    public void paste(Monster save)
+    {
+        if (!save.getName(false, false).equals(this.getName(false, false)))
+        {
+            return;
+        }
+        
+        this.currentHp = save.currentHp;
+        this.destroyedHp = save.destroyedHp;
+        this.extraAtk = save.extraAtk;
+        this.lessAtk = save.lessAtk;
+        this.lessDef = save.lessDef;
+        this.lessAtkSpd = save.lessAtkSpd;
+        this.extraDef = save.extraDef;
+        this.extraCritRate = save.extraCritRate;
+        this.extraGlancingRate = save.extraGlancingRate;
+        this.extraSpd = save.extraSpd;
+        this.shield = save.shield;
+        this.numOfViolentRuneProcs = save.numOfViolentRuneProcs;
+        this.atkBar = save.atkBar;
+        this.dead = save.dead;
+        
+        this.appliedBuffs = save.appliedBuffs;
+        this.appliedDebuffs = save.appliedDebuffs;
+        this.otherStats = save.otherStats;
+        this.abilities = save.abilities;
     }
 }

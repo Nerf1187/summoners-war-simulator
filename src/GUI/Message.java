@@ -20,22 +20,28 @@ public class Message extends JFrame
      */
     public Message(String message, boolean isError)
     {
+        //Set the GUI title
         setTitle(message);
+        
+        //Check if the message is an error
         if (isError)
         {
             setTitle("Error");
             mainLabel.setForeground(Color.RED);
         }
-        else
+        else //General message
         {
             mainLabel.setForeground(Color.BLACK);
         }
+        
+        //General GUI stuff
         mainLabel.setText(message);
         add(panel);
         setSize(250, 150);
         setLocationRelativeTo(null);
         setVisible(true);
         
+        //Remove the current window
         okButton.addActionListener(_ -> dispose());
     }
 }

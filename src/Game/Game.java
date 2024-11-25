@@ -1,11 +1,12 @@
 package Game;
 
 import Errors.*;
-import Monsters.Fire.*;
 import Monsters.*;
 import Stats.Buffs.*;
 import Stats.Debuffs.*;
 import java.util.*;
+
+import static Game.Main.scan;
 
 /**
  * This class contains all the information for the game that is used by {@link Main}, {@link Auto_Play} and {@link Test_One_Team}.
@@ -15,32 +16,35 @@ import java.util.*;
 public class Game
 {
     private static boolean canCounter;
-    private static final Scanner scan = new Scanner(System.in);
     private final Team t1, t2;
     
-    //Team with the Monster with the highest atk bar : other team
+    //Team with the Monster with the highest attack bar | The other team
     private Team teamWithHighestAtkBar = new Team("", new ArrayList<>()), other = new Team("", new ArrayList<>());
     
     /**
-     * Creates a new {@link Game} object
+     * Creates a new Game object
      *
      * @param t1 The first Team in the game
      * @param t2 The second Team in the game
      */
     public Game(Team t1, Team t2)
     {
+        //Set the game for the Monsters
         Monster.setGame(this);
+        
+        //Check that the teams have the same number of Monsters
         if (t1.size() != t2.size())
         {
             throw new ConflictingArguments("Teams must have the same number of mons.");
         }
         
+        //Set teams
         this.t1 = t1;
         this.t2 = t2;
     }
     
     /**
-     * @return true if a counter is possible in this Game, false otherwise.
+     * @return True if a counter is possible in this Game, false otherwise.
      */
     public static boolean canCounter()
     {
@@ -58,8 +62,7 @@ public class Game
     }
     
     /**
-     * Increases the attack bar for every Monster on each Team. This is the same as calling {@link Monster#increaseAtkBar()} for every Monster in the
-     * Game.
+     * Increases the attack bar for every Monster on each Team. This is the same as calling {@link Monster#increaseAtkBar()} for every Monster in the Game
      */
     public void increaseAtkBar()
     {
@@ -68,7 +71,7 @@ public class Game
     }
     
     /**
-     * @return true if at least one Monster in the Game has a full attack bar, false otherwise.
+     * @return True if at least one Monster in the Game has a full attack bar, false otherwise.
      */
     public boolean hasFullAtkBar()
     {
@@ -76,7 +79,7 @@ public class Game
     }
     
     /**
-     * @return true if a Team has no alive Monsters remaining, false otherwise
+     * @return True if a Team has no living Monsters remaining, false otherwise
      */
     public boolean endGame()
     {
@@ -84,26 +87,28 @@ public class Game
     }
     
     /**
-     * Finds the {@link Team} with a Monster with a full attack bar. If both have a Monster with a full attack bar chooses the one with a higher value. If
-     * they
-     * are the same, chooses a Team at random.
+     * Finds the Team with a Monster with a full attack bar. If both have a Monster with a full attack bar, chooses the one with a higher raw value. If they are the same, chooses a Team at random.
      *
-     * @return the Team with the highest attack bar
+     * @return The Team with the highest attack bar
      */
     public Team getTeamWithHighestAtkBar()
     {
+        //Team 1 has a higher full attack bar
         if (t1.getHighestFullAtkBar() > t2.getHighestFullAtkBar())
         {
             teamWithHighestAtkBar = t1;
             other = t2;
             return t1;
         }
+        //Team 2 has a higher full attack bar
         if (t2.getHighestFullAtkBar() > t1.getHighestFullAtkBar())
         {
             teamWithHighestAtkBar = t2;
             other = t1;
             return t2;
         }
+        //Both teams have equal highest full attack bars
+        //Randomly choose the team
         if (new Random().nextInt(101) <= 50)
         {
             teamWithHighestAtkBar = t1;
@@ -116,48 +121,55 @@ public class Game
     }
     
     /**
-     * Finds the Team that still has Monsters remaining. If both Teams have Monsters returns an empty Team
+     * Finds the Team that still has living Monsters remaining. If both Teams have living Monsters, returns an empty Team
      *
-     * @return a blank Team or the Team with Monsters still remaining
+     * @return A blank Team or the Team with Monsters still remaining
      */
     public Team getWinningTeam()
     {
+        //Return a blank team if the game has not ended
         if (!endGame())
         {
             return new Team("None", new ArrayList<>());
         }
+        //Team 2 won
         if (t1.deadTeam())
         {
             return t2;
         }
+        //Team 1 won
         return t1;
     }
     
     /**
-     * Finds the team that has no Monsters remaining. Returns an empty Team if both Teams still have Monsters
+     * Finds the team that has no living Monsters remaining. Returns an empty Team if both Teams still have living Monsters
      *
      * @return A blank Team or the Team with no Monsters left
      */
     public Team getLosingTeam()
     {
+        //Return a blank team if the game has not ended
         if (!endGame())
         {
             return new Team("None", new ArrayList<>());
         }
+        //Team 1 lost
         if (t1.deadTeam())
         {
             return t1;
         }
+        //Team 2 lost
         return t2;
     }
     
     /**
      * Formats the Game into a readable String
      *
-     * @return the formatted String
+     * @return The formatted String
      */
     public String toString()
     {
+        //Returns team 1 followed by team 2
         String s = "";
         s += "Team 1:\n";
         s += t1;
@@ -167,34 +179,12 @@ public class Game
     }
     
     /**
-     * Calculates how much damage each continuous damage Debuff does as a percent of health
-     *
-     * @return the percent of health to damage
-     */
-    public double continuousDmgAmount()
-    {
-        double returnAmount = 0.05;
-        for (int i = 0; i < t1.size(); i++)
-        {
-            //@Passive (Sath)
-            if ((t1.get(i) instanceof Sath && !t1.get(i).isDead() && !t1.get(i).containsDebuff(Debuff.OBLIVION)) ||
-                    (t2.get(i) instanceof Sath && !t2.get(i).isDead() && !t2.get(i).containsDebuff(Debuff.OBLIVION)))
-            {
-                returnAmount *= 2.0;
-                break;
-            }
-        }
-        
-        return returnAmount;
-    }
-    
-    /**
      * Resets the Game. Same as creating a new Game with the same Teams.
      */
     public void reset()
     {
-        t1.reset();
-        t2.reset();
+        t1.newInstances();
+        t2.newInstances();
     }
     
     /**
@@ -205,11 +195,13 @@ public class Game
      */
     public void activateBeforeTurnPassives(Monster next)
     {
-        Team nextTeam = teamWithHighestAtkBar;
-        for (int i = 0; i < nextTeam.size() + other.size(); i++)
+        //Activate passives for the acting team, then the other team
+        for (int i = 0; i < teamWithHighestAtkBar.size() + other.size(); i++)
         {
-            Monster m = (i < nextTeam.size()) ? nextTeam.get(i) : other.get(i - nextTeam.size());
+            Monster m = (i < teamWithHighestAtkBar.size()) ? teamWithHighestAtkBar.get(i) : other.get(i - teamWithHighestAtkBar.size());
+            //Do anything needed for the Monster before its turn
             m.beforeTurnProtocol(next, m.equals(next), other.contains(m), m.containsDebuff(Debuff.OBLIVION));
+            //Remove Provoke if the caster is dead
             if (m.containsDebuff(Debuff.PROVOKE))
             {
                 if (m.getProvoke().getCaster().isDead())
@@ -228,6 +220,7 @@ public class Game
     public void applyStats(Monster next)
     {
         boolean dmgTaken = false;
+        Monster stunner = null;
         //Apply debuffs before turn
         for (Debuff debuff : next.getAppliedDebuffs())
         {
@@ -238,61 +231,56 @@ public class Game
                 {
                     if (debuff.getNumTurns() == 1)
                     {
+                        //Detonate bomb
                         next.setCurrentHp((int) (next.getCurrentHp() - next.getMaxHp() * 0.4));
                         Main.printBombExplodeEffect(next);
-                        if (next.getCurrentHp() == 0)
-                        {
-                            next.setDead(true);
-                        }
-                        Main.stunned = true;
+                        stunner = debuff.getCaster();
                         dmgTaken = true;
                     }
                 }
                 //Sleep
-                case Debuff.SLEEP ->
-                {
-                    Main.printSleepEffect();
-                    Main.stunned = true;
-                }
+                case Debuff.SLEEP -> Main.printSleepEffect();
                 //DOT
                 case Debuff.CONTINUOUS_DMG ->
                 {
-                    next.setCurrentHp((int) (next.getCurrentHp() - next.getMaxHp() * (continuousDmgAmount())));
+                    next.applyContinuousDmg();
                     dmgTaken = true;
-                    if (Monster.isPrint())
-                    {
-                        System.out.println("DOT Applied, you took " + (int) (next.getMaxHp() * (continuousDmgAmount())));
-                    }
                 }
                 //Freeze
-                case Debuff.FREEZE ->
-                {
-                    Main.printFreezeEffect();
-                    Main.stunned = true;
-                }
+                case Debuff.FREEZE -> Main.printFreezeEffect();
                 //Stun
-                case Debuff.STUN ->
-                {
-                    Main.printStunEffect();
-                    Main.stunned = true;
-                }
+                case Debuff.STUN -> Main.printStunEffect();
             }
         }
         
+        //Check if the Monster is dead. Do this AFTER loop to not break program
+        if (next.getCurrentHp() <= 0)
+        {
+            next.kill();
+        }
+        
+        //Remove sleep if any damage was taken. Do this AFTER loop to not break program
         if (dmgTaken)
         {
             next.removeDebuff(Debuff.SLEEP);
         }
         
+        //Try to stun Monster if a bomb exploded. Do this AFTER loop to not break program
+        if (stunner != null)
+        {
+            next.addAppliedDebuff(Debuff.STUN, 100, 1, stunner);
+        }
+        
         //Apply buffs before turn
         for (Buff buff : next.getAppliedBuffs())
         {
+            //Recovery
             if (buff.getBuffNum() == Buff.RECOVERY && !next.containsDebuff(Debuff.UNRECOVERABLE))
             {
                 next.setCurrentHp(Math.min(next.getMaxHp(), (int) (next.getCurrentHp() + next.getMaxHp() * 0.15)));
                 if (Monster.isPrint())
                 {
-                    System.out.println("Continuous healing applied, you healed " + (int) (next.getMaxHp() * 0.15) + " HP.");
+                    System.out.printf("Continuous healing applied, you healed %,d HP.%n", (int) (next.getMaxHp() * 0.15));
                 }
             }
         }
@@ -302,38 +290,42 @@ public class Game
      * Gets the ability number from the user
      *
      * @param next The Monster whose turn it is
-     * @return the valid number the user selects
+     * @return The valid number the user selects
      */
     public static int getAbilityNum(Monster next)
     {
         int abilityNum;
         do
         {
+            //Get ability number
             System.out.println("Type the ability number you want to use (e.g. 1,2...) or type \"stats\" to see stat descriptions");
             try
             {
                 abilityNum = scan.nextInt();
-                if (next.abilityIsPassive(abilityNum))
+                //Make sure the chosen ability is valid
+                if (!next.abilityIsValid(abilityNum))
                 {
-                    System.out.println("Oops! Ability is passive! (You can not use this ability, it is automatically applied)\n");
+                    System.out.println("Oops! You can not use this ability, it is automatically applied\n");
                     abilityNum = -1;
                 }
             }
             catch (InputMismatchException e)
             {
                 String response = scan.nextLine();
+                //Print buff and debuff descriptions
                 abilityNum = -1;
                 if (response.equals("stats"))
                 {
                     Stats.Stat.printStatDescriptions();
                 }
             }
+            //Ability not found
             catch (IndexOutOfBoundsException e)
             {
                 abilityNum = -1;
             }
         }
-        while (!next.getViableAbilityNumbers().contains(abilityNum));
+        while (!next.abilityIsValid(abilityNum));
         return abilityNum;
     }
     
@@ -343,11 +335,11 @@ public class Game
      * @param next       The Monster whose turn it is.
      * @param abilityNum The ability number the user has chosen
      * @param threat     Whether a Monster has the Threat buff
-     * @return the target Monster
+     * @return The target Monster
      */
     public Monster getTarget(Monster next, int abilityNum, boolean threat)
     {
-        //get target num/re-choose ability if wanted
+        //Get target num/re-choose ability if wanted
         int target;
         boolean cancel = false;
         Monster monster = null;
@@ -361,10 +353,10 @@ public class Game
                 System.out.println(other.getSingleMonFromTeam(other.getMonWithThreat(), false));
                 monster = other.getMonWithThreat();
             }
-            //Enemy does not have any Threat buffs and ability targets enemy
+            //The enemy does not have any Threat buffs and ability targets enemy
             else if (next.getAbility(abilityNum).targetsEnemy())
             {
-                System.out.print(other.print(next.getElement(), 1) + "\n");
+                System.out.printf("%s\n", other.print(next.getElement(), 1));
             }
             //Ability targets self
             else if (next.getAbility(abilityNum).targetsSelf())
@@ -372,15 +364,16 @@ public class Game
                 System.out.println(teamWithHighestAtkBar.getSingleMonFromTeam(next, true));
                 monster = next;
             }
-            //Ability targets friendly Team
+            //Ability targets allied Team
             else
             {
-                System.out.println(teamWithHighestAtkBar.print(next.getElement(), 0) + "\n");
+                System.out.printf("%s\n%n", teamWithHighestAtkBar.print(next.getElement(), 0));
             }
             try
             {
                 target = scan.nextInt();
             }
+            //Cancel operation
             catch (InputMismatchException e)
             {
                 String s = scan.nextLine();
@@ -403,7 +396,9 @@ public class Game
     }
     
     /**
-     * @return the team whose mons turn it is
+     * Gets the acting team
+     *
+     * @return The acting team
      */
     public Team getNextMonsTeam()
     {
@@ -411,7 +406,7 @@ public class Game
     }
     
     /**
-     * @return the team who does not have their mon's turn
+     * @return The non-acting team
      */
     public Team getOtherTeam()
     {
@@ -422,7 +417,7 @@ public class Game
      * Finds the Team that contains the given Monster
      *
      * @param monster The Monster to search for
-     * @return the Team with the given Monster
+     * @return The Team with the given Monster
      */
     public Team getTeamFromMon(Monster monster)
     {
@@ -438,12 +433,11 @@ public class Game
      */
     public static void applyNextTurn(Monster next, Monster targetMon, int abilityNum)
     {
-        //Apply nextTurn()
+        //Try to perform the Monster's turn
         //If something went wrong, does process again
         if (!next.nextTurn(targetMon, abilityNum))
         {
-            System.out.println("Uh oh! Something in the attack went wrong! (Check your ability cooldown and make sure you're not targeting a dead " +
-                    "monster!)");
+            System.out.println("Uh oh! Something in the turn went wrong! (Check your ability number and cooldown cooldown and make sure you're not targeting a dead monster!)");
         }
     }
 }
