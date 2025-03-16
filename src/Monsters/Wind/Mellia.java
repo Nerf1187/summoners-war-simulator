@@ -20,10 +20,7 @@ public class Mellia extends Monster
      */
     public Mellia()
     {
-        super("Mellia" + count, WIND, 10_710, 648, 615, 104, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Mellia1.csv", this));
-        setAbilities();
-        count++;
+        this("Mellia1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Mellia extends Monster
      */
     public Mellia(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Mellia" + count, WIND, 10_710, 648, 615, 104, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

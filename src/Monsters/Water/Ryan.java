@@ -21,10 +21,7 @@ public class Ryan extends Monster
      */
     public Ryan()
     {
-        super("Ryan" + count, WATER, 10_380, 549, 736, 107, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Ryan1.csv", this));
-        setAbilities();
-        count++;
+        this("Ryan1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Ryan extends Monster
      */
     public Ryan(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Ryan" + count, WATER, 10_380, 549, 736, 107, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

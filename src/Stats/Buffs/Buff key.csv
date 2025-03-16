@@ -15,9 +15,9 @@
 15,Threat,,The enemy can only attack the target with Threat. Target receives 15% less damage. The duration is only reduced when target is attacked,done
 16,Inc Atk Bar,Ability specific,null,done
 17,Cleanse,,null,done
-18,Buff steal,,null,done
+18,Buff Steal,,null,done
 19,Vampire,+20% of damage dealt,Recovers HP by 20% of damage dealt,done
-14,Rune shield,15% of monster with rune's max health,null,done
+14,Rune Shield,15% of monster with rune's max health,null,done
 20,Remove Debuff,,null,done
 21,Extend Buff,,Extends the time of each beneficial effect on the ally target,
 22,Shorten Debuff,,Shortens the time of each harmful effect on the ally target,

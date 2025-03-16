@@ -24,13 +24,7 @@ public class Coco extends Monster
      */
     public Coco()
     {
-        super("Coco" + count, FIRE, 10_710, 615, 812, 101, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Coco1.csv", this));
-        setAbilities();
-        //Magic Spheres count
-        numOfMagicSpheres.setStatNum(Stat.MAGIC_SPHERE);
-        numOfMagicSpheres.setNumOfSpecialEffects(0);
-        count++;
+        this("Coco1.csv");
     }
     
     /**
@@ -40,8 +34,13 @@ public class Coco extends Monster
      */
     public Coco(String runeFileName)
     {
-        this();
+        super("Coco" + count, FIRE, 10_710, 615, 812, 101, 15, 50, 40, 0);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        //Magic Spheres count
+        numOfMagicSpheres.setStatNum(Stat.MAGIC_SPHERE);
+        numOfMagicSpheres.setNumOfSpecialEffects(0);
+        count++;
     }
     
     private void setAbilities()

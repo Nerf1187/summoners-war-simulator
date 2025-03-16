@@ -21,10 +21,7 @@ public class Xiao_Ling extends Monster
      */
     public Xiao_Ling()
     {
-        super("Xiao Ling" + count, LIGHT, 12_180, 527, 692, 104, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Xiao_Ling1.csv", this));
-        setAbilities();
-        count++;
+        this("Xiao_Ling1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Xiao_Ling extends Monster
      */
     public Xiao_Ling(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Xiao Ling" + count, LIGHT, 12_180, 527, 692, 104, 15, 50, 40, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
@@ -79,10 +78,13 @@ public class Xiao_Ling extends Monster
         if (this.passiveCanActivate())
         {
             //Steal a portion of the attack bar if the target has a worse HP ratio
-            if (target.getHpRatio() <= this.getHpRatio() && !target.containsBuff(Buff.IMMUNITY))
+            if (target.getHpRatio() <= this.getHpRatio())
             {
-                setAtkBar((int) (target.getAtkBar() * 0.5));
-                target.setAtkBar((int) (target.getAtkBar() * 0.5));
+                if (!target.containsBuff(Buff.IMMUNITY))
+                {
+                    this.increaseAtkBar((int) Math.ceil((target.getAtkBar() * 0.5)));
+                    target.setAtkBar((int) Math.ceil((target.getAtkBar() * 0.5)));
+                }
             }
             else if (!this.containsDebuff(Debuff.UNRECOVERABLE)) //Increase HP by half the damage done
             {

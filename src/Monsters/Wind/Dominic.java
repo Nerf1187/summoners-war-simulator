@@ -21,10 +21,7 @@ public class Dominic extends Monster
      */
     public Dominic()
     {
-        super("Dominic" + count, WIND, 10_875, 615, 801, 102, 30, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Dominic1.csv", this));
-        setAbilities();
-        count++;
+        this("Dominic1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Dominic extends Monster
      */
     public Dominic(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Dominic" + count, WIND, 10_875, 615, 801, 102, 30, 50, 15, 0);
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

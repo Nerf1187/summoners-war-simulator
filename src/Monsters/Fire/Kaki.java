@@ -22,14 +22,7 @@ public class Kaki extends Monster
      */
     public Kaki()
     {
-        super("Kaki" + count, FIRE, 8_400, 604, 812, 115, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Kaki2.csv", this));
-        setAbilities();
-        count++;
-        
-        //@Passive
-        //Increase attack defense on attack
-        setDef((int) Math.ceil((getDef() + getAtk() * 0.2)));
+        this("Kaki1.csv");
     }
     
     /**
@@ -39,8 +32,14 @@ public class Kaki extends Monster
      */
     public Kaki(String runeFileName)
     {
-        this();
+        super("Kaki" + count, FIRE, 8_400, 604, 812, 115, 15, 50, 15, 0);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
+        
+        //@Passive
+        //Increase attack defense on attack
+        setDef((int) Math.ceil((getDef() + getAtk() * 0.2)));
     }
     
     private void setAbilities()

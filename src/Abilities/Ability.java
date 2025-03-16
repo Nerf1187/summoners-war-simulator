@@ -48,7 +48,7 @@ public class Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @throws ConflictingArguments If targetsEnemy and targetsSelf are both true
-     * @throws BadArgumentLength    If debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength    If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy,
@@ -61,11 +61,11 @@ public class Ability
         }
         if (debuffs.size() != debuffChances.size())
         {
-            throw new BadArgumentLength("Debuff size and debuffs chance size not the same");
+            throw new InvalidArgumentLength("Debuff size and debuffs chance size not the same");
         }
         if (buffs.size() != buffChances.size())
         {
-            throw new BadArgumentLength("Buff size and buffs chance size not the same");
+            throw new InvalidArgumentLength("Buff size and buffs chance size not the same");
         }
         
         //Set values
@@ -124,7 +124,7 @@ public class Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param ignore              An int to distinguish this constructor from another
      * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    If buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength    If buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
@@ -152,7 +152,7 @@ public class Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param targetsAllTeam      True if the ability targets the entire team, false otherwise
      * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    If debuffs and debuffChances are different lengths
+     * @throws InvalidArgumentLength    If debuffs and debuffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy, boolean isPassive, boolean ignoresDefense, boolean targetsSelf,
@@ -183,7 +183,7 @@ public class Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param ignore              An int to distinguish this constructor from another
      * @throws ConflictingArguments If targetsEnemy and targetsSelf are true
-     * @throws BadArgumentLength    if debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength    if debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean targetsEnemy,

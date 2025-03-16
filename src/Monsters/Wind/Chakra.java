@@ -25,11 +25,7 @@ public class Chakra extends Monster
      */
     public Chakra()
     {
-        super("Chakra" + count, WIND, 10_215, 593, 867, 106, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Chakra1.csv", this));
-        normalSpd = getSpd();
-        setAbilities();
-        count++;
+        this("Chakra1.csv");
     }
     
     /**
@@ -39,8 +35,11 @@ public class Chakra extends Monster
      */
     public Chakra(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Chakra" + count, WIND, 10_215, 593, 867, 106, 15, 50, 15, 0);
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        normalSpd = getSpd();
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
@@ -57,8 +56,7 @@ public class Chakra extends Monster
                                                                             "chance.", ability2Debuffs, ability2DebuffChances, 3, false, false, true));
         
         abilities.add(new Ability("The Wind Thunderer (3)", 0, 0, 1, "Falls under the Thunderer state that enhances your skills for 3 turns and instantly gains another turn. While under the Thunderer state, your Attack Speed increases by 100%. " +
-                                                                     "Once the Thunderer state ends, you become stunned for 1 turn. In addition, decreases the skill cooldown of [The Wind Thunderer] by 2 turns each when you are not under the Thunderer state.", 4, false, false, false, true, false,
-                false));
+                                                                     "Once the Thunderer state ends, you become stunned for 1 turn. In addition, decreases the skill cooldown of [The Wind Thunderer] by 2 turns each when you are not under the Thunderer state.", 4, false, false, false, true, false, false));
         
         abilities.add(new Passive("Might · Hurricane", "Deals additional damage that's proportionate to your Attack Speed when you attack the enemy and removes 1 beneficial effect from the enemy with a slower Attack Speed than yours. If the damage" +
                                                        " dealt on your turn during the Thunderer state is 15% or above of the target's MAX HP, increases the duration of the Thunderer state for 1 turn."));

@@ -2,6 +2,7 @@ package GUI;
 
 import javax.swing.*;
 import Monsters.*;
+import Runes.Monster_Runes.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
@@ -55,9 +56,9 @@ public class DuplicateRuneFile extends JFrame
             {
                 int numOfSameMonsterRuneSets = 0;
                 int lastNum = 0;
-                //Get the files in the Monster runes directory
-                File runeFolder = new File("src/Runes/Monster_Runes");
-                List<File> runeSets = Arrays.stream(Objects.requireNonNull(runeFolder.listFiles())).filter(file -> file.getName().contains(".csv")).toList();
+                
+                //Get the rune files in the Monster runes directory
+                List<File> runeSets = Runes.runeSets;
                 for (File set : runeSets)
                 {
                     int lastNameIndex = 0;
@@ -99,7 +100,7 @@ public class DuplicateRuneFile extends JFrame
             else
             {
                 dispose();
-                new Message("Success!", false);
+                new Message("Success", false, () -> new Message("Duplicate saved to %s".formatted(newFileName), false));
             }
         });
         
@@ -158,8 +159,10 @@ public class DuplicateRuneFile extends JFrame
         try
         {
             //Write every line from the old file to the new one
-            Scanner oldFile = new Scanner(new File("src/Runes/Monster_Runes/%s".formatted(oldFileName)));
-            File newFile = new File("src/Runes/Monster_Runes/%s".formatted(newFileName));
+            Scanner oldFile = new Scanner(new File("%s/%s".formatted(MonsterRunes.path, oldFileName)));
+            
+            File newFile = new File("%s/%s".formatted(MonsterRunes.path, newFileName));
+            
             FileWriter newFileWriter = new FileWriter(newFile);
             while (oldFile.hasNextLine())
             {

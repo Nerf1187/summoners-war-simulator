@@ -199,7 +199,7 @@ public class CreateRuneFile extends JFrame
                     try
                     {
                         //Create a temp file to parse new rune from
-                        File f = new File("src/Runes/Monster_Runes/temp.csv");
+                        File f = new File("%s/temp.csv".formatted(MonsterRunes.path));
                         FileWriter writer = new FileWriter(f);
                         writeRuneToFile(writer, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
                                 Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
@@ -387,7 +387,7 @@ public class CreateRuneFile extends JFrame
     }
     
     /**
-     * Instantiates all the necessary variables and starts the GUI.
+     * Initializes all the necessary variables and starts the GUI.
      *
      * @param fileName   The name of the file to write to if there is one, otherwise should be {"0"}
      * @param singleRune True if the GUI creates one rune, false otherwise
@@ -402,14 +402,12 @@ public class CreateRuneFile extends JFrame
             fileName = Runes.getFileName();
             if ((fileName).equals("tempFile") || (fileName).equals("oldTempFile"))
             {
-                new Message("Please choose a different Monster name", true);
-                System.err.println("Please choose a different Monster name");
-                System.exit(1);
+                new Message("Please choose a different Monster name", true, () -> System.exit(1));
             }
             try
             {
                 //Create a new FileWriter for the file name
-                fw = new FileWriter("src/Runes/Monster_Runes/%s.csv".formatted(fileName));
+                fw = new FileWriter("%s/%s.csv".formatted(MonsterRunes.path, fileName));
             }
             catch (IOException e)
             {
@@ -423,7 +421,7 @@ public class CreateRuneFile extends JFrame
                 if (!singleRune)
                 {
                     //Create a FileWriter for the provided file name if the program is creating more than one rune
-                    fw = new FileWriter("src/Runes/Monster_Runes/%s".formatted(fileName));
+                    fw = new FileWriter("%s/%s".formatted(MonsterRunes.path, fileName));
                 }
             }
             catch (IOException e)

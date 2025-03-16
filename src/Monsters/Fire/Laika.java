@@ -22,10 +22,7 @@ public class Laika extends Monster
      */
     public Laika()
     {
-        super("Laika" + count, FIRE, 11_040, 571, 834, 100, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Laika1.csv", this));
-        setAbilities();
-        count++;
+        this("Laika1.csv");
     }
     
     /**
@@ -35,8 +32,10 @@ public class Laika extends Monster
      */
     public Laika(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Laika" + count, FIRE, 11_040, 571, 834, 100, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

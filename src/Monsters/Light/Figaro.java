@@ -19,10 +19,7 @@ public class Figaro extends Monster
      */
     public Figaro()
     {
-        super("Figaro" + count, LIGHT, 11_700, 494, 703, 103, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Figaro1.csv", this));
-        setAbilities();
-        count++;
+        this("Figaro1.csv");
     }
     
     /**
@@ -32,8 +29,10 @@ public class Figaro extends Monster
      */
     public Figaro(String runeFileName)
     {
-        this();
+        super("Figaro" + count, LIGHT, 11_700, 494, 703, 103, 15, 50, 15, 0);
         super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

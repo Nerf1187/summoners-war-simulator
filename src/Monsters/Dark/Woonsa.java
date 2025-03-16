@@ -21,10 +21,7 @@ public class Woonsa extends Monster
      */
     public Woonsa()
     {
-        super("Woonsa" + count, DARK, 12_015, 637, 703, 118, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Woonsa1.csv", this));
-        setAbilities();
-        count++;
+        this("Woonsa1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Woonsa extends Monster
      */
     public Woonsa(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Woonsa" + count, DARK, 12_015, 637, 703, 118, 15, 50, 15, 0);
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

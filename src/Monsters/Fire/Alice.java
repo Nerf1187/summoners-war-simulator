@@ -25,12 +25,7 @@ public class Alice extends Monster
      */
     public Alice()
     {
-        super("Alice" + count, FIRE, 9_555, 900, 604, 101, 15, 50, 40, 0);
-        maxSpd = getSpd();
-        super.setRunes(MonsterRunes.getRunesFromFile("Alice1.csv", this));
-        setAbilities();
-        currentSpd = this.getSpd();
-        count++;
+        this("Alice1.csv");
     }
     
     /**
@@ -40,8 +35,12 @@ public class Alice extends Monster
      */
     public Alice(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Alice" + count, FIRE, 9_555, 900, 604, 101, 15, 50, 40, 0);
+        maxSpd = getSpd();
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        currentSpd = this.getSpd();
+        count++;
     }
     
     private void setAbilities()

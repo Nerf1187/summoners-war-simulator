@@ -24,11 +24,7 @@ public class Sath extends Monster
      */
     public Sath()
     {
-        super("Sath" + count, FIRE, 9_885, 505, 867, 91, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Sath1.csv", this));
-        setAbilities();
-        finalCritRate = this.getCritRate();
-        count++;
+        this("Sath1.csv");
     }
     
     /**
@@ -38,27 +34,28 @@ public class Sath extends Monster
      */
     public Sath(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Sath" + count, FIRE, 9_885, 505, 867, 91, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        finalCritRate = this.getCritRate();
+        count++;
     }
     
     private void setAbilities()
     {
-        
         abilities.add(new Attack_Ability("Grim Scythe (1)", 4.4 * 1.2, 0, 1, "Reaps the life of the enemy with a deadly scythe. " +
                                                                              "Acquires an additional turn if the enemy dies.", 0, false, false, false));
         
         ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0);
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Deadly Swing (2)", 2.7 * 1.2, 0, 1, "Attacks all enemies with a deadly scythe and " +
-                                                                              "inflicts Continuous Damage for 2 turns. Always lands a Critical Hit if the enemy's HP is 30% or lower.", ability2Debuffs, ability2DebuffChances, 3, false, false, true));
+                                                                              "inflicts Continuous Damage for 2 turns. The critical Rate increases to 100% if the enemy's HP is 30% or lower", ability2Debuffs, ability2DebuffChances, 3, false, false, true));
         
         //@Passive:Creation
         abilities.add(new Passive("Living Hell", "Increases the amount of damage all allies and enemies receive from Continuous Damage by two times. " +
                                                  "Disturbs the HP recovery for 2 turns with a 75% chance and inflicts Continuous Damage if you attack an enemy on your turn. If you attack an enemy who already has Continuous Damage, your attacks won't land as a Glancing Hit."));
         
         abilities.add(new Leader_Skill(Stat.ATK, 0.3, FIRE));
-        
         
         super.setAbilities(abilities);
     }

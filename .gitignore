@@ -27,11 +27,10 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-/src/Developer Website/
-/src/Monsters/Dark/Evan.java
 /src/module-info.java
 /src/Game/CreateRandomTeam.java
-/src/META-INF/
-/src/Game/Results/testingFile.csv
-/src/Game/Continue_Auto_Play.java
+*test*
+*Test*
+!*Test?One?Team*
 /.idea/
+/resources/manifests

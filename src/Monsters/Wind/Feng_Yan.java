@@ -21,10 +21,7 @@ public class Feng_Yan extends Monster
      */
     public Feng_Yan()
     {
-        super("Feng Yan" + count, WIND, 10_215, 801, 659, 96, 15, 50, 15, 25);
-        setRunes(MonsterRunes.getRunesFromFile("Feng_Yan1.csv", this));
-        setAbilities();
-        count++;
+        this("Feng_Yan1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Feng_Yan extends Monster
      */
     public Feng_Yan(String runeFileName)
     {
-        this();
+        super("Feng Yan" + count, WIND, 10_215, 801, 659, 96, 15, 50, 15, 25);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

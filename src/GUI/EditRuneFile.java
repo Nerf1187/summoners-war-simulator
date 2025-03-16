@@ -295,10 +295,10 @@ public class EditRuneFile extends JFrame
         try
         {
             //Create a temp file to put new information into
-            newFile = new File("src/Runes/Monster_Runes/tempFile.csv");
+            newFile = new File("%s/tempFile.csv".formatted(MonsterRunes.path));
             FileWriter newFileWriter = new FileWriter(newFile);
             //Get the old rune file
-            File oldFile = new File("src/Runes/Monster_Runes/%s".formatted(fileName));
+            File oldFile = new File("%s/%s".formatted(MonsterRunes.path, fileName));
             Scanner read = new Scanner(oldFile);
             
             //Write lines to the new file
@@ -320,20 +320,20 @@ public class EditRuneFile extends JFrame
             read.close();
             
             //Try to rename the old file to a temporary name
-            if (oldFile.renameTo(new File("src/Runes/Monster_Runes/oldTempFile.csv")))
+            if (oldFile.renameTo(new File("%s/oldTempFile.csv".formatted(MonsterRunes.path))))
             {
                 //Attempt to rename the new file to the original file name
-                if (newFile.renameTo(new File("src/Runes/Monster_Runes/%s".formatted(fileName))))
+                if (newFile.renameTo(new File("%s/%s".formatted(MonsterRunes.path, fileName))))
                 {
                     //Delete the original file ****DO NOT REMOVE****
-                    File temp = new File("src/Runes/Monster_Runes/oldTempFile.csv");
+                    File temp = new File("%s/oldTempFile.csv".formatted(MonsterRunes.path));
                     temp.delete();
                     return true;
                 }
                 else //Unable to rename the new file
                 {
                     //Rename the old file to its original name
-                    oldFile.renameTo(new File("src/Runes/Monster_Runes/%s".formatted(fileName)));
+                    oldFile.renameTo(new File("%s/%s".formatted(MonsterRunes.path, fileName)));
                     return false;
                 }
             }

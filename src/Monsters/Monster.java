@@ -4,6 +4,7 @@ import Abilities.*;
 import Errors.*;
 import Game.*;
 import Monsters.Fire.*;
+import Runes.Monster_Runes.*;
 import Runes.*;
 import Stats.Buffs.*;
 import Stats.Debuffs.*;
@@ -33,8 +34,13 @@ public class Monster
     
     //Global elements
     public static final int FIRE = 0, WATER = 1, WIND = 2, LIGHT = 3, DARK = 4, ALL = 5;
-    private final int MAX_BOMBS = 3, MAX_DOT = 8;
+    private final int MAX_BOMBS = 3, MAX_DOT = 8, MAX_BUFFS = 8;
     private String name;
+    //Constant path to this class
+    public static final String path = Monster.class.getResource("Monster.class").getPath()
+                                              .substring(0, Monster.class.getResource("Monster.class").getPath().indexOf("Summoners%20War%20Battle%20Simulator") + 36)
+                                              .replaceAll("%20", " ")
+                                              .replaceAll("file:", "") + "/src/Monsters";
     
     //Monster stats
     private int currentHp, maxHp, destroyedHp = 0, def, atk, spd, critRate, critDmg, resistance, accuracy;
@@ -50,24 +56,32 @@ public class Monster
     
     //Monster's base stats (unchanging)
     private final int baseMaxHp, baseAtk, baseDef, baseSpd, baseCritRate, baseCritDmg, baseRes, baseAcc;
+    
+    //Various variables for turns
     private int extraGlancingRate, lessAtk, lessDef;
     protected int lessAtkSpd;
     private int abilityGlancingRateChange;
     private int numOfViolentRuneProcs = 0;
     private double dmgDealtThisTurn, dmgTakenThisTurn;
     private double atkBar = 0;
-    private boolean dead = false, crit = false, glancing = false, wasCrit = false, singleTargetAttack = false;
+    private boolean dead = false, crit = false, glancing = false, wasCrit = false, wasGlanced = false, singleTargetAttack = false, shouldCounter = false, isCopy = false;
+    
+    //Applied Effects
     private ArrayList<Buff> appliedBuffs = new ArrayList<>();
     private ArrayList<Debuff> appliedDebuffs = new ArrayList<>();
     private ArrayList<Stat> otherStats = new ArrayList<>();
+    
+    //Abilities
     private ArrayList<Ability> abilities;
+    
+    //Runes
     private ArrayList<Rune> runes = new ArrayList<>();
     
     /**
      * Creates a new Monster
      *
      * @param name       The name of the Monster
-     * @param element    The element of the Monster. FIRE = 0, WATER = 1. WIND = 2, LIGHT = 3, DARK = 4
+     * @param element    The element of the Monster. Use <code>Monster.{ELEMENT}</code> Ex. <code>Monster.FIRE</code>
      * @param hp         The base health of the Monster
      * @param def        The base defense of the Monster
      * @param attack     The base attack power of the Monster
@@ -80,15 +94,24 @@ public class Monster
     public Monster(String name, int element, int hp, int def, int attack, int speed, int critRate, int critDmg, int resistance, int accuracy)
     {
         //Make sure no Monster's speed is changed for testing
-        if (speed > 400)
+        //Comment this check if you are testing and increase the speed of a Monster
+        final int maxSpeed = 350;
+        if (speed > 350)
         {
-            System.out.printf("Speed must be less than 500: %s%n", name);
-            throw new RuntimeException("Speed must be less than 500: %s".formatted(name));
+            System.out.printf("Base speed must be less than %d: %s%n", maxSpeed, name);
+            throw new IllegalArgumentException("Base Speed must be less than %d: %s".formatted(maxSpeed, name));
         }
         
         //Monster info
         this.name = name;
         this.element = element;
+        
+        //Make sure the element is valid
+        if (element < FIRE || element > DARK)
+        {
+            System.out.printf("Unknown Monster element: %s%n", this.getName(true, false));
+            throw new IllegalArgumentException("Unknown Monster element: " + this.getName(true, false));
+        }
         
         //Base stats
         baseAtk = attack;
@@ -182,6 +205,7 @@ public class Monster
      */
     public void setRunes(ArrayList<Rune> runes)
     {
+        
         //Create temporary values for rounding
         tempMaxHp = baseMaxHp;
         tempDef = baseDef;
@@ -638,7 +662,7 @@ public class Monster
      *
      * @param num The amount to set the attack bar to
      */
-    public void setAtkBar(int num)
+    public void setAtkBar(double num)
     {
         atkBar = Math.max(num, 0);
     }
@@ -742,7 +766,15 @@ public class Monster
         ArrayList<Monster> allMons = new ArrayList<>();
         
         //Add a new instance of each Monster in the database
-        monsterNamesDatabase.forEach((name, _) -> allMons.add(createNewMonFromName(name)));
+        try
+        {
+            monsterNamesDatabase.forEach((name, _) -> allMons.add(createNewMonFromName(name, true)));
+        }
+        catch (Exception e)
+        {
+            System.err.println("Error getting database Monster instances");
+            throw e;
+        }
         
         return allMons;
     }
@@ -824,6 +856,26 @@ public class Monster
             //Round to 3 decimal places if the number is between 0 and 10
             default -> BigDecimal.valueOf(ratio).setScale(3, RoundingMode.HALF_UP).doubleValue();
         };
+    }
+    
+    /**
+     * Checks if the Monster was hit by a crit from the most recent hit on this turn
+     *
+     * @return True if the Monster was hit with a crit from the most recent attack this turn, false otherwise
+     */
+    public boolean wasCrit()
+    {
+        return wasCrit;
+    }
+    
+    /**
+     * Checks if the Monster was hit by a glancing hit from the most recent hit on this turn
+     *
+     * @return True if the Monster was hit with a glancing hit from the most recent attack this turn, false otherwise
+     */
+    public boolean wasGlanced()
+    {
+        return wasGlanced;
     }
     
     /**
@@ -1121,7 +1173,13 @@ public class Monster
             switch (num)
             {
                 //Continuous healing can stack with itself, no other buff can.
-                case Buff.RECOVERY -> appliedBuffs.add(new Buff(num, turns));
+                case Buff.RECOVERY ->
+                {
+                    if (this.appliedBuffs.size() <= MAX_BUFFS)
+                    {
+                        appliedBuffs.add(new Buff(num, turns));
+                    }
+                }
                 case Buff.THREAT ->
                 {
                     //Apply the new Threat if and only if its turns active is longer than the one already applied
@@ -1417,7 +1475,7 @@ public class Monster
     public void addAppliedDebuff(Debuff debuff, Monster caster)
     {
         //Check for DecAtkBar and Shorten_Debuff
-        if (debuff instanceof DecAtkBar || debuff instanceof Shorten_Buff)
+        if (debuff instanceof DecAtkBar || debuff instanceof ShortenBuff)
         {
             //Resistance check
             int resRate = new Random().nextInt(101);
@@ -1596,28 +1654,33 @@ public class Monster
         String elementRelation = Team.elementalRelationship(element, target.element);
         //Change crit rate based on the elemental relationship
         int critChanceChange = 0;
+        int critResist = (target.containsBuff(Buff.CRIT_RESIST_UP)) ? -50 : 0;
+        int glancingChanceChange = 0;
         if (elementRelation.equals(ConsoleColors.GREEN_BACKGROUND))
         {
             critChanceChange = 15;
         }
         else if (elementRelation.equals(ConsoleColors.RED_BACKGROUND))
         {
-            critChanceChange = -20;
+            critChanceChange = -15;
+            glancingChanceChange = -50;
         }
-        //Crit
-        if (new Random().nextInt(101) <= (critRate + extraCritRate - extraGlancingRate + critChanceChange))
-        {
-            //Current dmg * 1.critDmg
-            dmg *= (1 + ((this.critDmg) / 100.0));
-            crit = true;
-        }
+        
         //Glancing
-        else if (new Random().nextInt(101) <= (30 + extraGlancingRate - critChanceChange + abilityGlancingRateChange))
+        if (new Random().nextInt(100) < (extraGlancingRate + glancingChanceChange + abilityGlancingRateChange))
         {
             //Current dmg * 0.7
             dmg *= 0.7;
             glancing = true;
         }
+        //Crit
+        else if (new Random().nextInt(100) < (critRate + critChanceChange + extraCritRate + critResist))
+        {
+            //Current dmg * 1.critDmg
+            dmg *= (1 + ((this.critDmg) / 100.0));
+            crit = true;
+        }
+        
         //Random damage within range of calculation
         return Math.max(1, new Random().nextInt((int) dmg - 100, (int) dmg + 100));
     }
@@ -1629,7 +1692,7 @@ public class Monster
      */
     public double calculateBaseDmgReduction()
     {
-        //1,000 / (1140 +3.5d)
+        //1,000 / (1,140 + 3.5d)
         return (1_000 / (1_140 + 3.5 * (def + extraDef - lessDef)));
     }
     
@@ -1704,6 +1767,10 @@ public class Monster
     public void increaseAtkBarByPercent(int num)
     {
         //Prevent the attack bar from going negative
+        if (print)
+        {
+            System.out.printf("%s's Attack bar increased by %d percent%n", this.getName(true, true), num);
+        }
         atkBar += (int) Math.max(Math.ceil(MAX_ATK_BAR_VALUE * (num / 100.0)), 0);
     }
     
@@ -1786,7 +1853,6 @@ public class Monster
         {
             return false;
         }
-        
         
         //Get chosen ability
         Ability a = abilities.get(abilityNum);
@@ -1995,6 +2061,7 @@ public class Monster
         }
         
         target.wasCrit = crit;
+        target.wasGlanced = glancing;
         
         crit = false;
         glancing = false;
@@ -2019,6 +2086,7 @@ public class Monster
             }
         }
         
+        target.shouldCounter = target.containsBuff(Buff.COUNTER);
         //Apply debuffs to target if Monster does not have immunity and the attack was not a glancing hit
         int increasedChance = 0;
         if (crit)
@@ -2031,9 +2099,17 @@ public class Monster
         }
         ArrayList<Debuff> debuffs = ability.getDebuffs();
         ArrayList<Integer> debuffsChance = ability.getDebuffsChance();
+        
         for (int i = 0; i < debuffs.size(); i++)
         {
-            target.addAppliedDebuff(debuffs.get(i), debuffsChance.get(i) + increasedChance, this);
+            int debuffNum = debuffs.get(i).getDebuffNum();
+            int chance = debuffsChance.get(i) + increasedChance;
+            //Stripping is not affected by glancing hits
+            if (glancing && (debuffNum == Debuff.STRIP || debuffNum == Debuff.REMOVE_BENEFICIAL_EFFECT || debuffNum == Debuff.SHORTEN_BUFFS))
+            {
+                chance -= increasedChance;
+            }
+            target.addAppliedDebuff(debuffs.get(i), chance, this);
         }
         if (print)
         {
@@ -2089,7 +2165,7 @@ public class Monster
         //Shorten beneficial effect
         if (target.containsDebuff(Debuff.SHORTEN_BUFFS))
         {
-            Shorten_Buff sb = (Shorten_Buff) target.getAppliedDebuffs().get(target.getDebuffIndex(Debuff.SHORTEN_BUFFS));
+            ShortenBuff sb = (ShortenBuff) target.getAppliedDebuffs().get(target.getDebuffIndex(Debuff.SHORTEN_BUFFS));
             for (Buff buff : target.getAppliedBuffs())
             {
                 buff.decreaseTurn(sb.getAmount());
@@ -2118,13 +2194,13 @@ public class Monster
         }
         
         //Vampire Rune
-        if (!containsDebuff(Debuff.UNRECOVERABLE) && !containsDebuff(Debuff.SEAL))
+        if (!this.containsDebuff(Debuff.UNRECOVERABLE) && !this.containsDebuff(Debuff.SEAL))
         {
             this.setCurrentHp((int) Math.ceil((currentHp + (finalDmg * 0.35 * numOfSets(Rune.VAMPIRE)))));
         }
         
         //Destroy Rune
-        if (numOfSets(Rune.DESTROY) > 0 && !containsDebuff(Debuff.SEAL))
+        if (this.numOfSets(Rune.DESTROY) > 0 && !this.containsDebuff(Debuff.SEAL))
         {
             //Max 4% of target's max HP per Destroy set
             int percentToDestroy = 4 * numOfSets(Rune.DESTROY);
@@ -2142,12 +2218,12 @@ public class Monster
         if (tempTarget.numOfSets(Rune.NEMESIS) > 0 && !tempTarget.containsDebuff(Debuff.SEAL))
         {
             double dmgPercent = finalDmg / target.getMaxHp();
-            double atkBarPercentIncrease = 0.04 * numOfSets(Rune.NEMESIS) * dmgPercent / 0.07;
-            this.increaseAtkBarByPercent((int) Math.ceil(atkBarPercentIncrease));
+            double atkBarPercentIncrease = 0.04 * tempTarget.numOfSets(Rune.NEMESIS) * dmgPercent / 0.07;
+            tempTarget.increaseAtkBarByPercent((int) Math.ceil(atkBarPercentIncrease));
         }
         
         //Despair Rune
-        if (numOfSets(Rune.DESPAIR) > 0 && !containsDebuff(Debuff.SEAL))
+        if (this.numOfSets(Rune.DESPAIR) > 0 && !this.containsDebuff(Debuff.SEAL))
         {
             double chance = 25.0;
             if (glancing)
@@ -2275,7 +2351,7 @@ public class Monster
         //Print heal message
         if (print && healAmount > 0)
         {
-            System.out.printf("%sHealed %s%s for %d health.%s\n", ConsoleColors.GREEN, target.getName(true, true), ConsoleColors.GREEN, (int) healAmount, ConsoleColors.RESET);
+            System.out.printf("%sHealed %s%s for %,d health.%s\n", ConsoleColors.GREEN, target.getName(true, true), ConsoleColors.GREEN, (int) healAmount, ConsoleColors.RESET);
         }
         
         
@@ -2490,10 +2566,10 @@ public class Monster
         //Decrease effect and ability cooldowns
         if (!isCounter)
         {
-            decreaseStatCooldowns();
+            this.decreaseStatCooldowns();
             if (!isStunned())
             {
-                decreaseAbilityCooldowns();
+                this.decreaseAbilityCooldowns();
             }
         }
         
@@ -2533,7 +2609,7 @@ public class Monster
         }
         Game.setCanCounter(true);
         //Increase every Monster's attack bar if Violent rune was not procced and the turn was not a counter
-        if (!isCounter && !vioProcced)
+        if (!isCounter && !vioProcced && !this.isCopy)
         {
             game.increaseAtkBar();
         }
@@ -2879,6 +2955,22 @@ public class Monster
     }
     
     /**
+     * Removes all buffs on the Monster
+     *
+     * @return The number of buffs removed
+     */
+    public int strip()
+    {
+        int size = appliedBuffs.size();
+        this.removeBuff(Buff.THREAT);
+        while (!this.appliedBuffs.isEmpty())
+        {
+            this.decreaseStatCooldowns();
+        }
+        return size;
+    }
+    
+    /**
      * Compares two Monsters
      *
      * @param mon The Monster to compare
@@ -2915,6 +3007,10 @@ public class Monster
         {
             currentHp = 0;
             //Remove all buffs and debuffs
+            if (this.containsBuff(Buff.THREAT))
+            {
+                this.removeBuff(Buff.THREAT);
+            }
             while (!appliedBuffs.isEmpty() || !appliedDebuffs.isEmpty())
             {
                 decreaseStatCooldowns();
@@ -2958,7 +3054,7 @@ public class Monster
         //Make sure the argument length is valid
         if (args.length % 2 != 0)
         {
-            throw new BadArgumentLength("Bad argument length: %d".formatted(args.length));
+            throw new InvalidArgumentLength("Bad argument length: %d".formatted(args.length));
         }
         
         //Format the args into buffs
@@ -2981,7 +3077,7 @@ public class Monster
         //Make sure the argument length is valid
         if (args.length % 3 != 0)
         {
-            throw new BadArgumentLength("Bad argument length: %d".formatted(args.length));
+            throw new InvalidArgumentLength("Bad argument length: %d".formatted(args.length));
         }
         
         //Format the args into debuffs
@@ -3043,8 +3139,9 @@ public class Monster
         }
         
         //Counter
-        if (containsBuff(Buff.COUNTER) && !isDead() && Game.canCounter() && !isStunned())
+        if (shouldCounter && !isDead() && Game.canCounter() && !isStunned())
         {
+            this.shouldCounter = false;
             Game.setCanCounter(false);
             if (print)
             {
@@ -3082,47 +3179,16 @@ public class Monster
             return;
         }
         Game.setCanCounter(false);
-        //Save the Monster's current stat and ability numbers
-        ArrayList<Buff> targetBuffs = new ArrayList<>(appliedBuffs);
-        ArrayList<Debuff> targetDebuffs = new ArrayList<>(appliedDebuffs);
-        ArrayList<Stat> targetOtherEffects = new ArrayList<>(otherStats);
-        ArrayList<Integer> targetAbilityCooldowns = new ArrayList<>();
-        double currentAtkBar = atkBar;
         
-        for (Ability ability : abilities)
-        {
-            targetAbilityCooldowns.add(ability.getTurnsRemaining());
-        }
+        //Save the Monster's current state and ability numbers
+        Monster copy = this.copy();
+        double tempAtkBar = copy.getAtkBar();
         
         //Counter the attacker
-        this.nextTurn(attacker, 1);
+        copy.nextTurn(attacker, 1);
         
         //Reset all stat and ability numbers
-        appliedBuffs = targetBuffs;
-        appliedDebuffs = targetDebuffs;
-        otherStats = targetOtherEffects;
-        ArrayList<Ability> abilityArrayList = abilities;
-        for (int i = 0; i < abilityArrayList.size(); i++)
-        {
-            abilityArrayList.get(i).setToNumTurns(targetAbilityCooldowns.get(i));
-        }
-        
-        for (Buff b : targetBuffs)
-        {
-            b.decreaseTurn(-1);
-        }
-        
-        for (Debuff d : targetDebuffs)
-        {
-            d.decreaseTurn(-1);
-        }
-        
-        for (Stat s : targetOtherEffects)
-        {
-            s.decreaseTurn(-1);
-        }
-        
-        atkBar = currentAtkBar;
+        this.setAtkBar(tempAtkBar + copy.getAtkBar());
     }
     
     /**
@@ -3191,16 +3257,6 @@ public class Monster
             }
         }
         return false;
-    }
-    
-    /**
-     * Checks if the monster was hit by a crit this turn
-     *
-     * @return True if the Monster was hit with a crit this turn, false otherwise
-     */
-    public boolean wasCrit()
-    {
-        return wasCrit;
     }
     
     /**
@@ -3603,7 +3659,7 @@ public class Monster
         int runeSetNum = Main.getRuneSetNum();
         
         //Try to create the Monster
-        Monster m = createNewMonFromName(inputInspect, Math.abs(runeSetNum));
+        Monster m = createNewMonFromName(inputInspect, Math.abs(runeSetNum), true);
         
         //Print the Monster's details
         if (m != null)
@@ -3946,18 +4002,19 @@ public class Monster
      */
     public static Monster createNewMonFromMon(Monster mon)
     {
-        return createNewMonFromName(mon.getName(false, false));
+        return createNewMonFromName(mon.getName(false, false), true);
     }
     
     /**
      * Creates a new Monster given its name. Uses the default rune set
      *
-     * @param name The name of the Monster
-     * @return A new Monster with the given name. Ex: inputting "Loren" will return a new Loren instance with rune set 1
+     * @param name     The name of the Monster
+     * @param scanLine True if the function should buffer a call to <code>Scanner.nextLine()</code>, false otherwise
+     * @return A new Monster with the given name and default rune set. Ex: inputting "Loren" will return a new Loren instance with rune set 1
      */
-    public static Monster createNewMonFromName(String name)
+    public static Monster createNewMonFromName(String name, boolean scanLine)
     {
-        return createNewMonFromName(name, 1);
+        return createNewMonFromName(name, 1, scanLine);
     }
     
     /**
@@ -3965,9 +4022,10 @@ public class Monster
      *
      * @param name       The name of the Monster
      * @param runeSetNum The rune set number to use
+     * @param scanLine   True if the function should buffer a Scanner.nextLine() call, false otherwise
      * @return A new Monster with the given name. Ex: inputting ("Loren", 2) will return a new Loren instance with rune set 2
      */
-    public static Monster createNewMonFromName(String name, int runeSetNum)
+    public static Monster createNewMonFromName(String name, int runeSetNum, boolean scanLine)
     {
         //Fill the database if it's empty
         if (monsterNamesDatabase.isEmpty())
@@ -3991,18 +4049,30 @@ public class Monster
             Class<?> c = Class.forName(className);
             Monster m = (Monster) c.getConstructor(String.class).newInstance("%s%d.csv".formatted(name, runeSetNum));
             //Return null if the Monster could not be created properly, otherwise return the Monster
-            return m.getRunes() == null ? null : m;
+            if (m.getRunes() == null)
+            {
+                System.err.println("Unable to create Monster");
+                return null;
+            }
+            return m;
         }
         catch (ClassNotFoundException e) //The Monster could not be created properly
         {
-            System.err.println("Can not create Monster");
-            scan.nextLine();
+            if (scanLine)
+            {
+                System.err.println("Unable to create Monster \"" + name + "\"");
+                scan.nextLine();
+            }
             System.out.println();
-            return null;
+            throw new RuntimeException(e);
         }
         catch (Exception e)
         {
-            return null;
+            if (scanLine)
+            {
+                System.err.println("Unable to create Monster \"" + name + "\"");
+            }
+            throw new RuntimeException(e);
         }
     }
     
@@ -4072,22 +4142,31 @@ public class Monster
      */
     public Monster copy()
     {
-        //TODO finish push pop and have Raoq use them for ability 2
-        Monster save = createNewMonFromName(this.getName(false, false));
+        Monster save = createNewMonFromMon(this);
+        
+        save.name = this.name;
         
         save.currentHp = this.currentHp;
         save.destroyedHp = this.destroyedHp;
+        
         save.extraAtk = this.extraAtk;
         save.lessAtk = this.lessAtk;
-        save.lessDef = this.lessDef;
-        save.lessAtkSpd = this.lessAtkSpd;
+        
         save.extraDef = this.extraDef;
+        save.lessDef = this.lessDef;
+        
+        save.extraSpd = this.extraSpd;
+        save.lessAtkSpd = this.lessAtkSpd;
+        
         save.extraCritRate = this.extraCritRate;
         save.extraGlancingRate = this.extraGlancingRate;
-        save.extraSpd = this.extraSpd;
+        
         save.shield = this.shield;
+        
         save.numOfViolentRuneProcs = this.numOfViolentRuneProcs;
+        
         save.atkBar = this.atkBar;
+        
         save.dead = this.dead;
         
         ArrayList<Buff> buffs = new ArrayList<>();
@@ -4114,6 +4193,8 @@ public class Monster
         save.appliedDebuffs = debuffs;
         save.otherStats = otherEffects;
         
+        save.isCopy = true;
+        
         return save;
     }
     
@@ -4129,24 +4210,44 @@ public class Monster
             return;
         }
         
+        //HP
         this.currentHp = save.currentHp;
         this.destroyedHp = save.destroyedHp;
+        
+        //Attack
         this.extraAtk = save.extraAtk;
         this.lessAtk = save.lessAtk;
-        this.lessDef = save.lessDef;
-        this.lessAtkSpd = save.lessAtkSpd;
+        
+        //Defense
         this.extraDef = save.extraDef;
+        this.lessDef = save.lessDef;
+        
+        //Speed
+        this.extraSpd = save.extraSpd;
+        this.lessAtkSpd = save.lessAtkSpd;
+        
+        //Crit/Glancing rate
         this.extraCritRate = save.extraCritRate;
         this.extraGlancingRate = save.extraGlancingRate;
-        this.extraSpd = save.extraSpd;
+        
+        //Shield
         this.shield = save.shield;
+        
+        //Vio procs
         this.numOfViolentRuneProcs = save.numOfViolentRuneProcs;
+        
+        //Attack bar
         this.atkBar = save.atkBar;
+        
+        //Dead state
         this.dead = save.dead;
         
+        //Effects
         this.appliedBuffs = save.appliedBuffs;
         this.appliedDebuffs = save.appliedDebuffs;
         this.otherStats = save.otherStats;
+        
+        //Abilities
         this.abilities = save.abilities;
     }
 }

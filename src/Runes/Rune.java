@@ -24,6 +24,7 @@ public class Rune
     private final Monster monster;
     private final int monBaseMaxHp, monBaseAtk, monBaseDef;
     private boolean applied = false;
+    private static final BufferedInputStream runeKey = new BufferedInputStream(Objects.requireNonNull(Rune.class.getResourceAsStream("Rune key.csv")));
     
     /**
      * Creates a new Rune
@@ -173,18 +174,21 @@ public class Rune
      */
     public static String numToType(int num)
     {
+        runeKey.mark(999_999);
         try
         {
             //Read the rune key and get the name of the requested set
-            Scanner read = new Scanner(new File("Rune key.csv"));
+            Scanner read = new Scanner(runeKey);
             while (read.hasNextLine())
             {
                 String[] line = read.nextLine().split(",");
                 if ((line[0].equals(num + "")))
                 {
+                    runeKey.reset();
                     return line[1];
                 }
             }
+            runeKey.reset();
         }
         catch (Exception ignored)
         {

@@ -19,10 +19,7 @@ public class Lushen extends Monster
      */
     public Lushen()
     {
-        super("Lushen" + count, WIND, 9_225, 461, 900, 103, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Lushen1.csv", this));
-        setAbilities();
-        count++;
+        this("Lushen1.csv");
     }
     
     /**
@@ -32,8 +29,10 @@ public class Lushen extends Monster
      */
     public Lushen(String runeFileName)
     {
-        this();
+        super("Lushen" + count, WIND, 9_225, 461, 900, 103, 15, 50, 15, 0);
         super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

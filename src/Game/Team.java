@@ -333,7 +333,6 @@ public class Team
         lines.add(line3);
         lines.add(line4);
         
-        
         //Find the longest line and it's length
         int longestLength = 0;
         ArrayList<String> longestLine = new ArrayList<>();
@@ -580,7 +579,7 @@ public class Team
             //Make sure only one Monster is passed
             if (args.length != 1)
             {
-                throw new BadArgumentLength("Length of varArgs must be 1 to print one Monster");
+                throw new InvalidArgumentLength("Length of varArgs must be 1 to print one Monster");
             }
             //Get the index of the requested Monster
             returnValues.add(monsters.indexOf(args[0]));
@@ -757,10 +756,19 @@ public class Team
     
     /**
      * Resets every Monster on the team by creating new instances of the same class. Does not set team-based rune effects
+     * @return True if every Monster on the team was successfully reset, false otherwise
      */
-    public void newInstances()
+    public boolean newInstances()
     {
-        monsters.replaceAll(monster -> Monster.createNewMonFromName(monster.getName(false, false)));
+        try
+        {
+            monsters.replaceAll(Monster::createNewMonFromMon);
+            return true;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
     }
     
     /**

@@ -20,10 +20,7 @@ public class Chloe extends Monster
      */
     public Chloe()
     {
-        super("Chloe" + count, FIRE, 11_700, 648, 549, 111, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Chloe1.csv", this));
-        setAbilities();
-        count++;
+        this("Chloe1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Chloe extends Monster
      */
     public Chloe(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Chloe" + count, FIRE, 11_700, 648, 549, 111, 15, 50, 15, 0);
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

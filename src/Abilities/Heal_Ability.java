@@ -23,7 +23,7 @@ public class Heal_Ability extends Ability
      * @param buffChances             The chance that each buff will apply
      * @param cooldown                The cooldown of the ability
      * @param targetsMultipleMonsters Whether the Ability targets multiple Monsters
-     * @throws BadArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean targetsMultipleMonsters)
@@ -43,7 +43,7 @@ public class Heal_Ability extends Ability
      * @param buffsChance             The chances that each buff will apply
      * @param cooldown                The cooldown of the ability
      * @param targetsMultipleMonsters Whether the Ability targets multiple Monsters
-     * @throws BadArgumentLength If buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength If buffs and buffChances are different lengths
      */
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffsChance, int cooldown, boolean targetsMultipleMonsters)

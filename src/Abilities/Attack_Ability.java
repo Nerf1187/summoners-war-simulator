@@ -28,7 +28,7 @@ public class Attack_Ability extends Ability
      * @param ignoresDefense      Whether this ability ignores the target's defense
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param hitsTeam            Whether this ability targets everyone on the enemy team
-     * @throws BadArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, ArrayList<Buff> buffs, ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense,
@@ -52,7 +52,7 @@ public class Attack_Ability extends Ability
      * @param ignoresDefense      Whether this ability ignores the target's defense
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param hitsTeam            Whether this ability targets everyone on the enemy team
-     * @throws BadArgumentLength If debuffs and debuffChances are different lengths
+     * @throws InvalidArgumentLength If debuffs and debuffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Debuff> debuffs,
             ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
@@ -76,7 +76,7 @@ public class Attack_Ability extends Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param hitsTeam            Whether this ability targets everyone on the enemy team
      * @param ignore              An int to distinguish this constructor from another
-     * @throws BadArgumentLength If buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength If buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam, int ignore)
@@ -102,7 +102,7 @@ public class Attack_Ability extends Ability
      * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
      * @param hitsTeam            Whether this ability targets everyone on the enemy team
      * @param ignore              An int to distinguish this constructor from another
-     * @throws BadArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
+     * @throws InvalidArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Attack_Ability(String name, double multiplier, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
             ArrayList<Integer> buffChances, ArrayList<Debuff> debuffs, ArrayList<Integer> debuffChances, int cooldown, boolean ignoresDefense,

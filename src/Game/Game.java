@@ -183,8 +183,12 @@ public class Game
      */
     public void reset()
     {
-        t1.newInstances();
-        t2.newInstances();
+        if (t1.newInstances() && t2.newInstances())
+        {
+            return;
+        }
+        System.err.println("Error resetting game");
+        System.exit(1);
     }
     
     /**

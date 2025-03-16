@@ -23,13 +23,7 @@ public class Aegir extends Monster
      */
     public Aegir()
     {
-        super("Aegir" + count, WATER, 10_215, 571, 725, 103, 15, 50, 15, 25);
-        setRunes(MonsterRunes.getRunesFromFile("Aegir1.csv", this));
-        //Set normal values
-        normalSpd = getSpd();
-        normalDef = getDef();
-        setAbilities();
-        count++;
+        this("Aegir1.csv");
     }
     
     /**
@@ -39,13 +33,18 @@ public class Aegir extends Monster
      */
     public Aegir(String runeFileName)
     {
-        this();
+        super("Aegir" + count, WATER, 10_215, 571, 725, 103, 15, 50, 15, 25);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
+        
+        //Set normal stats
+        normalSpd = getSpd();
+        normalDef = getDef();
     }
     
     private void setAbilities()
     {
-        
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0, Debuff.CONTINUOUS_DMG, 2, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(50, 50);
         abilities.add(new Attack_Ability("Penalty (1)", 3.8 * 1.3, 0, 1, "Attacks the enemy with an axe to inflict 2 continuous damage effects with a 50% chance", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
@@ -61,7 +60,7 @@ public class Aegir extends Monster
         
         abilities.add(new Attack_Ability("Confiscate (3)", 4 * 1.25, 0, 2, "Attacks the enemy 2 times, with each strike having a 75% chance to steal 1 beneficial effect from the enemy. Absorbs the Attack Bar by 50% each if you attack the " +
                                                                            "enemy with no beneficial effects. Goes under [Berserk] state for 3 turns afterwards. Under Berserk state, the defense is decreased by 30%, damage dealt to enemies is "
-                                                                           + "increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", 3, false, false, false));
+                                                                           + "increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", ability2Buffs, ability2BuffChances, 3, false, false, false, 0));
         
         abilities.getLast().addBeneficialEffectRemoversOverride(Buff.BUFF_STEAL);
         
@@ -70,7 +69,6 @@ public class Aegir extends Monster
         super.setAbilities(abilities);
     }
     
-    @Override
     public boolean nextTurn(Monster target, int abilityNum)
     {
         //Check for berserk before turn
@@ -114,14 +112,14 @@ public class Aegir extends Monster
         //Life steal
         if (hasBerserk && !containsDebuff(Debuff.UNRECOVERABLE))
         {
-            setCurrentHp(Math.max(getMaxHp(), (int) (getCurrentHp() + getDmgDealtThisTurn() * 0.1)));
+            this.setCurrentHp(Math.max(getMaxHp(), (int) (this.getCurrentHp() + this.getDmgDealtThisTurn() * 0.1)));
         }
         
         //Remove Berserk if it's effect is over
         berserk.decreaseTurn();
         if (berserk.getNumTurns() <= 0)
         {
-            removeBerserk();
+            this.removeBerserk();
         }
         
         super.afterTurnProtocol(target, true);
@@ -165,7 +163,7 @@ public class Aegir extends Monster
             {
                 this.stealBuff(target);
             }
-            else if (resistanceCheck(target))
+            else if (this.resistanceCheck(target))
             {
                 target.decreaseAtkBarByPercent(50);
                 this.increaseAtkBarByPercent(50);

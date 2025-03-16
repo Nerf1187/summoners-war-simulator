@@ -20,10 +20,7 @@ public class Lulu_And_Friends extends Monster
      */
     public Lulu_And_Friends()
     {
-        super("Lulu and Friends" + count, WATER, 10_050, 714, 648, 99, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Lulu_And_Friends1.csv", this));
-        setAbilities();
-        count++;
+        this("Lulu_and_Friends1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Lulu_And_Friends extends Monster
      */
     public Lulu_And_Friends(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Lulu and Friends" + count, WATER, 10_050, 714, 648, 99, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

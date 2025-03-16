@@ -22,12 +22,7 @@ public class Riley extends Monster
      */
     public Riley()
     {
-        super("Riley" + count, WIND, 11_850, 714, 637, 97, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Riley1.csv", this));
-        setAbilities();
-        count++;
-        totemCount.setStatNum(Stat.TOTEM);
-        addOtherStat(totemCount);
+        this("Riley1.csv");
     }
     
     /**
@@ -37,8 +32,12 @@ public class Riley extends Monster
      */
     public Riley(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Riley" + count, WIND, 11_850, 714, 637, 97, 15, 50, 40, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
+        totemCount.setStatNum(Stat.TOTEM);
+        addOtherStat(totemCount);
     }
     
     private void setAbilities()
@@ -128,6 +127,7 @@ public class Riley extends Monster
     {
         //Reset number of totems
         totemCount.setNumOfSpecialEffects(0);
+        totemCount.setNumTurns(999_999);
         super.reset();
     }
     
@@ -193,6 +193,6 @@ class Ability4 extends Heal_Ability
     
     public String toString()
     {
-        return (!r.abilityIsValid(this)) ? name + ": " + ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + description + ConsoleColors.RESET : super.toString();
+        return (r.abilityIsValid(this)) ? super.toString() : name + ": " + ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + description + ConsoleColors.RESET;
     }
 }

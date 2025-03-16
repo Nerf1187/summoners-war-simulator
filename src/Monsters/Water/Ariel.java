@@ -21,10 +21,7 @@ public class Ariel extends Monster
      */
     public Ariel()
     {
-        super("Ariel" + count, WATER, 11_850, 747, 604, 100, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Ariel1.csv", this));
-        setAbilities();
-        count++;
+        this("Ariel1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Ariel extends Monster
      */
     public Ariel(String runeFileName)
     {
-        this();
+        super("Ariel" + count, WATER, 11_850, 747, 604, 100, 15, 50, 40, 0);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

@@ -23,11 +23,7 @@ public class Miho extends Monster
      */
     public Miho()
     {
-        super("Miho" + count, DARK, 10_050, 560, 801, 119, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Miho1.csv", this));
-        critRate = getCritRate();
-        setAbilities();
-        count++;
+        this("Miho1.csv");
     }
     
     /**
@@ -37,8 +33,11 @@ public class Miho extends Monster
      */
     public Miho(String runeFileName)
     {
-        this();
+        super("Miho" + count, DARK, 10_050, 560, 801, 119, 15, 50, 15, 0);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        critRate = getCritRate();
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
@@ -46,20 +45,16 @@ public class Miho extends Monster
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.STUN, 1, 0);
         ArrayList<Integer> ability1DebuffChances = abilityChances(50);
         abilities.add(new Attack_Ability("Energy Punch (1)", 1.2 * 4.45, 0.2, 1, "Attacks with a spinning punch and stuns the " +
-                                                                                 "enemy for 1 turn with a 50% chance and recovers HP by 20% of inflicted damage.", ability1Debuffs, ability1DebuffChances, 0, false,
-                false, false));
+                                                                                 "enemy for 1 turn with a 50% chance and recovers HP by 20% of inflicted damage.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
         
         ArrayList<Debuff> ability2Debuffs = new ArrayList<>();
         ability2Debuffs.add(new DecAtkBar(25));
         ArrayList<Integer> ability2DebuffChances = abilityChances(100);
         abilities.add(new Attack_Ability("Chain Attack(2)", 1.2 * 3.9, 0, 2, "Launches 2 consecutive attacks on an enemy, " +
-                                                                             "inflicting damage and decreasing the enemy's Attack Bar by 25% with each attack.", ability2Debuffs, ability2DebuffChances, 3, false,
-                false, false));
+                                                                             "inflicting damage and decreasing the enemy's Attack Bar by 25% with each attack.", ability2Debuffs, ability2DebuffChances, 3, false, false, false));
         
         //@Passive:Creation
-        abilities.add(new Passive("Eye For An Eye", "Increases your Attack Bar by 30% and counterattacks the attacker with a critical hit when you are " +
-                                                    "attacked " +
-                                                    "with a critical hit. You won't get defeated with critical hit attacks."));
+        abilities.add(new Passive("Eye For An Eye", "Increases your Attack Bar by 30% and counterattacks the attacker with a critical hit when you are attacked with a critical hit. You won't get defeated with critical hit attacks."));
         
         super.setAbilities(abilities);
     }

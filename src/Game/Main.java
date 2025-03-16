@@ -1,7 +1,9 @@
 package Game;
 
+import Monsters.Dark.*;
 import Monsters.Fire.*;
 import Monsters.*;
+import Monsters.Light.*;
 import Monsters.Water.*;
 import Monsters.Wind.*;
 import Runes.*;
@@ -54,6 +56,15 @@ public class Main
         Game game = new Game(team1, team2);
         Monster.setGame(game);
         
+        //Run the game
+        game = battle(game);
+        
+        //Print which team won
+        System.out.printf("%s wins!", ConsoleColors.BLUE_BOLD_BRIGHT + game.getWinningTeam().getName());
+    }
+    
+    protected static Game battle(Game game)
+    {
         //Play game
         while (!game.endGame())
         {
@@ -157,9 +168,12 @@ public class Main
             //Delay output
             pause(800);
         }
-        
-        //Print which team won
-        System.out.printf("%s wins!", ConsoleColors.BLUE_BOLD_BRIGHT + game.getWinningTeam().getName());
+        return game;
+    }
+    
+    protected static Game battle(Team team1, Team team2)
+    {
+        return battle(new Game(team1, team2));
     }
     
     /**
@@ -367,7 +381,7 @@ public class Main
         {
             //Team 1
             mons1.add(new Dominic());
-            mons1.add(new Trevor());
+            mons1.add(new Loren());
             mons1.add(new Alice());
             mons1.add(new Feng_Yan());
             
@@ -375,10 +389,7 @@ public class Main
             mons2.add(new Ariel());
             mons2.add(new Dominic());
             mons2.add(new Riley());
-            mons2.add(new Chakra());
-            
-            mons1.getFirst().addAppliedBuff(new Shield(2, 2), mons1.getFirst());
-            mons1.getFirst().addAppliedBuff(new Shield(1, 2), mons1.getFirst());
+            mons2.add(new Evan());
         }
         
         //4v4
@@ -534,7 +545,14 @@ public class Main
         int runeSetNum = getRuneSetNum();
         
         //Try to create a Monster with the given rune set number
-        Monster monToAdd = Monster.createNewMonFromName(inputMon, Math.abs(runeSetNum));
+        Monster monToAdd = null;
+        try
+        {
+            monToAdd = Monster.createNewMonFromName(inputMon, Math.abs(runeSetNum), true);
+        }
+        catch (Exception ignored)
+        {
+        }
         
         //Return false if the Monster could not be added
         if (monToAdd == null)

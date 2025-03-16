@@ -21,10 +21,7 @@ public class Trevor extends Monster
      */
     public Trevor()
     {
-        super("Trevor" + count, FIRE, 8_895, 659, 725, 107, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Trevor1.csv", this));
-        setAbilities();
-        count++;
+        this("Trevor1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Trevor extends Monster
      */
     public Trevor(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Trevor" + count, FIRE, 10_050, 527, 780, 107, 15, 50, 15, 0);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
@@ -47,7 +46,8 @@ public class Trevor extends Monster
                                                                                "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0));
         
         abilities.add(new Attack_Ability("Relentless Strike (2)", 1.3 * 5.7, 0.3, 1, "Increases the Critical Rate for 2 turns " +
-                                                                                     "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage.", 3, false,
+                                                                                     "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage. This attack won't land as a Glancing Hit", 3,
+                false,
                 false, false));
         
         //@Passive:Creation
@@ -65,9 +65,11 @@ public class Trevor extends Monster
         if (abilityNum == 2 && abilities.get(1).getTurnsRemaining() == 0)
         {
             this.addAppliedBuff(Buff.CRIT_RATE_UP, 2, this);
+            this.setAbilityGlancingRateChange(-999_999);
         }
         
         boolean b = super.nextTurn(target, abilityNum);
+        this.setAbilityGlancingRateChange(0);
         if (!b)
         {
             return false;

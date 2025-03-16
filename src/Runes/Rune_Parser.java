@@ -2,6 +2,7 @@ package Runes;
 
 import Game.*;
 import Monsters.*;
+import Runes.Monster_Runes.*;
 import lib.json.*;
 import lib.json.parser.*;
 import java.awt.*;
@@ -33,6 +34,12 @@ public class Rune_Parser
         
         File file = getFileFromUser("Select account file to open", "*.json");
         
+        if (file == null)
+        {
+            System.err.println("No file selected.");
+            System.exit(1);
+        }
+        
         //Ask the user if they want to replace all files if they have a replacement or add new files
         String response;
         do
@@ -47,7 +54,7 @@ public class Rune_Parser
         try
         {
             //Get the file containing all Monster IDs and names and set to a JSONpObject
-            FileReader keyReader = new FileReader("src/Monsters/name_id_keys.json");
+            FileReader keyReader = new FileReader("%s/name_id_keys.json".formatted(Monster.path));
             Object JsonObj2 = parser.parse(keyReader);
             monsterIds = (JSONObject) JsonObj2;
             
@@ -105,7 +112,7 @@ public class Rune_Parser
                 }
                 
                 //Create a file with a temporary path name
-                File f = new File("src/Runes/Monster_Runes/temp.csv");
+                File f = new File("%s/temp.csv".formatted(MonsterRunes.path));
                 try
                 {
                     //Initialize the writer and write each rune and artifact to the file
@@ -127,18 +134,18 @@ public class Rune_Parser
                         
                         //Create a new path
                         String name = getMonsterName(monsterId);
-                        String newPath = String.format("src/Runes/Monster_Runes/%s", name + fileNum + ".csv");
+                        String newPath = "%s/%s%d.csv".formatted(MonsterRunes.path, name, fileNum);
                         //Create a file with the new path in case there is already a file with the same name
                         File oldFile = new File(newPath);
                         
                         //Try and rename the old file to a temporary name
-                        if (oldFile.renameTo(new File("src/Runes/Monster_Runes/oldTemp.csv")))
+                        if (oldFile.renameTo(new File("%s/oldTemp.csv".formatted(MonsterRunes.path))))
                         {
                             //Try to rename the new file to the new path
                             if (f.renameTo(new File(newPath)))
                             {
                                 //Delete the old file
-                                new File("src/Runes/Monster_Runes/oldTemp.csv").delete();
+                                new File("%s/oldTemp.csv".formatted(MonsterRunes.path)).delete();
                             }
                             else
                             {
@@ -156,7 +163,7 @@ public class Rune_Parser
                             //Try to rename the new file to the new path in case there was no old file to rename
                             if (!f.renameTo(new File(newPath)))
                             {
-                                //Delete new file if unable to rename
+                                //Delete the new file if unable to rename
                                 f.delete();
                                 //Print error message
                                 System.out.printf("%sUnable to replace %s's runes%s%n", ConsoleColors.RED, name + fileNum, ConsoleColors.RESET);
@@ -168,7 +175,7 @@ public class Rune_Parser
                     {
                         //Get path name
                         String name = getMonsterName(monsterId);
-                        String newPath = "src/Runes/Monster_Runes/" + name;
+                        String newPath = "%s/%s".formatted(MonsterRunes.path, name);
                         
                         boolean success = false;
                         //Try to get file number, has a max of 15 per Monster
@@ -210,11 +217,11 @@ public class Rune_Parser
             //Print a message at the end depending on if there were any errors
             if (allSuccess.get())
             {
-                System.out.printf("%sAll rune files updated/created successfully.", ConsoleColors.GREEN);
+                System.out.printf("%sAll rune files updated/created successfully.%s", ConsoleColors.GREEN, ConsoleColors.RESET);
             }
             else
             {
-                System.out.printf("%n%sAt least 1 rune file was not able to be updated/created", ConsoleColors.YELLOW);
+                System.out.printf("%n%sAt least 1 rune file was not able to be updated/created.%s", ConsoleColors.YELLOW, ConsoleColors.RESET);
             }
         }
         catch (Exception e)

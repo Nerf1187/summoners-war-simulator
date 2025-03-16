@@ -1,6 +1,7 @@
 package GUI;
 
 import javax.swing.*;
+import Runes.Monster_Runes.*;
 import java.awt.event.*;
 import java.io.*;
 
@@ -34,7 +35,7 @@ public class DeleteRuneFile extends JFrame
         //Confirm action
         yesButton.addActionListener(_ -> {
             //Try to delete the file and show a message displaying the result
-            if (new File("src/Runes/Monster_Runes/%s".formatted(fileName)).delete())
+            if (new File("%s/%s".formatted(MonsterRunes.path, fileName)).delete())
             {
                 new Message("Success", false);
                 dispose();

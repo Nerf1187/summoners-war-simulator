@@ -21,10 +21,7 @@ public class Verad extends Monster
      */
     public Verad()
     {
-        super("Verad" + count, WATER, 11_535, 801, 571, 98, 15, 50, 15, 25);
-        setRunes(MonsterRunes.getRunesFromFile("Verad1.csv", this));
-        setAbilities();
-        count++;
+        this("Verad1.csv");
     }
     
     /**
@@ -34,8 +31,10 @@ public class Verad extends Monster
      */
     public Verad(String runeFileName)
     {
-        this();
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Verad" + count, WATER, 11_535, 801, 571, 98, 15, 50, 15, 25);
+        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

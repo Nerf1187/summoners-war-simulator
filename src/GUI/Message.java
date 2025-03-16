@@ -20,6 +20,18 @@ public class Message extends JFrame
      */
     public Message(String message, boolean isError)
     {
+        this(message, isError, () -> {});
+    }
+    
+    /**
+     * Creates the GUI
+     *
+     * @param message The message to display
+     * @param isError True if the message represents an error false otherwise
+     * @param applyOnClose The function to apply when closing the GUI through the close button
+     */
+    public Message(String message, boolean isError, Function applyOnClose)
+    {
         //Set the GUI title
         setTitle(message);
         
@@ -41,7 +53,10 @@ public class Message extends JFrame
         setLocationRelativeTo(null);
         setVisible(true);
         
-        //Remove the current window
-        okButton.addActionListener(_ -> dispose());
+        //Remove the current window and apply the function
+        okButton.addActionListener(_ -> {
+            dispose();
+            applyOnClose.apply();
+        });
     }
 }

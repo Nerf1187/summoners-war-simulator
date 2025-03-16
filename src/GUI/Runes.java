@@ -2,6 +2,7 @@ package GUI;
 
 import javax.swing.*;
 import Monsters.*;
+import Runes.Monster_Runes.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
@@ -26,10 +27,18 @@ public class Runes extends JFrame
     private static String fileName;
     
     /**
-     * Creates original the Rune GUI.
+     * The list of all rune files
      */
-    public void startRunes()
+    protected static final List<File> runeSets = Arrays.stream(Objects.requireNonNull(new File(MonsterRunes.path).listFiles())).filter(file -> file.getName().contains(".csv")).toList();
+    
+    /**
+     * Creates original the Rune GUI.
+     *
+     * @param fileName The name of the file to use
+     */
+    public void startRunes(String fileName)
     {
+        Runes.fileName = fileName;
         //General GUI stuff
         add(panel);
         setTitle("Action");
@@ -63,8 +72,7 @@ public class Runes extends JFrame
             if (!validFileName(fileName, 'c'))
             {
                 //Show an error and exit the program
-                System.err.println("Error, can not create file (file may already exist)");
-                System.exit(1);
+                new Message("Error, cannot create file (file may already exist)", true, () -> System.exit(1));
             }
             //Start the rune creation process
             CreateRuneFile.run(fileName, false, 1);
@@ -77,8 +85,7 @@ public class Runes extends JFrame
             if (!validFileName(fileName, 'e'))
             {
                 //Show an error and exit the program
-                System.err.println("Error, cannot find file");
-                System.exit(1);
+                new Message("Error, cannot find file", true, () -> System.exit(1));
             }
             //Start the rune editing process
             EditRuneFile.run(fileName, 0);
@@ -91,8 +98,7 @@ public class Runes extends JFrame
             if (!validFileName(fileName, 'd'))
             {
                 //Show an error and exit the program
-                System.err.println("Error, cannot find file");
-                System.exit(1);
+                new Message("Error, cannot find file", true, () -> System.exit(1));
             }
             //Start the rune deletion process
             DeleteRuneFile.run(fileName);
@@ -105,8 +111,7 @@ public class Runes extends JFrame
             if (!validFileName(fileName, 'v'))
             {
                 //Show an error and exit the program
-                System.err.println("Error, cannot find file");
-                System.exit(1);
+                new Message("Error, cannot find file", true, () -> System.exit(1));
             }
             //Start the rune viewing process
             ViewRunes.run(fileName);
@@ -119,8 +124,7 @@ public class Runes extends JFrame
             if (!validFileName(fileName, 'r'))
             {
                 //Show an error and exit the program
-                System.err.println("Error, cannot find file");
-                System.exit(1);
+                new Message("Error, cannot find file", true, () -> System.exit(1));
             }
             //Start the rune duplicating process
             DuplicateRuneFile.run(fileName);
@@ -132,9 +136,11 @@ public class Runes extends JFrame
      */
     public void main()
     {
+        new GetNameAndNum(this);
+        
         //Get the file name
-        fileName = getFileName();
-        startRunes();
+        /*fileName = getFileName();
+        startRunes(fileName);*/
     }
     
     /**
@@ -145,7 +151,7 @@ public class Runes extends JFrame
     public static String getFileName()
     {
         //Get the name and rune set number from the user
-        GetNameAndNum nameAndNum = new GetNameAndNum();
+        GetNameAndNum nameAndNum = new GetNameAndNum(new Runes());
         
         //Prevent this function from continuing while the user is entering the information
         while (nameAndNum.isVisible())
@@ -164,7 +170,7 @@ public class Runes extends JFrame
         }
         catch (NumberFormatException e) //Unable to parse the input to an int
         {
-            System.err.println(e);
+            System.err.println("Unable to read the rune set number");
             System.exit(1);
         }
         
@@ -193,10 +199,6 @@ public class Runes extends JFrame
             System.err.printf("Error, cannot distinguish action \"%s\"%n", action);
             return false;
         }
-        
-        //Get the files in the Monster_Runes directory
-        File folder = new File("src/Runes/Monster_Runes");
-        List<File> runeSets = Arrays.stream(Objects.requireNonNull(folder.listFiles())).filter(file -> file.getName().contains(".csv")).toList();
         
         //Create
         if (action == 'c')

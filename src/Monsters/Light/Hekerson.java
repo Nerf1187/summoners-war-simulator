@@ -19,10 +19,7 @@ public class Hekerson extends Monster
      */
     public Hekerson()
     {
-        super("Hekerson" + count, LIGHT, 10_710, 560, 703, 101, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Hekerson1.csv", this));
-        setAbilities();
-        count++;
+        this("Hekerson1.csv");
     }
     
     /**
@@ -32,8 +29,10 @@ public class Hekerson extends Monster
      */
     public Hekerson(String runeFileName)
     {
-        this();
+        super("Hekerson" + count, LIGHT, 10_710, 560, 703, 101, 15, 50, 15, 0);
         super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

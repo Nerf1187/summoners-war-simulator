@@ -20,10 +20,7 @@ public class Loren extends Monster
      */
     public Loren()
     {
-        super("Loren" + count, LIGHT, 9_225, 516, 681, 101, 15, 50, 15, 25);
-        super.setRunes(MonsterRunes.getRunesFromFile("Loren1.csv", this));
-        setAbilities();
-        count++;
+        this("Loren1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Loren extends Monster
      */
     public Loren(String runeFileName)
     {
-        this();
+        super("Loren" + count, LIGHT, 9_225, 516, 681, 101, 15, 50, 15, 25);
         super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

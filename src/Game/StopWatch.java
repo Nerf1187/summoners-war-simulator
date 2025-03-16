@@ -14,7 +14,7 @@ public class StopWatch
     /**
      * Time since first start (in nanoseconds)
      */
-    private long elapsedNanoseconds = 0;
+    private long elapsedNanoseconds;
     /**
      * Flag for if the timer is paused
      */
@@ -23,10 +23,12 @@ public class StopWatch
     /**
      * Creates a new StopWatch object
      *
-     * @param start True if the stopwatch should start on creation
+     * @param start       True if the stopwatch should start on creation
+     * @param initialTime The initial time to start at
      */
-    public StopWatch(boolean start)
+    public StopWatch(boolean start, long initialTime)
     {
+        elapsedNanoseconds = initialTime;
         if (start)
         {
             //Start the timer immediately if needed
@@ -72,10 +74,28 @@ public class StopWatch
     }
     
     /**
-     * @return The amount of time that elapsed while the StopWatch was played (in nanoseconds)
+     * Resets the stopwatch to its initial state.
+     * <p>
+     * This method sets the elapsed time to zero and pauses the stopwatch.
+     * It can be used to prepare the stopwatch for reuse after it has been started or paused.
+     */
+    public void reset()
+    {
+        elapsedNanoseconds = 0;
+        paused = true;
+    }
+    
+    /**
+     * Retrieves the total elapsed time recorded by the stopwatch in nanoseconds.
+     * This method ensures the stopwatch is in a consistent state by pausing and
+     * immediately restarting it before returning the elapsed time.
+     *
+     * @return The total elapsed time in nanoseconds.
      */
     public long getElapsedTime()
     {
+        pause();
+        play();
         return elapsedNanoseconds;
     }
 }

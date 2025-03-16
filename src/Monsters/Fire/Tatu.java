@@ -20,10 +20,7 @@ public class Tatu extends Monster
      */
     public Tatu()
     {
-        super("Tatu" + count, FIRE, 8_730, 626, 823, 111, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Tatu1.csv", this));
-        setAbilities();
-        count++;
+        this("Tatu1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Tatu extends Monster
      */
     public Tatu(String runeFileName)
     {
-        this();
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Tatu" + count, FIRE, 8_730, 626, 823, 111, 15, 50, 15, 0);
+        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()

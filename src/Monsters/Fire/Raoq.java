@@ -20,10 +20,7 @@ public class Raoq extends Monster
      */
     public Raoq()
     {
-        super("Raoq" + count, FIRE, 9_720, 582, 801, 108, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile("Raoq1.csv", this));
-        setAbilities();
-        count++;
+        this("Raoq1.csv");
     }
     
     /**
@@ -33,8 +30,10 @@ public class Raoq extends Monster
      */
     public Raoq(String runeFileName)
     {
-        this();
+        super("Raoq" + count, FIRE, 9_720, 582, 801, 108, 15, 50, 15, 0);
         super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
@@ -82,7 +81,7 @@ public class Raoq extends Monster
             //Get random first Monster and make sure it is not Raoq
             do
             {
-                if (tempTeam.numOfLivingMons() <= 1)
+                if (tempTeam.numOfLivingMons() < 1)
                 {
                     break;
                 }
@@ -93,7 +92,7 @@ public class Raoq extends Monster
                 }
                 tempTeam.getMonsters().remove(attackingMon1);
             }
-            while ((attackingMon1 instanceof Raoq && tempTeam.numOfLivingMons() > 1) || attackingMon1.isStunned());
+            while ((attackingMon1 instanceof Raoq && tempTeam.numOfLivingMons() >= 1) || attackingMon1.isStunned());
             
             //Get random second Monster and make sure it is not the same as the first and not Raoq
             Monster attackingMon2 = null;
@@ -101,7 +100,7 @@ public class Raoq extends Monster
             tempTeam = new Team("Temp", tempMonsters);
             do
             {
-                if (attackingMon1 == null || tempTeam.numOfLivingMons() <= 2)
+                if (attackingMon1 == null || tempTeam.numOfLivingMons() < 2)
                 {
                     break;
                 }
@@ -112,7 +111,7 @@ public class Raoq extends Monster
                 }
                 tempTeam.getMonsters().remove(attackingMon2);
             }
-            while ((attackingMon2 instanceof Raoq && tempTeam.numOfLivingMons() > 2) || attackingMon2.equals(attackingMon1) || attackingMon2.isStunned());
+            while ((attackingMon2 instanceof Raoq && tempTeam.numOfLivingMons() >= 2) || attackingMon2.equals(attackingMon1) || attackingMon2.isStunned());
             
             //Have the two random Monsters attack the target if they exist
             boolean canCounter = Game.canCounter();
@@ -120,15 +119,17 @@ public class Raoq extends Monster
             {
                 Game.setCanCounter(false);
                 Monster save = attackingMon1.copy();
-                attackingMon1.attack(target, attackingMon1.getAbility(1));
-                attackingMon1.paste(save);
+                double tempAtkBar = save.getAtkBar();
+                save.nextTurn(target, 1);
+                attackingMon1.setAtkBar(tempAtkBar + save.getAtkBar());
             }
             if (attackingMon2 != null)
             {
                 Game.setCanCounter(false);
                 Monster save = attackingMon2.copy();
-                attackingMon2.attack(target, attackingMon2.getAbility(1));
-                attackingMon2.paste(save);
+                double tempAtkBar = save.getAtkBar();
+                save.nextTurn(target, 1);
+                attackingMon2.setAtkBar(tempAtkBar + save.getAtkBar());
             }
             Game.setCanCounter(canCounter);
         }

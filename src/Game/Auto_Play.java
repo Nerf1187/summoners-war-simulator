@@ -25,7 +25,7 @@ public class Auto_Play extends Thread
     private static long numOfCompletedSimulations = 0, totalSims = 0;
     private static int i = 0, j = 1;
     private static boolean simsCalculationError = false;
-    private static final StopWatch totalRunningTime = new StopWatch(false), battleTime = new StopWatch(false);
+    private static StopWatch totalRunningTime = new StopWatch(false, 0), battleTime = new StopWatch(false, 0);
     
     /**
      * Runs the Auto_Play class
@@ -49,6 +49,10 @@ public class Auto_Play extends Thread
             //Print the top 4 teams
             for (Team team : bestTeams)
             {
+                if (team == null)
+                {
+                    continue;
+                }
                 for (Monster mon : team.getMonsters())
                 {
                     System.out.printf("%s\t\t", mon.getName(true, false));
@@ -56,8 +60,9 @@ public class Auto_Play extends Thread
                 System.out.printf("Number of wins: %,d Number of losses: %,d\n", team.getWins(), team.getLosses());
             }
             System.out.println("\n\n");
-            //export results to file if there are more than 500,000 simulations run, the number of completed simulations is more than half the total number, or more than an hour of battle time has passed.
-            if (numOfCompletedSimulations >= 500_000 || numOfCompletedSimulations >= Math.abs(totalSims) * 0.5 || battleTime.getElapsedTime() >= 3.6e12)
+            
+            //Export results to a csv file if there are more than 500,000 simulations run, the number of completed simulations is more than half the total number, or more than an hour of battle time has passed.
+            if (numOfCompletedSimulations >= 500_000 || numOfCompletedSimulations > Math.abs(totalSims) * 0.5 || battleTime.getElapsedTime() >= 3.6e12)
             {
                 //Attempt to export and get file name
                 String fileName = exportResults(i, j);
@@ -95,21 +100,25 @@ public class Auto_Play extends Thread
         {
             Main.pause(5);
         }
-        postRunOptions(teamStats);
+        pauseMenu(teamStats);
     }
     
     /**
      * Continues simulations from a previous instance of Auto_Play
      *
-     * @param teams   The teams to use
-     * @param library The names of every Monster used
-     * @param _i      The last i value from the previous instance
-     * @param _j      The last j value from the previous instance
+     * @param teams       The teams to use
+     * @param library     The names of every Monster used
+     * @param totalTime   The total time when the previous Auto Play stopped
+     * @param _battleTime The battle time when the previous Auto Play stopped
+     * @param _i          The last i value from the previous instance
+     * @param _j          The last j value from the previous instance
      */
-    public void main(ArrayList<Team> teams, ArrayList<String> library, int _i, int _j)
+    public void main(ArrayList<Team> teams, ArrayList<String> library, long totalTime, long _battleTime, int _i, int _j)
     {
         teamStats = teams;
         monsterKeys.addAll(library);
+        totalRunningTime = new StopWatch(false, totalTime);
+        battleTime = new StopWatch(false, _battleTime);
         i = _i;
         j = _j;
         numOfCompletedSimulations = calculateNumOfPreCompletedSims(_i, _j, teams.size());
@@ -553,6 +562,7 @@ public class Auto_Play extends Thread
         
         //Start overall timer
         totalRunningTime.play();
+        
         //Run all simulations
         for (; i < allPossibleTeams.size(); i++)
         {
@@ -604,7 +614,7 @@ public class Auto_Play extends Thread
                     System.out.println();
                     
                     //Allow the user to view current standings
-                    postRunOptions(teamStats);
+                    pauseMenu(teamStats);
                     
                     //Exit pause
                     pause = false;
@@ -661,7 +671,9 @@ public class Auto_Play extends Thread
         {
             currentCombination.add(null);
         }
+        System.out.print("Progress: 0%\r");
         generateCombinationsUtil(monsters, r, 0, 0, currentCombination, result, saveTime);
+        System.out.println("\n");
         return result;
     }
     
@@ -704,6 +716,7 @@ public class Auto_Play extends Thread
                 //Add the same instance of each Monster to save memory
                 result.add(new ArrayList<>(currentCombination));
             }
+            System.out.printf("Progress: %.1f%%\r", 100.0 * result.size() / nCr(monsters.size(), r));
             return;
         }
         
@@ -715,26 +728,56 @@ public class Auto_Play extends Thread
         }
     }
     
+    
+    /**
+     * Calculates the number of combinations (nCr) for choosing {@code r} items from a set of {@code n} items.
+     *
+     * @param n The total number of items in the set.
+     * @param r The number of items to choose from the set.
+     * @return The number of valid combinations (nCr), or 0 if {@code r > n}.
+     * @author JetBrains AI Assistant
+     */
+    private static long nCr(int n, int r)
+    {
+        //Make sure there are valid combinations
+        if (r > n)
+        {
+            return 0;
+        }
+        
+        //Take advantage of symmetry: C(n, r) = C(n, n-r)
+        r = Math.min(r, n - r);
+        
+        //Calculate combination count
+        long result = 1;
+        for (int i = 0; i < r; i++)
+        {
+            result *= (n - i);
+            result /= (i + 1);
+        }
+        return result;
+    }
+    
     /**
      * @param numOfCombos The number of combinations being tested
      * @return The total number of different simulations that can be run (equivalent to numOfCombos!)
      */
     public static long totalNumOfSims(int numOfCombos)
     {
-        //Base case
-        if (numOfCombos == 0)
-        {
-            return 0;
-        }
+        long result = 0;
         try //to add recursively
         {
-            return numOfCombos + totalNumOfSims(numOfCombos - 1);
+            for (int i = numOfCombos; i > 0; i--)
+            {
+                result += numOfCombos;
+            }
+            return result;
         }
-        catch (StackOverflowError e) //Too many recursive calls
+        catch (Exception e) //Too many recursive calls
         {
             //Flag an error
             simsCalculationError = true;
-            return numOfCombos;
+            return result;
         }
     }
     
@@ -756,7 +799,17 @@ public class Auto_Play extends Thread
         }
         while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, pickedMons));
         
-        pickedMons.add(Monster.createNewMonFromName(inputMon));
+        //Try to create the Monster and add it to the array
+        try
+        {
+            pickedMons.add(Monster.createNewMonFromName(inputMon, true));
+        }
+        catch (Exception e)
+        {
+            System.out.println("Unable to find Monster");
+            return findTeamFromMonsters(pickedMons, teams);
+        }
+        
         //Do the above until there are 4 selected Monsters
         if (pickedMons.size() < 4)
         {
@@ -856,7 +909,7 @@ public class Auto_Play extends Thread
             {
                 team.set(i, Monster.createNewMonFromMon(team.get(i)));
             }
-            catch (Throwable e)
+            catch (Exception e)
             {
                 throw new RuntimeException(e);
             }
@@ -924,7 +977,7 @@ public class Auto_Play extends Thread
      *
      * @param teams A list of the teams to use.
      */
-    public static void postRunOptions(ArrayList<Team> teams)
+    public static void pauseMenu(ArrayList<Team> teams)
     {
         final ArrayList<Team> finalTeams = new ArrayList<>(teams);
         ArrayList<Team> tempTeams = new ArrayList<>(finalTeams);
@@ -1053,6 +1106,10 @@ public class Auto_Play extends Thread
                     case "monsters" ->
                     {
                         ArrayList<Monster> sortMonsByPlace = sortMonsByPlace(tempTeams);
+                        if (sortMonsByPlace == null)
+                        {
+                            yield 1;
+                        }
                         
                         //Print each monster
                         for (int i = 0; i < sortMonsByPlace.size(); i++)
@@ -1064,11 +1121,16 @@ public class Auto_Play extends Thread
                     }
                     case "help" ->
                     {
-                        printPostRunCommands();
+                        printPauseCommands();
                         yield 1;
                     }
                     //Exit
                     case "exit" -> -1;
+                    case "quit" ->
+                    {
+                        System.exit(0);
+                        yield 1;
+                    }
                     default -> 0;
                 })
                 {
@@ -1084,6 +1146,7 @@ public class Auto_Play extends Thread
                     {
                     }
                 }
+                
                 //Range of teams
                 if (input.contains("-"))
                 {
@@ -1170,23 +1233,28 @@ public class Auto_Play extends Thread
         }
     }
     
-    private static void printPostRunCommands()
+    /**
+     * Prints a list of available commands in the pause menu along with their descriptions.
+     */
+    private static void printPauseCommands()
     {
-        String[] commands = {"inspect", "order", "monsters", "Any number", "# - #", "help", "filter", "exit"};
-        String[] commandInfo = {
-                "Inspect a specific team using its Monsters",
-                "Change how the teams are ordered",
-                "View every Monster sorted by their average place",
-                "Get the team at a specific index. You can use a negative number to start counting from the end of the list",
-                "Use this format to get a range of teams, replacing \"#\" with a number",
-                "Show this commands list",
-                "Filter the teams by whitelisting or blacklisting specific Monsters",
-                "Exit this part of the program"
-        };
+        //Add each command and description to a HashMap
+        HashMap<String, String> commandsMap = new HashMap<>();
+        commandsMap.put("inspect", "Inspect a specific team using its Monsters");
+        commandsMap.put("order", "Change how the teams are ordered");
+        commandsMap.put("monsters", "View every Monster sorted by their average place");
+        commandsMap.put("#", "Get the team at a specific index (starting at 0). You can use a negative number to start counting from the end of the list");
+        commandsMap.put("# - #", "Use this format to get a range of teams, replacing \"#\" with a number");
+        commandsMap.put("help", "Show this commands list");
+        commandsMap.put("filter", "Filter the teams by whitelisting or blacklisting specific Monsters");
+        commandsMap.put("exit", "Exit this menu");
+        commandsMap.put("quit", "Quit the program");
         
-        for (int i = 0; i < commands.length; i++)
+        //Print each command as a list
+        int i = 1;
+        for (Map.Entry<String, String> entry : commandsMap.entrySet())
         {
-            System.out.printf("%d. \"%s\": %s%n", i + 1, commands[i], commandInfo[i]);
+            System.out.printf("%d. \"%s\": %s%n", i++, entry.getKey(), entry.getValue());
         }
     }
     
@@ -1223,11 +1291,19 @@ public class Auto_Play extends Thread
         //Get each Monster's average place
         ArrayList<Monster> monsters = new ArrayList<>();
         HashMap<Monster, Integer> averages = new HashMap<>();
-        map.forEach((name, vals) -> {
-            Monster m = Monster.createNewMonFromName(name);
-            averages.put(m, (vals[0] / vals[1]));
-            monsters.add(m);
-        });
+        try
+        {
+            map.forEach((name, vals) -> {
+                Monster m = Monster.createNewMonFromName(name, true);
+                averages.put(m, (vals[0] / vals[1]));
+                monsters.add(m);
+            });
+        }
+        catch (Exception e)
+        {
+            System.out.println("Unable to sort Monsters");
+            return null;
+        }
         
         //Sort the final list according to each Monster's average place
         for (int i = 0; i < monsters.size(); i++)
@@ -1245,7 +1321,7 @@ public class Auto_Play extends Thread
     }
     
     /**
-     * Sorts the teams. This method does not change the original List
+     * Sorts the teams using merge sort.
      *
      * @param teams      The teams to sort
      * @param highToLow  True if the returned value should be sorted highest to lowest, false otherwise
@@ -1253,53 +1329,98 @@ public class Auto_Play extends Thread
      */
     private static void sortTeams(ArrayList<Team> teams, boolean highToLow, String sortOption)
     {
-        //Insertion sort
-        for (int i = 1; i < teams.size(); i++)
-        {
-            Team key = teams.get(i);
-            int j = i - 1;
-            while (insertionSortBoolean(highToLow, sortOption, j, key, teams))
-            {
-                teams.set(j + 1, teams.get(j));
-                j--;
-            }
-            teams.set(j + 1, key);
-        }
+        System.out.println("Sorting teams...");
+        ArrayList<Team> temp = sortHelper(teams, highToLow, sortOption, teams.size());
+        teams.clear();
+        teams.addAll(temp);
+        System.out.println("Done");
     }
     
     /**
-     * Gives the boolean required for the sorting algorithm
+     * Helper method for sorting a list of Team objects based on the specified options.
+     *
+     * @param teams      The list of Team objects to be sorted.
+     * @param highToLow  A boolean indicating whether the sorting should be in descending (true) or ascending (false) order.
+     * @param sortOption The sorting criteria to be applied.
+     * @param totalSize  The total size of the original list, used for calculating and displaying progress.
+     * @return A sorted ArrayList of Team objects based on the specified options.
+     */
+    private static ArrayList<Team> sortHelper(ArrayList<Team> teams, boolean highToLow, String sortOption, int totalSize)
+    {
+        if (teams.isEmpty() || teams.size() == 1)
+        {
+            return teams;
+        }
+        
+        int middle = teams.size() / 2;
+        ArrayList<Team> left = new ArrayList<>(teams.subList(0, middle));
+        ArrayList<Team> right = new ArrayList<>(teams.subList(middle, teams.size()));
+        
+        return merge(sortHelper(left, highToLow, sortOption, totalSize), sortHelper(right, highToLow, sortOption, totalSize), highToLow, sortOption, totalSize);
+    }
+    
+    /**
+     * Merges two sorted lists of teams into a single sorted list based on the specified sorting criteria.
+     *
+     * @param left       The left ArrayList of teams to merge, pre-sorted based on the sorting criteria
+     * @param right      The right ArrayList of teams to merge, pre-sorted based on the sorting criteria
+     * @param highToLow  A boolean flag indicating whether sorting should be in descending order (true) or ascending order (false)
+     * @param sortOption The sorting criteria to be applied.
+     * @param totalSize  The total size of all teams being merged from both lists, used for progress calculation
+     * @return An ArrayList of teams containing all elements from the input lists merged according to the specified order
+     */
+    private static ArrayList<Team> merge(ArrayList<Team> left, ArrayList<Team> right, boolean highToLow, String sortOption, int totalSize)
+    {
+        int leftIndex = 0, rightIndex = 0;
+        ArrayList<Team> mergedTeams = new ArrayList<>();
+        
+        while (leftIndex < left.size() && rightIndex < right.size())
+        {
+            mergedTeams.add(mergeBool(highToLow, sortOption, left.get(leftIndex), right.get(rightIndex)) ? left.get(leftIndex++) : right.get(rightIndex++));
+        }
+        
+        while (leftIndex < left.size())
+        {
+            mergedTeams.add(left.get(leftIndex++));
+        }
+        
+        while (rightIndex < right.size())
+        {
+            mergedTeams.add(right.get(rightIndex++));
+        }
+        System.out.printf("Progress: %.4f%%\r", (mergedTeams.size() * 1.0 / totalSize) * 100);
+        return mergedTeams;
+    }
+    
+    /**
+     * Gives the boolean required for the sorting algorithm.
      *
      * @param highToLow  True if the returned value should be sorted highest to lowest, false otherwise
-     * @param sortOption This is the values the program will use to sort the teams
-     * @param j          The current index
-     * @param key        The current key
-     * @param teams      The current list
-     * @return The result of the boolean
+     * @param sortOption This is the value the program will use to sort the teams.
+     * @param t1         The first team for order checking
+     * @param t2         The second team for order checking
+     * @return The result of the boolean (true for the first team, false for the second team)
      */
-    private static boolean insertionSortBoolean(boolean highToLow, String sortOption, int j, Team key, ArrayList<Team> teams)
+    private static boolean mergeBool(boolean highToLow, String sortOption, Team t1, Team t2)
     {
-        //Beginning of the list
-        if (j < 0)
+        if (t1 == null || t2 == null)
         {
             return false;
         }
         
-        //Calculate ratios
-        double keyRatio = 1.0 * key.getWins() / key.getWins();
-        double ratioToCheck = 1.0 * teams.get(j).getWins() / teams.get(j).getLosses();
+        double t1Ratio = 1.0 * t1.getWins() / t1.getLosses();
+        double t2Ratio = 1.0 * t2.getWins() / t2.getLosses();
         
-        //Sort high to low
         return (highToLow) ? switch (sortOption)
         {
-            case "wins" -> key.getWins() > teams.get(j).getWins(); //Sort by wins
-            case "losses" -> key.getLosses() > teams.get(j).getLosses(); //Sort by losses
-            default -> keyRatio > ratioToCheck; //Sort by ratios
-        } : switch (sortOption) //Sort low to high
+            case "wins" -> t1.getWins() > t2.getWins(); //Wins high to low
+            case "losses" -> t1.getLosses() > t2.getLosses(); //Losses high to low
+            default -> t1Ratio > t2Ratio; //Ratio high to low
+        } : switch (sortOption)
         {
-            case "wins" -> key.getWins() < teams.get(j).getWins(); //Sort by wins
-            case "losses" -> key.getLosses() < teams.get(j).getLosses(); //Sort by losses
-            default -> keyRatio < ratioToCheck; //Sort by ratios
+            case "wins" -> t1.getWins() < t2.getWins(); //Wins low to high
+            case "losses" -> t1.getLosses() < t2.getLosses(); //Losses low to high
+            default -> t1Ratio < t2Ratio; //Ratio low to high
         };
     }
     
@@ -1336,6 +1457,8 @@ public class Auto_Play extends Thread
     /**
      * Exports current results to a csv file
      *
+     * @param i The last i value used in the loop
+     * @param j The last j value used in the loop
      * @return The name of the newly created file or null if the file could not be created
      */
     public static String exportResults(int i, int j)
@@ -1350,6 +1473,7 @@ public class Auto_Play extends Thread
         if (!completed)
         {
             lines.add("%d,%d".formatted(i, j));
+            lines.add("%d,%d".formatted(totalRunningTime.getElapsedTime(), battleTime.getElapsedTime()));
         }
         
         //Add each team to the list
@@ -1364,8 +1488,9 @@ public class Auto_Play extends Thread
         try
         {
             //Create the file
-            fileName = "src/Game/Results/%s.csv".formatted(today.toString().replaceAll(":", "-"));
-            FileWriter writer = new FileWriter(fileName);
+            fileName = "%s/src/Game/Results/%s.csv".formatted(Auto_Play.class.getResource("Auto_Play.class").getPath().substring(0, Auto_Play.class.getResource("Auto_Play.class").getPath().indexOf("Summoners%20War%20Battle%20Simulator") + 36), today.toString().replaceAll(":", "-")).replaceAll("%20", " ").replaceAll("file:", "");
+            File f = new File(fileName);
+            FileWriter writer = new FileWriter(f);
             //Add each line to file
             for (String line : lines)
             {
@@ -1380,7 +1505,7 @@ public class Auto_Play extends Thread
             try
             {
                 //Create the file
-                fileName = "src/Game/Results/%s.csv".formatted(new Random().nextDouble(0, 10));
+                fileName = "%ssrc/Game/Results/%s.csv".formatted(Auto_Play.class.getResource("Auto_Play.class").getPath().substring(0, Auto_Play.class.getResource("Auto_Play.class").getPath().indexOf("Summoners%20War%20Battle%20Simulator") + 36), new Random().nextDouble(0, 10));
                 FileWriter writer = new FileWriter(fileName);
                 
                 //Add each line to file
@@ -1445,7 +1570,7 @@ public class Auto_Play extends Thread
                             return whitelistedMonsters;
                         }
                         //Move Monster to whitelist
-                        movetoFilteredList(mons, monName, whitelistedMonsters);
+                        moveToFilteredList(mons, monName, whitelistedMonsters);
                         monName = "";
                     }
                 }
@@ -1480,7 +1605,7 @@ public class Auto_Play extends Thread
                             continue;
                         }
                         //Move Monster to blacklist
-                        movetoFilteredList(mons, monName, blacklistedMonsters);
+                        moveToFilteredList(mons, monName, blacklistedMonsters);
                         monName = "";
                     }
                 }
@@ -1500,10 +1625,19 @@ public class Auto_Play extends Thread
      * @param monName            The name of the Monster
      * @param filteredMonsters   The filtered monsters
      */
-    private static void movetoFilteredList(ArrayList<Monster> unfilteredMonsters, String monName, ArrayList<Monster> filteredMonsters)
+    private static void moveToFilteredList(ArrayList<Monster> unfilteredMonsters, String monName, ArrayList<Monster> filteredMonsters)
     {
         //Create Monster from name
-        Monster mon = Monster.createNewMonFromName(monName);
+        Monster mon;
+        try
+        {
+            mon = Monster.createNewMonFromName(monName, true);
+        }
+        catch (Exception e)
+        {
+            System.out.println("Unable to find Monster");
+            return;
+        }
         
         //Move Monster from the unfiltered list to the filtered one
         for (int i = 0; i < unfilteredMonsters.size(); i++)

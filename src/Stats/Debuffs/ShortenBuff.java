@@ -3,7 +3,7 @@ package Stats.Debuffs;
 /**
  * This class is used to create all shorten buff effects
  */
-public class Shorten_Buff extends Debuff
+public class ShortenBuff extends Debuff
 {
     private final int amount;
     
@@ -12,7 +12,7 @@ public class Shorten_Buff extends Debuff
      *
      * @param numOfTurns The number of turns to decrease the buffs by
      */
-    public Shorten_Buff(int numOfTurns)
+    public ShortenBuff(int numOfTurns)
     {
         super(SHORTEN_BUFFS, 0, 1);
         this.amount = numOfTurns;

@@ -19,10 +19,7 @@ public class Rasheed extends Monster
      */
     public Rasheed()
     {
-        super("Rasheed" + count, DARK, 10_875, 549, 538, 96, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile("Rasheed1.csv", this));
-        setAbilities();
-        count++;
+        this("Rasheed1.csv");
     }
     
     /**
@@ -32,8 +29,10 @@ public class Rasheed extends Monster
      */
     public Rasheed(String runeFileName)
     {
-        this();
+        super("Rasheed" + count, DARK, 10_875, 549, 538, 96, 15, 50, 40, 0);
         setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        setAbilities();
+        count++;
     }
     
     private void setAbilities()
