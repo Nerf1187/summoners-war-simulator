@@ -3,12 +3,9 @@ package GUI;
 import javax.swing.*;
 import Monsters.*;
 import Runes.*;
-import Runes.Monster_Runes.*;
+import Util.Util.*;
 import java.awt.event.*;
-import java.io.*;
 import java.util.*;
-
-import static GUI.CreateRuneFile.*;
 
 /**
  * Allows the user to easily edit their rune set.
@@ -35,7 +32,7 @@ public class EditRuneFile extends JFrame
     private boolean changeType = false;
     
     /**
-     * Creates the GUI to edit the rune file
+     * Creates the GUIS to edit the rune file
      *
      * @param fileName     The name of the file to edit
      * @param selectedRune The default rune to be selected
@@ -43,7 +40,8 @@ public class EditRuneFile extends JFrame
     public EditRuneFile(String fileName, int selectedRune)
     {
         //Get the runes from the selected file
-        runes = MonsterRunes.getRunesFromFile(fileName, new Monster());
+        runes = RUNES.getRunesFromFile(fileName, new Monster());
+        
         //Add runes to the selector
         for (int i = 0; i < runes.size(); i++)
         {
@@ -52,9 +50,9 @@ public class EditRuneFile extends JFrame
         //Set the default rune
         runeSelector.setSelectedIndex(selectedRune);
         //Add all the attributes
-        addAllAttributes(newAttributeSelector);
+        GUIS.addAllAttributes(newAttributeSelector);
         
-        //General GUI stuff
+        //General GUIS stuff
         add(panel);
         setTitle("Edit %s".formatted(fileName));
         setSize(500, 500);
@@ -69,23 +67,23 @@ public class EditRuneFile extends JFrame
             public void focusLost(FocusEvent e)
             {
                 //Add all attributes to start
-                addAllAttributes(attributeSelector);
+                GUIS.addAllAttributes(attributeSelector);
                 //Get selected rune for editing
                 Rune toEdit = runes.get(runeSelector.getSelectedIndex());
                 outer:
                 for (int i = attributeSelector.getItemCount() - 1; i >= 0; i--)
                 {
                     //Check the attribute at index i
-                    int attributeToCheck = Rune.stringToNum(attributeSelector.getItemAt(i));
+                    RuneAttribute attributeToCheck = RuneAttribute.stringToAttribute(attributeSelector.getItemAt(i));
                     //Check if the attribute is the rune's main attribute
-                    if (toEdit.getMainAttribute().getNum() == attributeToCheck)
+                    if (toEdit.getMainAttribute().getAttribute() == attributeToCheck)
                     {
                         continue;
                     }
                     //Check if the attribute is one of the rune's sub attributes
                     for (SubAttribute subAttribute : toEdit.getSubAttributes())
                     {
-                        if (subAttribute.getNum() == attributeToCheck)
+                        if (subAttribute.getAttribute() == attributeToCheck)
                         {
                             continue outer;
                         }
@@ -94,7 +92,7 @@ public class EditRuneFile extends JFrame
                     attributeSelector.removeItemAt(i);
                 }
                 //Show the rune type
-                attributeSelector.addItem(Rune.numToType(toEdit.getType()));
+                attributeSelector.addItem(toEdit.getType().toString());
             }
             
             //Filter the list to only show attributes the specific rune has
@@ -111,29 +109,30 @@ public class EditRuneFile extends JFrame
             {
                 //Get rune to edit
                 Rune toEdit = runes.get(runeSelector.getSelectedIndex());
+                
                 //Check if the user is changing the rune type or an attribute
-                if (Objects.requireNonNull(attributeSelector.getSelectedItem()).toString().equals(Rune.numToType(toEdit.getType()))) //Change the rune type
+                if (Objects.requireNonNull(attributeSelector.getSelectedItem()).toString().equals(toEdit.getType().toString())) //Change the rune type
                 {
                     newAttributeSelector.removeAllItems();
                     changeType = true;
-                    addAllTypes(newAttributeSelector);
+                    GUIS.addAllTypes(newAttributeSelector);
                 }
                 else //Change attribute
                 {
                     changeType = false;
-                    addAllAttributes(newAttributeSelector);
+                    GUIS.addAllAttributes(newAttributeSelector);
                     //Get attribute to change
-                    int attributeToChange = Rune.stringToNum(Objects.requireNonNull(attributeSelector.getSelectedItem()).toString());
+                    RuneAttribute attributeToChange = RuneAttribute.stringToAttribute(Objects.requireNonNull(attributeSelector.getSelectedItem()).toString());
                     for (int i = newAttributeSelector.getItemCount() - 1; i >= 0; i--)
                     {
-                        int attributeToCheck = Rune.stringToNum(newAttributeSelector.getItemAt(i));
+                        RuneAttribute attributeToCheck = RuneAttribute.stringToAttribute(STRINGS.toEnumCase(newAttributeSelector.getItemAt(i)));
                         //Keep attribute if it is the same as the one to change
                         if (attributeToCheck == attributeToChange)
                         {
                             continue;
                         }
                         //Remove the attribute if is the rune's main attribute
-                        if (toEdit.getMainAttribute().getNum() == attributeToCheck)
+                        if (toEdit.getMainAttribute().getAttribute() == attributeToCheck)
                         {
                             newAttributeSelector.removeItemAt(i);
                             continue;
@@ -141,7 +140,7 @@ public class EditRuneFile extends JFrame
                         //Remove the attribute if it one of the rune's sub effects
                         for (SubAttribute subAttribute : toEdit.getSubAttributes())
                         {
-                            if (subAttribute.getNum() == attributeToCheck)
+                            if (subAttribute.getAttribute() == attributeToCheck)
                             {
                                 newAttributeSelector.removeItemAt(i);
                             }
@@ -159,7 +158,7 @@ public class EditRuneFile extends JFrame
             String newAttribute = Objects.requireNonNull(newAttributeSelector.getSelectedItem()).toString();
             String newAmount = newAmountTxt.getText();
             //Change type
-            if (stringIsInt(newAmount) || changeType)
+            if (STRINGS.stringIsInt(newAmount) || changeType)
             {
                 //Change the rune type
                 if (newAmount.isEmpty())
@@ -175,7 +174,7 @@ public class EditRuneFile extends JFrame
                 else //Change an attribute
                 {
                     //Attempt to change the attribute and show a message displaying the results
-                    if (editFile(fileName, runeSelector.getSelectedIndex() + 1, toEdit))
+                    if (FILES.editFile(fileName, runeSelector.getSelectedIndex() + 1, toEdit))
                     {
                         new Message("Success", false);
                     }
@@ -188,7 +187,7 @@ public class EditRuneFile extends JFrame
                     runeSelector.requestFocusInWindow();
                 }
                 //Update runes in case they were changed
-                runes = MonsterRunes.getRunesFromFile(fileName, new Monster());
+                runes = RUNES.getRunesFromFile(fileName, new Monster());
             }
         });
         
@@ -221,7 +220,7 @@ public class EditRuneFile extends JFrame
     }
     
     /**
-     * Starts the GUI
+     * Starts the GUIS
      *
      * @param fileName     The name of the file to edit
      * @param selectedRune The default rune to be selected
@@ -247,18 +246,18 @@ public class EditRuneFile extends JFrame
      */
     private boolean replaceAttribute(Rune rune, String oldAttributeName, String newAttributeName, int newAttributeAmount)
     {
-        int oldAttributeNum = Rune.stringToNum(oldAttributeName);
-        int newAttributeNum = Rune.stringToNum(newAttributeName);
+        RuneAttribute oldAttributeNum = RuneAttribute.stringToAttribute(oldAttributeName);
+        RuneAttribute newAttributeNum = RuneAttribute.stringToAttribute(newAttributeName);
         
         //Change the type
         if (changeType)
         {
-            rune.setType(newAttributeNum);
+            rune.setType(RuneType.stringToType(newAttributeName));
             return true;
         }
         
         //Change the main attribute
-        if (rune.getMainAttribute().getNum() == oldAttributeNum)
+        if (rune.getMainAttribute().getAttribute() == oldAttributeNum)
         {
             MainAttribute newAttribute = new MainAttribute(newAttributeNum, newAttributeAmount);
             rune.setMainAttribute(newAttribute);
@@ -270,7 +269,7 @@ public class EditRuneFile extends JFrame
         for (int i = 0; i < subAttributes.size(); i++)
         {
             SubAttribute subAttribute = subAttributes.get(i);
-            if (subAttribute.getNum() == oldAttributeNum)
+            if (subAttribute.getAttribute() == oldAttributeNum)
             {
                 SubAttribute newAttribute = new SubAttribute(newAttributeNum, newAttributeAmount);
                 subAttributes.set(i, newAttribute);
@@ -278,80 +277,5 @@ public class EditRuneFile extends JFrame
             }
         }
         return false;
-    }
-    
-    /**
-     * Edits the chosen line in the chosen rune file. It does this by writing to a temporary file, saving the original to a different name,
-     * changing the new file's name to the requested name, and deletes the original file.
-     *
-     * @param fileName The name of the file to edit. Should end in ".csv"
-     * @param lineNum  The line number to edit
-     * @param newRune  The new Rune to replace the old one with
-     * @return True if and only if the file was successfully edited
-     */
-    public static boolean editFile(String fileName, int lineNum, Rune newRune)
-    {
-        File newFile = null;
-        try
-        {
-            //Create a temp file to put new information into
-            newFile = new File("%s/tempFile.csv".formatted(MonsterRunes.path));
-            FileWriter newFileWriter = new FileWriter(newFile);
-            //Get the old rune file
-            File oldFile = new File("%s/%s".formatted(MonsterRunes.path, fileName));
-            Scanner read = new Scanner(oldFile);
-            
-            //Write lines to the new file
-            for (int i = 1; read.hasNextLine(); i++)
-            {
-                //Write the edited rune to the temp file if it is the current rune
-                if (i == lineNum)
-                {
-                    CreateRuneFile.writeRuneToFile(newFileWriter, newRune);
-                    read.nextLine();
-                }
-                else //Write old rune to the temp file
-                {
-                    newFileWriter.write("%s\n".formatted(read.nextLine()));
-                }
-            }
-            //Close reader and writer
-            newFileWriter.close();
-            read.close();
-            
-            //Try to rename the old file to a temporary name
-            if (oldFile.renameTo(new File("%s/oldTempFile.csv".formatted(MonsterRunes.path))))
-            {
-                //Attempt to rename the new file to the original file name
-                if (newFile.renameTo(new File("%s/%s".formatted(MonsterRunes.path, fileName))))
-                {
-                    //Delete the original file ****DO NOT REMOVE****
-                    File temp = new File("%s/oldTempFile.csv".formatted(MonsterRunes.path));
-                    temp.delete();
-                    return true;
-                }
-                else //Unable to rename the new file
-                {
-                    //Rename the old file to its original name
-                    oldFile.renameTo(new File("%s/%s".formatted(MonsterRunes.path, fileName)));
-                    return false;
-                }
-            }
-            else //Unable to rename the original file
-            {
-                //Delete the temp file
-                newFile.delete();
-                return false;
-            }
-        }
-        catch (Exception e) //Something went wrong
-        {
-            //Delete the old file if it exists
-            if (newFile != null)
-            {
-                newFile.delete();
-            }
-            return false;
-        }
     }
 }

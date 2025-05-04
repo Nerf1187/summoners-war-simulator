@@ -1,11 +1,11 @@
 package Monsters.Wind;
 
 import Abilities.*;
+import Effects.Debuffs.*;
+import Effects.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -13,7 +13,6 @@ import java.util.*;
  */
 public class Chakra extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     private boolean thundererActive = false;
@@ -35,8 +34,8 @@ public class Chakra extends Monster
      */
     public Chakra(String runeFileName)
     {
-        super("Chakra" + count, WIND, 10_215, 593, 867, 106, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Chakra" + count, Element.WIND, 10_215, 593, 867, 106, 15, 50, 15, 0);
+        super.setRunes(RUNES.getRunesFromFile(runeFileName, this));
         normalSpd = getSpd();
         setAbilities();
         count++;
@@ -46,22 +45,22 @@ public class Chakra extends Monster
     {
         ArrayList<Debuff> ability1Debuffs = new ArrayList<>();
         ability1Debuffs.add(new DecAtkBar(30));
-        ArrayList<Integer> ability1DebuffChances = abilityChances(65);
-        abilities.add(new Attack_Ability("Thunder Shot (1)", 3.6 * 1.2, 0, 1, "Attacks the enemy and decreases its Attack Bar by 30% with a 65% chance. When used during the Thunderer state, you attack additionally with lower damage to enemies of " +
-                                                                              "the same attribute as the target.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
+        ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(65);
+        Ability a1 = new Attack_Ability("Thunder Shot (1)", 3.6 * 1.2, 0, 1, "Attacks the enemy and decreases its Attack Bar by 30% with a 65% chance. When used during the Thunderer state, you attack additionally with lower damage to enemies of " +
+                                                                              "the same attribute as the target.", ability1Debuffs, ability1DebuffChances, 0, false, false, false);
         
-        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.DEC_ATK, 2, 0);
-        ArrayList<Integer> ability2DebuffChances = abilityChances(80);
-        abilities.add(new Attack_Ability("Wild Bolt (2)", 4.4 * 1.25, 0, 1, "Attacks all enemies and decreases their Attack Power for 2 turns with a 80% chance. When used during the Thunderer state, leaves a Branding effect for 2 turns with a 70% " +
-                                                                            "chance.", ability2Debuffs, ability2DebuffChances, 3, false, false, true));
+        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(DebuffEffect.DEC_ATK.getNum(), 2, 0);
+        ArrayList<Integer> ability2DebuffChances = MONSTERS.abilityChances(80);
+        Ability a2 = new Attack_Ability("Wild Bolt (2)", 4.4 * 1.25, 0, 1, "Attacks all enemies and decreases their Attack Power for 2 turns with a 80% chance. When used during the Thunderer state, leaves a Branding effect for 2 turns with a 70% " +
+                                                                            "chance.", ability2Debuffs, ability2DebuffChances, 3, false, false, true);
         
-        abilities.add(new Ability("The Wind Thunderer (3)", 0, 0, 1, "Falls under the Thunderer state that enhances your skills for 3 turns and instantly gains another turn. While under the Thunderer state, your Attack Speed increases by 100%. " +
-                                                                     "Once the Thunderer state ends, you become stunned for 1 turn. In addition, decreases the skill cooldown of [The Wind Thunderer] by 2 turns each when you are not under the Thunderer state.", 4, false, false, false, true, false, false));
+        Ability a3 = new Ability("The Wind Thunderer (3)", 0, 0, 1, "Falls under the Thunderer state that enhances your skills for 3 turns and instantly gains another turn. While under the Thunderer state, your Attack Speed increases by 100%. " +
+                                                                     "Once the Thunderer state ends, you become stunned for 1 turn. In addition, decreases the skill cooldown of [The Wind Thunderer] by 2 turns each when you are not under the Thunderer state.", 4, false, false, false, true, false, false);
         
-        abilities.add(new Passive("Might · Hurricane", "Deals additional damage that's proportionate to your Attack Speed when you attack the enemy and removes 1 beneficial effect from the enemy with a slower Attack Speed than yours. If the damage" +
-                                                       " dealt on your turn during the Thunderer state is 15% or above of the target's MAX HP, increases the duration of the Thunderer state for 1 turn."));
+        Ability a4 = new Passive("Might · Hurricane", "Deals additional damage that's proportionate to your Attack Speed when you attack the enemy and removes 1 beneficial effect from the enemy with a slower Attack Speed than yours. If the damage" +
+                                                       " dealt on your turn during the Thunderer state is 15% or above of the target's MAX HP, increases the duration of the Thunderer state for 1 turn.");
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
         
         //Thunderer secondary hits
         ability1OtherHits = new Attack_Ability("", 0.178, 0, 1, "", ability1Debuffs, ability1DebuffChances, 0, false, false, false);
@@ -101,7 +100,7 @@ public class Chakra extends Monster
                         targets.add(m);
                     }
                 });
-                case 2 -> target.addAppliedDebuff(Debuff.BRAND, 70, 2, this);
+                case 2 -> target.addAppliedDebuff(DebuffEffect.BRAND, 70, 2, this);
             }
             //Increase time remaining on Thunderer if the damage dealt was greater than 15% of the target's health
             if (!this.isDead())
@@ -124,9 +123,9 @@ public class Chakra extends Monster
                 this.removeThunderer(false);
             }
             //Re-add the effect
-            Stat t = new Stat(4);
-            t.setStatNum(Stat.THUNDERER);
-            this.addOtherStat(t);
+            Effect t = new Effect(4);
+            t.setEffect(OtherEffect.THUNDERER);
+            this.addOtherEffect(t);
             this.setSpd(normalSpd * 2);
             thundererActive = true;
             //Gain another turn
@@ -137,7 +136,14 @@ public class Chakra extends Monster
         applyToTeam(game.getOtherTeam(), m -> {
             if (m.getSpd() < this.getSpd())
             {
-                target.removeRandomBuff();
+                if (resistanceCheck(m))
+                {
+                    target.removeRandomBuff();
+                }
+                else if (isPrint())
+                {
+                    System.out.println("Resisted!");
+                }
             }
         });
         
@@ -159,15 +165,15 @@ public class Chakra extends Monster
     /**
      * @return The Thunderer effect if it exists, null otherwise
      */
-    private Stat getThunderer()
+    private Effect getThunderer()
     {
         if (thundererActive)
         {
-            for (Stat stat : this.getOtherStats())
+            for (Effect effect : this.getOtherEffects())
             {
-                if (stat.getStatNum() == Stat.THUNDERER)
+                if (effect.getEffect() == OtherEffect.THUNDERER)
                 {
-                    return stat;
+                    return effect;
                 }
             }
         }
@@ -184,19 +190,19 @@ public class Chakra extends Monster
         {
             return;
         }
-        Stat t = this.getThunderer();
+        Effect t = this.getThunderer();
         if (stun)
         {
-            this.addGuaranteedAppliedDebuff(Debuff.STUN, 2, this);
+            this.addGuaranteedAppliedDebuff(DebuffEffect.STUN, 2, this);
         }
-        this.removeOtherStat(t);
+        this.removeOtherEffect(t);
         this.setSpd(normalSpd);
         thundererActive = false;
     }
     
     private void decreaseThundererTurns()
     {
-        Stat t = this.getThunderer();
+        Effect t = this.getThunderer();
         if (t != null)
         {
             t.decreaseTurn();

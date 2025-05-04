@@ -38,6 +38,6 @@ Visit <a href="https://tool.swop.one">Summoner's War Optimizer</a> to learn how 
 
 # Developer Website
 
-The [Developer website](src/Developer%20Website/index.html) is a locally run website to help with creating Monster classes.
+The [Developer website](src/Developer_Website/index.html) is a locally run website to help with creating Monster classes.
 (I'm not great with frontend design, so give me a break with the visuals).
 Instructions for how to use it are in [Monster Creation Instructions.md](Monster%20Creation%20Instructions.md).

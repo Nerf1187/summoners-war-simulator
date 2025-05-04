@@ -3,8 +3,9 @@ package Runes;
 import Errors.*;
 import Monsters.*;
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.*;
+
+import static Runes.RuneType.*;
 
 /**
  * This class used to create and apply runes for Monsters
@@ -13,12 +14,7 @@ import java.util.*;
  */
 public class Rune
 {
-    public static final int ATK = 1, ATKPERCENT = 2, DEF = 3, DEFPERCENT = 4, HP = 5, HPPERCENT = 6, SPD = 7, CRITRATE = 8, CRITDMG = 9, RES = 10, ACC = 11;
-    public static final int ENERGY = 1, FATAL = 2, BLADE = 3, SWIFT = 4, FOCUS = 5, GUARD = 6, ENDURE = 7, SHIELD = 8, REVENGE = 9, WILL = 10, NEMESIS = 11;
-    public static final int VAMPIRE = 12, DESTROY = 13, DESPAIR = 14, VIOLENT = 15, RAGE = 16, FIGHT = 17, DETERMINATION = 18, ENHANCE = 19, ACCURACY = 20,
-            TOLERANCE = 21, SEAL = 24;
-    public static final int ELEMENTARTIFACT = 22, TYPEARTIFACT = 23;
-    private int type;
+    private RuneType type;
     private MainAttribute mainAttribute;
     private final ArrayList<SubAttribute> subAttributes;
     private final Monster monster;
@@ -31,24 +27,24 @@ public class Rune
      *
      * @param type          The rune type
      * @param mainAttribute The Main attribute
-     * @param place         The rune's place (1,2, etc.)
+     * @param place         The rune's place (1-6 for runes, 7 or 8 for element and type artifacts respectively)
      * @param subAttributes The list of subAttributes
      * @param monster       The Monster to apply the rune to
      */
-    public Rune(int type, MainAttribute mainAttribute, int place, ArrayList<SubAttribute> subAttributes, Monster monster)
+    public Rune(RuneType type, MainAttribute mainAttribute, int place, ArrayList<SubAttribute> subAttributes, Monster monster)
     {
         //Make sure the type and place are within the correct range
-        if (type > SEAL || type < 1 || place > 8 || place < 1)
+        if (place > 8 || place < 1)
         {
-            throw new IndexOutOfBoundsException("Type must be between 1 and 24 inclusive and place must be between 1 and 8 inclusive");
+            throw new IndexOutOfBoundsException("Place must be between 1 and 8 inclusive");
         }
         
         //Make sure artifacts have the correct placement
-        if (type == ELEMENTARTIFACT && place != 7)
+        if (type == ELEMENT_ARTIFACT && place != 7)
         {
             throw new ConflictingArguments("Place must equal 7 for an element artifact");
         }
-        if (type == TYPEARTIFACT && place != 8)
+        if (type == TYPE_ARTIFACT && place != 8)
         {
             throw new ConflictingArguments("Place must equal 8 for a type artifact");
         }
@@ -67,7 +63,7 @@ public class Rune
      */
     public Rune()
     {
-        type = -1;
+        type = RuneType.NONE;
         mainAttribute = null;
         subAttributes = null;
         monster = null;
@@ -106,28 +102,28 @@ public class Rune
      */
     private void applyAttribute(MainAttribute attribute)
     {
-        switch (attribute.getNum())
+        switch (attribute.getAttribute())
         {
             case ATK -> monster.setTempAtk(monster.getTempAtk() + attribute.getAmount());
-            case ATKPERCENT -> monster.setTempAtk((monBaseAtk * (1.0 * attribute.getAmount() / 100) + monster.getTempAtk()));
+            case ATK_PERCENT -> monster.setTempAtk((monBaseAtk * (1.0 * attribute.getAmount() / 100) + monster.getTempAtk()));
             case DEF -> monster.setTempDef(monster.getTempDef() + attribute.getAmount());
-            case DEFPERCENT -> monster.setTempDef((monBaseDef * (1.0 * attribute.getAmount() / 100) + monster.getTempDef()));
+            case DEF_PERCENT -> monster.setTempDef((monBaseDef * (1.0 * attribute.getAmount() / 100) + monster.getTempDef()));
             case HP -> monster.setTempMaxHp(monster.getTempMaxHp() + attribute.getAmount());
-            case HPPERCENT -> monster.setTempMaxHp((monBaseMaxHp * (1.0 * attribute.getAmount() / 100) + monster.getTempMaxHp()));
+            case HP_PERCENT -> monster.setTempMaxHp((monBaseMaxHp * (1.0 * attribute.getAmount() / 100) + monster.getTempMaxHp()));
             case SPD -> monster.setSpd(monster.getSpd() + attribute.getAmount());
-            case CRITRATE -> monster.setCritRate(monster.getCritRate() + attribute.getAmount());
-            case CRITDMG -> monster.setCritDmg(monster.getCritDmg() + attribute.getAmount());
+            case CRIT_RATE -> monster.setCritRate(monster.getCritRate() + attribute.getAmount());
+            case CRIT_DMG -> monster.setCritDmg(monster.getCritDmg() + attribute.getAmount());
             case RES -> monster.setResistance(monster.getResistance() + attribute.getAmount());
             case ACC -> monster.setAccuracy(monster.getAccuracy() + attribute.getAmount());
         }
     }
     
     /**
-     * Gets the rune's type
+     * Retrieves the type of the rune.
      *
-     * @return The rune's type
+     * @return The rune type, represented as a {@code RuneType} object.
      */
-    public int getType()
+    public RuneType getType()
     {
         return type;
     }
@@ -136,16 +132,10 @@ public class Rune
      * Sets the rune type to a new value
      *
      * @param type The new value
-     * @return True if the input was valid and the type was successfully set, false otherwise
      */
-    public boolean setType(int type)
+    public void setType(RuneType type)
     {
-        if (type < 1 || type > SEAL)
-        {
-            return false;
-        }
         this.type = type;
-        return true;
     }
     
     /**
@@ -155,84 +145,15 @@ public class Rune
      */
     public String toString()
     {
-        String s = numToType(type);
+        StringBuilder s = new StringBuilder(type.toString());
         //Get the main attribute followed by ach sub-attribute on separate lines
-        s += "\tMain Attribute:\n\t\t";
-        s += mainAttribute + "\n\tSub Attributes:\n";
+        s.append("\tMain Attribute:\n\t\t");
+        s.append(mainAttribute).append("\n\tSub Attributes:\n");
         for (SubAttribute sub : subAttributes)
         {
-            s += "\t\t" + sub + "\n";
+            s.append("\t\t").append(sub).append("\n");
         }
-        return s;
-    }
-    
-    /**
-     * Formats the rune type number into a String
-     *
-     * @param num The number to convert
-     * @return The rune type as a String
-     */
-    public static String numToType(int num)
-    {
-        runeKey.mark(999_999);
-        try
-        {
-            //Read the rune key and get the name of the requested set
-            Scanner read = new Scanner(runeKey);
-            while (read.hasNextLine())
-            {
-                String[] line = read.nextLine().split(",");
-                if ((line[0].equals(num + "")))
-                {
-                    runeKey.reset();
-                    return line[1];
-                }
-            }
-            runeKey.reset();
-        }
-        catch (Exception ignored)
-        {
-        }
-        if (num == ELEMENTARTIFACT)
-        {
-            return "Element artifact";
-        }
-        if (num == TYPEARTIFACT)
-        {
-            return "Type artifact";
-        }
-        return "";
-    }
-    
-    /**
-     * Converts a given variable name into an attribute or set number (Help from StackOverflow)
-     *
-     * @param str A String containing the variable name
-     * @return The attribute number with the given variable name if possible, -1 otherwise
-     */
-    public static int stringToNum(String str)
-    {
-        //Convert the name to uppercase
-        str = str.toUpperCase();
-        int returnVal = -1;
-        try
-        {
-            //Get the number equivalent of the String
-            Field f = Rune.class.getField(str);
-            Class<?> type = f.getType();
-            if (type.toString().equals("int"))
-            {
-                returnVal = f.getInt(new Rune());
-            }
-        }
-        //The given String is not a variable name
-        catch (NoSuchFieldException | IllegalAccessException e)
-        {
-            System.out.println(str + " is not a rune set type or property");
-            return -1;
-        }
-        
-        return returnVal;
+        return s.toString();
     }
     
     /**

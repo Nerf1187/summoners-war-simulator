@@ -1,7 +1,7 @@
 * All characters, names, effects, abilities, runes, etc. belong to Summoners War: Sky Arena and Com2uS Studios.
 
 
-* Java 23 with Preview features or higher is required
+* Java 24 with Preview features or higher is required
 
 
 * This is a personal project I developed to help further my programming skills.
@@ -13,10 +13,10 @@
 * Read [How to run.txt](How%20to%20run.md) for a description of each runnable class and instructions for how to run them
 
 
-* There are currently 30 monsters implemented (found [here](src/Monsters/Monster%20database.csv)).
+* There are currently 33 monsters implemented (found [here](src/Monsters/Monster%20database.csv)).
   Feel free to make more if you know how and want to.
-  If you do, read [this](How%20to%20create%20a%20new%20Monster.md) for instructions.
-  All characters should be accurate as of October 11, 2024.
+  If you do, read [this](Monster%20Creation%20Instructions.md) for instructions.
+  All characters should be accurate as of May 5, 2025.
   Each Monster has at least one rune set already but feel free to make your own.
 
 

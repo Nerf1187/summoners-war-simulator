@@ -1,22 +1,28 @@
 package GUI;
 
 import javax.swing.*;
-import Monsters.*;
 import Runes.Monster_Runes.*;
+import Util.Util.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.*;
-
-import static Game.Main.pause;
 
 /**
- * This class starts all Rune GUI related tasks
+ * This class starts all Rune GUIS related tasks
  *
  * @author Anthony (Tony) Youssef
  */
 
 public class Runes extends JFrame
 {
+    public enum FileAction
+    {
+        CREATE,
+        EDIT,
+        DELETE,
+        VIEW,
+        DUPLICATE
+    }
+    
     private JButton createButton;
     private JButton editButton;
     private JButton deleteButton;
@@ -24,24 +30,18 @@ public class Runes extends JFrame
     private JPanel panel;
     private JButton viewButton;
     private JButton duplicateButton;
-    private static String fileName;
     
+   
     /**
-     * The list of all rune files
-     */
-    protected static final List<File> runeSets = Arrays.stream(Objects.requireNonNull(new File(MonsterRunes.path).listFiles())).filter(file -> file.getName().contains(".csv")).toList();
-    
-    /**
-     * Creates original the Rune GUI.
+     * Creates original the Rune GUIS.
      *
      * @param fileName The name of the file to use
      */
     public void startRunes(String fileName)
     {
-        Runes.fileName = fileName;
-        //General GUI stuff
+        //General GUIS stuff
         add(panel);
-        setTitle("Action");
+        setTitle("FileAction");
         setSize(450, 200);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -69,10 +69,11 @@ public class Runes extends JFrame
         createButton.addActionListener(_ -> {
             dispose();
             //Make sure the file name is valid
-            if (!validFileName(fileName, 'c'))
+            if (!FILES.isValidFileName(fileName, FileAction.CREATE))
             {
                 //Show an error and exit the program
                 new Message("Error, cannot create file (file may already exist)", true, () -> System.exit(1));
+                return;
             }
             //Start the rune creation process
             CreateRuneFile.run(fileName, false, 1);
@@ -82,10 +83,11 @@ public class Runes extends JFrame
         editButton.addActionListener(_ -> {
             dispose();
             //Make sure the file name is valid
-            if (!validFileName(fileName, 'e'))
+            if (!FILES.isValidFileName(fileName, FileAction.EDIT))
             {
                 //Show an error and exit the program
                 new Message("Error, cannot find file", true, () -> System.exit(1));
+                return;
             }
             //Start the rune editing process
             EditRuneFile.run(fileName, 0);
@@ -95,23 +97,41 @@ public class Runes extends JFrame
         deleteButton.addActionListener(_ -> {
             dispose();
             //Make sure the file name is valid
-            if (!validFileName(fileName, 'd'))
+            if (!FILES.isValidFileName(fileName, FileAction.DELETE))
             {
                 //Show an error and exit the program
                 new Message("Error, cannot find file", true, () -> System.exit(1));
+                return;
             }
             //Start the rune deletion process
-            DeleteRuneFile.run(fileName);
+            new ConfirmationWindow("Are you sure you want to delete %s? This action can not be undone".
+                    formatted(fileName), () -> {
+                //Try to delete the file and show a message displaying the result
+                if (new File("%s/%s".formatted(MonsterRunes.path, fileName)).delete())
+                {
+                    new Message("Success", false);
+                }
+                else
+                {
+                    new Message("Error", true);
+                }
+                dispose();
+            }, () -> {
+                //Show message that the action was canceled
+                new Message("Aborted", false);
+                dispose();
+            });
         });
         
         //Try to view a rune file
         viewButton.addActionListener(_ -> {
             dispose();
             //Make sure the file name is valid
-            if (!validFileName(fileName, 'v'))
+            if (!FILES.isValidFileName(fileName, FileAction.VIEW))
             {
                 //Show an error and exit the program
                 new Message("Error, cannot find file", true, () -> System.exit(1));
+                return;
             }
             //Start the rune viewing process
             ViewRunes.run(fileName);
@@ -121,10 +141,11 @@ public class Runes extends JFrame
         duplicateButton.addActionListener(_ -> {
             dispose();
             //Make sure the file name is valid
-            if (!validFileName(fileName, 'r'))
+            if (!FILES.isValidFileName(fileName, FileAction.DUPLICATE))
             {
                 //Show an error and exit the program
                 new Message("Error, cannot find file", true, () -> System.exit(1));
+                return;
             }
             //Start the rune duplicating process
             DuplicateRuneFile.run(fileName);
@@ -137,94 +158,5 @@ public class Runes extends JFrame
     public void main()
     {
         new GetNameAndNum(this);
-        
-        //Get the file name
-        /*fileName = getFileName();
-        startRunes(fileName);*/
-    }
-    
-    /**
-     * Calls {@link GetNameAndNum} to get the file name from the user
-     *
-     * @return The file name as given by the user
-     */
-    public static String getFileName()
-    {
-        //Get the name and rune set number from the user
-        GetNameAndNum nameAndNum = new GetNameAndNum(new Runes());
-        
-        //Prevent this function from continuing while the user is entering the information
-        while (nameAndNum.isVisible())
-        {
-            pause(5);
-        }
-        
-        //Get the proper Monster name
-        String monName = Monster.toProperName(nameAndNum.monNameText.getText());
-        
-        //Try to set the rune number
-        int runeSetNum = 0;
-        try
-        {
-            runeSetNum = Integer.parseInt(nameAndNum.runeSetNumText.getText());
-        }
-        catch (NumberFormatException e) //Unable to parse the input to an int
-        {
-            System.err.println("Unable to read the rune set number");
-            System.exit(1);
-        }
-        
-        //Return the formatted file name
-        return "%s%d.csv".formatted(monName, runeSetNum);
-    }
-    
-    /**
-     * Tests whether a given String is a valid file name
-     *
-     * @param fileName The text to check
-     * @param action   The requested action from the user
-     * @return True if the text is a valid file name in the Runes/Monster_Runes directory, false otherwise
-     */
-    public static boolean validFileName(String fileName, char action)
-    {
-        //Checks if the name exists and does not contain "temp" in it
-        if (fileName == null || fileName.contains("temp"))
-        {
-            return false;
-        }
-        
-        //Make sure it is a valid action
-        if (action != 'c' && action != 'e' && action != 'd' && action != 'v' && action != 'r')
-        {
-            System.err.printf("Error, cannot distinguish action \"%s\"%n", action);
-            return false;
-        }
-        
-        //Create
-        if (action == 'c')
-        {
-            //Make sure the passed name is not the name of an already existing file
-            for (File runeSet : runeSets)
-            {
-                if (runeSet.getName().equals(fileName))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else //All other actions
-        {
-            //Make sure the passed name is the name of an already existing file
-            for (File runeSet : runeSets)
-            {
-                if (runeSet.getName().equals(fileName))
-                {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
     }
 }

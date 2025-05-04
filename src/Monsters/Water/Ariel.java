@@ -1,11 +1,11 @@
 package Monsters.Water;
 
 import Abilities.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Runes.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -13,7 +13,6 @@ import java.util.*;
  */
 public class Ariel extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -31,8 +30,8 @@ public class Ariel extends Monster
      */
     public Ariel(String runeFileName)
     {
-        super("Ariel" + count, WATER, 11_850, 747, 604, 100, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Ariel" + count, Element.WATER, 11_850, 747, 604, 100, 15, 50, 40, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
@@ -40,27 +39,27 @@ public class Ariel extends Monster
     private void setAbilities()
     {
         
-        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.REMOVE_BENEFICIAL_EFFECT, 0, 1);
-        ArrayList<Integer> ability1DebuffChances = abilityChances(75);
-        abilities.add(new Attack_Ability("Heavenly Sword (1)", 1.3 * (1.9 + (getDef() * 3.0) / getAtk()), 0, 1,
+        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(DebuffEffect.REMOVE_BENEFICIAL_EFFECT.getNum(), 0, 1);
+        ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(75);
+        Ability a1 = new Attack_Ability("Heavenly Sword (1)", 1.3 * (1.9 + (getDef() * 3.0) / getAtk()), 0, 1,
                 "Attacks with a heavenly sword, removing a beneficial effect on the enemy with a 75% chance. The damage increases according to your " +
-                "Defense.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
+                "Defense.", ability1Debuffs, ability1DebuffChances, 0, false, false, false);
         
-        ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.DEF_UP, 2);
-        ArrayList<Integer> ability2BuffChances = abilityChances(100);
-        abilities.add(new Heal_Ability("Archangel's Blessing (2)", 0.35, 1, "Recovers an ally's HP by 35% and increases the " +
-                                                                            "Defense for 2 turns.", ability2Buffs, ability2BuffChances, 2, false));
+        ArrayList<Buff> ability2Buffs = MONSTERS.abilityBuffs(BuffEffect.DEF_UP.getNum(), 2);
+        ArrayList<Integer> ability2BuffChances = MONSTERS.abilityChances(100);
+        Ability a2 = new Heal_Ability("Archangel's Blessing (2)", 0.35, 1, "Recovers an ally's HP by 35% and increases the " +
+                                                                            "Defense for 2 turns.", ability2Buffs, ability2BuffChances, 2, false);
         
         ArrayList<Buff> ability3Buffs = new ArrayList<>();
         ability3Buffs.add(new IncAtkBar(20));
-        ArrayList<Integer> ability3BuffChances = abilityChances(100);
-        abilities.add(new Heal_Ability("Holy Water (3)", 0.5 * 1.2, 1, "Removes all harmful effects granted on all allies and " +
+        ArrayList<Integer> ability3BuffChances = MONSTERS.abilityChances(100);
+        Ability a3 = new Heal_Ability("Holy Water (3)", 0.5 * 1.2, 1, "Removes all harmful effects granted on all allies and " +
                                                                        "recovers their HP by 50% each. In addition, increases the Attack Bar of all allies by 20% each and recovers 15% HP each turn for 3 " +
-                                                                       "turns by the number of harmful effects removed on the allies who had their harmful effects removed.", ability3Buffs, ability3BuffChances, 4, true));
+                                                                       "turns by the number of harmful effects removed on the allies who had their harmful effects removed.", ability3Buffs, ability3BuffChances, 4, true);
         
-        abilities.add(new Leader_Skill(Stat.HP, 0.5, WATER));
+        Ability a4 = new Leader_Skill(RuneAttribute.HP, 0.5, Element.WATER);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
     }
     
     
@@ -77,7 +76,7 @@ public class Ariel extends Monster
             applyToTeam(game.getNextMonsTeam(), m -> {
                 for (int i = 0; i < m.cleanse(); i++)
                 {
-                    m.addAppliedBuff(Buff.RECOVERY, 3, this);
+                    m.addAppliedBuff(BuffEffect.RECOVERY, 3, this);
                 }
             });
         }

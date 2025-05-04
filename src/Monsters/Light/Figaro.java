@@ -2,8 +2,8 @@ package Monsters.Light;
 
 import Abilities.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Debuffs.*;
+import Effects.Debuffs.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -11,7 +11,6 @@ import java.util.*;
  */
 public class Figaro extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -29,29 +28,29 @@ public class Figaro extends Monster
      */
     public Figaro(String runeFileName)
     {
-        super("Figaro" + count, LIGHT, 11_700, 494, 703, 103, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Figaro" + count, Element.LIGHT, 11_700, 494, 703, 103, 15, 50, 15, 0);
+        super.setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
     
     private void setAbilities()
     {
-        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.UNRECOVERABLE, 2, 0);
-        ArrayList<Integer> ability1DebuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Flying Cards (1)", 3.6 * 1.2, 0, 1, "Throws a sharp card to " +
+        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(DebuffEffect.UNRECOVERABLE.getNum(), 2, 0);
+        ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(100);
+        Ability a1 = new Attack_Ability("Flying Cards (1)", 3.6 * 1.2, 0, 1, "Throws a sharp card to " +
                                                                               "attack and disturbs the enemy's HP recovery for 2 turns with a 70% chance.", ability1Debuffs, ability1DebuffChances, 0,
-                false, false, false));
+                false, false, false);
         
-        abilities.add(new Attack_Ability("Surprise Box (2)", 1.25 * 2.4, 0, 1, "Summons a surprise box that inflicts damage" +
+        Ability a2 = new Attack_Ability("Surprise Box (2)", 1.25 * 2.4, 0, 1, "Summons a surprise box that inflicts damage" +
                                                                                " and grants 1 random weakening effect among Stun, Glancing Hit Rate Increase, and Attack Speed Decrease to all enemies.", 3, false,
-                false, true));
+                false, true);
         
         //@Passive:Creation
-        abilities.add(new Passive("Camouflage", "Removes 1 beneficial effect from the targeted enemy, and installs a bomb for 2 turns with " +
-                                                "a 35% chance every time you perform an attack. In addition, cancels incoming damage with a 25% chance."));
+        Ability a3 = new Passive("Camouflage", "Removes 1 beneficial effect from the targeted enemy, and installs a bomb for 2 turns with " +
+                                                "a 35% chance every time you perform an attack. In addition, cancels incoming damage with a 25% chance.");
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)
@@ -69,9 +68,9 @@ public class Figaro extends Monster
                 int rand = new Random().nextInt(3);
                 switch (rand)
                 {
-                    case 0 -> m.addAppliedDebuff(Debuff.STUN, 100, 1, this);
-                    case 1 -> m.addAppliedDebuff(Debuff.GLANCING_HIT_UP, 100, 1, this);
-                    case 2 -> m.addAppliedDebuff(Debuff.DEC_ATK_SPD, 100, 1, this);
+                    case 0 -> m.addAppliedDebuff(DebuffEffect.STUN, 100, 1, this);
+                    case 1 -> m.addAppliedDebuff(DebuffEffect.GLANCING_HIT_UP, 100, 1, this);
+                    case 2 -> m.addAppliedDebuff(DebuffEffect.DEC_ATK_SPD, 100, 1, this);
                 }
             });
         }
@@ -86,14 +85,14 @@ public class Figaro extends Monster
                     if (resistanceCheck(m))
                     {
                         m.removeRandomBuff();
-                        m.addGuaranteedAppliedDebuff(Debuff.BOMB, 2, this);
+                        m.addGuaranteedAppliedDebuff(DebuffEffect.BOMB, 2, this);
                     }
                 });
             }
             else if (resistanceCheck(target))
             {
                 target.removeRandomBuff();
-                target.addGuaranteedAppliedDebuff(Debuff.BOMB, 2, this);
+                target.addGuaranteedAppliedDebuff(DebuffEffect.BOMB, 2, this);
             }
         }
         

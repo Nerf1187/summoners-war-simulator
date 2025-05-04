@@ -1,8 +1,8 @@
 package Abilities;
 
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
 import Errors.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
 import java.util.*;
 
 /**
@@ -130,5 +130,21 @@ public class Attack_Ability extends Ability
     {
         super(name, multiplier, healingPercent, numOfActivations, description, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(),
                 new ArrayList<>(), cooldown, true, false, ignoresDefense, false, ignoresDmgReduction, hitsTeam);
+    }
+    
+    /**
+     * Constructs a new Attack Ability with no buffs, debuffs, or frontend information (i.e., no name or description)
+     *
+     * @param multiplier          The attack multiplier (ex. 2.5 for 250%)
+     * @param healingPercent      The percentage of the max hp to heal (0-100)
+     * @param numOfActivations    The amount of times the ability activates when called
+     * @param cooldown            The cooldown of the ability
+     * @param ignoresDefense      Whether this ability ignores the target's defense
+     * @param ignoresDmgReduction Whether this ability ignores damage reduction effects
+     * @param hitsTeam            Whether this ability targets everyone on the enemy team
+     */
+    public Attack_Ability(double multiplier, double healingPercent, int numOfActivations, int cooldown, boolean ignoresDefense, boolean ignoresDmgReduction, boolean hitsTeam)
+    {
+        this("", multiplier, healingPercent, numOfActivations, "", cooldown, ignoresDefense, ignoresDmgReduction, hitsTeam);
     }
 }

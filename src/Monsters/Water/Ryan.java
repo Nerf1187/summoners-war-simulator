@@ -3,9 +3,9 @@ package Monsters.Water;
 import Abilities.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -13,7 +13,6 @@ import java.util.*;
  */
 public class Ryan extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -31,8 +30,8 @@ public class Ryan extends Monster
      */
     public Ryan(String runeFileName)
     {
-        super("Ryan" + count, WATER, 10_380, 549, 736, 107, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Ryan" + count, Element.WATER, 10_380, 549, 736, 107, 15, 50, 15, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
@@ -40,24 +39,24 @@ public class Ryan extends Monster
     private void setAbilities()
     {
         
-        ArrayList<Buff> ability1Buffs = abilityBuffs(Buff.ATK_UP, 3);
-        ArrayList<Integer> ability1BuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Combat Knife (1)", 1.35 * 1.9, 0, 2, "Swings a dagger to attack the enemy 2 times and " +
-                                                                               "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0));
+        ArrayList<Buff> ability1Buffs = MONSTERS.abilityBuffs(BuffEffect.ATK_UP.getNum(), 3);
+        ArrayList<Integer> ability1BuffChances = MONSTERS.abilityChances(100);
+        Ability a1 = new Attack_Ability("Combat Knife (1)", 1.35 * 1.9, 0, 2, "Swings a dagger to attack the enemy 2 times and " +
+                                                                               "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0);
         
-        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0);
-        ArrayList<Integer> ability2DebuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Sharp Strike (2)", 1.3 * 5.6, 0, 1, "Attacks an enemy and inflicts Continuous Damage" +
+        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(DebuffEffect.CONTINUOUS_DMG.getNum(), 2, 0);
+        ArrayList<Integer> ability2DebuffChances = MONSTERS.abilityChances(100);
+        Ability a2 = new Attack_Ability("Sharp Strike (2)", 1.3 * 5.6, 0, 1, "Attacks an enemy and inflicts Continuous Damage" +
                                                                               " for 2 turns. This attack will also decrease the enemy's Defense for 2 turns if it lands as a Critical Hit. Instantly gains another " +
-                                                                              "turn if the target has 50% or less HP after the attack.", ability2Debuffs, ability2DebuffChances, 3, false, false, false));
+                                                                              "turn if the target has 50% or less HP after the attack.", ability2Debuffs, ability2DebuffChances, 3, false, false, false);
         
-        ArrayList<Debuff> ability3Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 1, 0);
-        ArrayList<Integer> ability3DebuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Dagger Dash (3)", 1.25 * 3.2, 0, 3, "Attacks the enemy with an attack that is " +
+        ArrayList<Debuff> ability3Debuffs = abilityDebuffs(DebuffEffect.CONTINUOUS_DMG.getNum(), 1, 0);
+        ArrayList<Integer> ability3DebuffChances = MONSTERS.abilityChances(100);
+        Ability a3 = new Attack_Ability("Dagger Dash (3)", 1.25 * 3.2, 0, 3, "Attacks the enemy with an attack that is " +
                                                                               "guaranteed to land as a Critical Hit 3 times, each attack inflicting Continuous Damage for 1 turn. Increases your Attack Bar " +
-                                                                              "proportionate to the enemy's lost HP from your attack.", ability3Debuffs, ability3DebuffChances, 3, false, false, false));
+                                                                              "proportionate to the enemy's lost HP from your attack.", ability3Debuffs, ability3DebuffChances, 3, false, false, false);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3);
     }
     
     @Override
@@ -84,7 +83,7 @@ public class Ryan extends Monster
                 //Decrease target's defense if they were crit
                 if (target.wasCrit())
                 {
-                    target.addAppliedDebuff(Debuff.DEC_DEF, 2, 200, this);
+                    target.addAppliedDebuff(DebuffEffect.DEC_DEF, 2, 200, this);
                 }
                 //Gain another turn if the target is under half health
                 if (target.getHpRatio() <= 50)
@@ -92,7 +91,7 @@ public class Ryan extends Monster
                     setAtkBar(2_000);
                     if (isPrint())
                     {
-                        System.out.println(ConsoleColors.GREEN + "Extra Turn!" + ConsoleColors.RESET);
+                        System.out.println(ConsoleColor.GREEN + "Extra Turn!" + ConsoleColor.RESET);
                     }
                 }
             }

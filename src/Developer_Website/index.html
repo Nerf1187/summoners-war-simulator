@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Monster Code</title>
+    
+    <link rel="stylesheet" href="styles.css">
+    
+    <script src="lib/Sortable-1.15.6/Sortable.js"></script>
+    <script src="main.js"></script>
+
+</head>
+<body>
+    <!-- Initialize form with buttons and standard Monster information-->
+    <form method="get" id="form" class="section">
+        <h1>Basic info</h1>
+        
+        <!-- Monster name -->
+        <label for="name">Name:</label>
+        <input id="name" type="text" required="">
+        
+        <!-- Monster element -->
+        <label for="element">Element</label>
+        <select id="element" required="">
+            <option value="FIRE">Fire</option>
+            <option value="WATER">Water</option>
+            <option value="WIND">Wind</option>
+            <option value="LIGHT">Light</option>
+            <option value="DARK">Dark</option>
+        </select>
+        
+        <br>
+        <br>
+        <br>
+        
+        <!-- Monster stats -->
+        <div id="stats">
+            <!-- HP -->
+            <label for="hp">HP</label>
+            <input type="number" id="hp" required="" min="0">
+            
+            <!-- Defense -->
+            <label for="defense">Defense</label>
+            <input type="number" id="defense" required="" min="0">
+            
+            <!-- Attack -->
+            <label for="attack">Attack</label>
+            <input type="number" id="attack" required="" min="0">
+            
+            <!-- Speed -->
+            <label for="speed">Speed</label>
+            <input type="number" id="speed" required="" min="0">
+            
+            <!-- Critical rate -->
+            <label for="crit-rate">Crit Rate</label>
+            <input type="number" id="crit-rate" required="" min="0" max="100">
+            
+            <!-- Critical Damage-->
+            <label for="crit-dmg">Crit Dmg</label>
+            <input type="number" id="crit-dmg" required="" min="0">
+            
+            <!-- Resistance -->
+            <label for="resistance">Resistance</label>
+            <input type="number" id="resistance" required="" min="0" max="100">
+            
+            <!-- Accuracy -->
+            <label for="accuracy">Accuracy</label>
+            <input type="number" id="accuracy" required="" min="0" max="100">
+        </div>
+        
+        <br>
+        <br>
+        <br>
+        
+        <!-- All abilities-->
+        <h1>Abilities</h1>
+        <div id="abilities">
+        </div>
+        
+        <!-- Add ability button -->
+        <button type="button" id="add-ability">Add Ability</button>
+        
+        <br>
+        <br>
+        <br>
+        
+        <!-- Submit form -->
+        <div style="justify-content: center; display: flex">
+            <button type="submit" id="submit">Submit</button>
+        </div>
+    </form>
+    
+    <!-- Copy output header -->
+    <h3 id="copy-output"></h3>
+    <br>
+    <br>
+    
+    <!-- Copy output button -->
+    <label for="code-output" style="display: flex; justify-content: center; font: 50px bold">Code Output</label>
+    <div style="display: flex; justify-content: center">
+        <button id="copy-button">Copy</button>
+    </div>
+    
+    <!-- Code output textarea -->
+    <div id="code">
+        <br>
+        <textarea name="code-output" id="code-output"></textarea>
+    </div>
+</body>
+</html>

@@ -3,9 +3,9 @@ package Monsters.Wind;
 import Abilities.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
-import Stats.*;
+import Effects.Buffs.*;
+import Effects.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -13,9 +13,8 @@ import java.util.*;
  */
 public class Riley extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
-    Stat totemCount = new Stat(999_999);
+    Effect totemCount = new Effect(999_999);
     
     /**
      * Creates the Monster with the default rune set
@@ -32,35 +31,35 @@ public class Riley extends Monster
      */
     public Riley(String runeFileName)
     {
-        super("Riley" + count, WIND, 11_850, 714, 637, 97, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Riley" + count, Element.WIND, 11_850, 714, 637, 97, 15, 50, 40, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
-        totemCount.setStatNum(Stat.TOTEM);
-        addOtherStat(totemCount);
+        totemCount.setEffect(OtherEffect.TOTEM);
+        addOtherEffect(totemCount);
     }
     
     private void setAbilities()
     {
         
-        abilities.add(new Attack_Ability("Totem Magic (1)", 1.2 * 3.9, 0, 1, "Attacks the enemy target and recovers" +
-                                                                             " the HP of an ally with the lowest HP ratio by 15%.", 0, false, false, false));
+        Ability a1 = new Attack_Ability("Totem Magic (1)", 1.2 * 3.9, 0, 1, "Attacks the enemy target and recovers" +
+                                                                             " the HP of an ally with the lowest HP ratio by 15%.", 0, false, false, false);
         
-        ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.IMMUNITY, 1);
-        ArrayList<Integer> ability2BuffChances = abilityChances(100);
-        abilities.add(new Heal_Ability("Dance with the Elemental (2)", 0, 1, "Grants Immunity on all allies for 1 turn.", ability2Buffs,
-                ability2BuffChances, 3, true));
+        ArrayList<Buff> ability2Buffs = MONSTERS.abilityBuffs(BuffEffect.IMMUNITY.getNum(), 1);
+        ArrayList<Integer> ability2BuffChances = MONSTERS.abilityChances(100);
+        Ability a2 = new Heal_Ability("Dance with the Elemental (2)", 0, 1, "Grants Immunity on all allies for 1 turn.", ability2Buffs,
+                ability2BuffChances, 3, true);
         
-        ArrayList<Buff> ability3Buffs = abilityBuffs(Buff.ATK_UP, 2, Buff.REMOVE_DEBUFF, 0);
-        ArrayList<Integer> ability3BuffChances = abilityChances(100, 100);
-        abilities.add(new Heal_Ability("Valiant Boar Soul (3)", 1.15 * 0.3, 1, "Removes 1 harmful effect of all allies," +
-                                                                               " recovers the HP by 30% and increases the Attack Power for 2 turns.", ability3Buffs, ability3BuffChances, 3, true));
+        ArrayList<Buff> ability3Buffs = MONSTERS.abilityBuffs(BuffEffect.ATK_UP.getNum(), 2, BuffEffect.REMOVE_DEBUFF.getNum(), 0);
+        ArrayList<Integer> ability3BuffChances = MONSTERS.abilityChances(100, 100);
+        Ability a3 = new Heal_Ability("Valiant Boar Soul (3)", 1.15 * 0.3, 1, "Removes 1 harmful effect of all allies," +
+                                                                               " recovers the HP by 30% and increases the Attack Power for 2 turns.", ability3Buffs, ability3BuffChances, 3, true);
         
-        ArrayList<Buff> ability4Buffs = abilityBuffs(Buff.ATK_UP, 2, Buff.IMMUNITY, 1);
-        ArrayList<Integer> ability4BuffChances = abilityChances(100, 100);
-        abilities.add(new Ability4(ability4Buffs, ability4BuffChances, this));
+        ArrayList<Buff> ability4Buffs = MONSTERS.abilityBuffs(BuffEffect.ATK_UP.getNum(), 2, BuffEffect.IMMUNITY.getNum(), 1);
+        ArrayList<Integer> ability4BuffChances = MONSTERS.abilityChances(100, 100);
+        Ability a4 = new Ability4(ability4Buffs, ability4BuffChances, this);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
     }
     
     public boolean abilityIsValid(int abilityNum)
@@ -144,8 +143,8 @@ public class Riley extends Monster
     {
         Riley save = (Riley) super.copy();
         
-        Stat s = new Stat(999_999);
-        s.setStatNum(Stat.TOTEM);
+        Effect s = new Effect(999_999);
+        s.setEffect(OtherEffect.TOTEM);
         s.setNumOfSpecialEffects(this.totemCount.getNumOfSpecialEffects());
         save.totemCount = s;
         
@@ -173,7 +172,7 @@ class Ability4 extends Heal_Ability
     /**
      * The Riley who owns the ability
      */
-    Riley r;
+    final Riley r;
     
     /**
      * Creates a new ability
@@ -193,6 +192,6 @@ class Ability4 extends Heal_Ability
     
     public String toString()
     {
-        return (r.abilityIsValid(this)) ? super.toString() : name + ": " + ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + description + ConsoleColors.RESET;
+        return (r.abilityIsValid(this)) ? super.toString() : name + ": " + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + description + ConsoleColor.RESET;
     }
 }

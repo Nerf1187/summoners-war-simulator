@@ -1,0 +1,123 @@
+h4 {
+    margin-bottom: 0;
+}
+
+input, textarea, select {
+    margin-top: 10px;
+    margin-right: 20px;
+}
+
+input[type="number"] {
+    width: 50px;
+}
+
+input[type="text"] {
+    width: 75px;
+}
+
+input[type="checkbox"] {
+    width: 25px;
+}
+
+button {
+    margin-top: 5px;
+    border-radius: 15px;
+    transition: 0.2s;
+    padding: 3px 8px;
+}
+
+button:hover {
+    transform: scale(1.1);
+    cursor: pointer;
+}
+
+button:active {
+    transform: scale(1.0) ;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.buff-button {
+    background-color: #00a4fd;
+}
+
+.buff-button:hover {
+    background-color: #008fd2;
+}
+
+.debuff-button {
+    background-color: #ff0000;
+}
+
+.debuff-button:hover {
+    background-color: #e50000;
+}
+
+.ability-description {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ability, .effect, .section {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: solid black 2px;
+}
+
+.ability {
+    border-bottom: solid black 5px;
+    /*margin-left: 20px;*/
+}
+
+.handle {
+    cursor: grabbing;
+    margin-right: 10px;
+}
+
+.dragging {
+    background: #C8EBFB;
+}
+
+#submit, #copy-button {
+    background-color: #2dff00;
+    color: black;
+    width: 200px;
+    height: 75px;
+    border-radius: 38px;
+    font-size: 40px;
+}
+
+#submit {
+    margin-bottom: 30px;
+}
+
+#submit:hover {
+    background-color: #1fc400;
+}
+
+#add-ability {
+    background-color: #ff8000;
+}
+
+#add-ability:hover {
+    background-color: #d76c00;
+}
+
+#code-output {
+    width: 70%;
+    height: 900px;
+}
+
+#code {
+    display: flex;
+    justify-content: center;
+}
+
+#copy-button:hover {
+    transform: scale(1.1);
+    background-color: #1fc400;
+}

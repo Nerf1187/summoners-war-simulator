@@ -1,8 +1,8 @@
 package Abilities;
 
 import Errors.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
 import java.util.*;
 
 /**

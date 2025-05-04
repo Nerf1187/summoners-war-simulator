@@ -1,11 +1,11 @@
 package GUI;
 
 import javax.swing.*;
-import Monsters.*;
+import Util.Util.*;
 import java.awt.event.*;
 
 /**
- * This class is a GUI to get the file name from the user
+ * This class is a GUIS to get the file name from the user
  *
  * @author Anthony (Tony) Youssef
  */
@@ -20,13 +20,13 @@ public class GetNameAndNum extends JFrame
     private JButton submitButton;
     
     /**
-     * Creates the GUI
+     * Creates the GUIS
      *
      * @param mainRunes The main Runes class that called this constructor
      */
     public GetNameAndNum(Runes mainRunes)
     {
-        //General GUI stuff
+        //General GUIS stuff
         add(infoFrame);
         setTitle("Enter Monster name and rune set number");
         setSize(800, 400);
@@ -41,7 +41,7 @@ public class GetNameAndNum extends JFrame
             {
                 try
                 {
-                    String fileName = formatFileName(monNameText.getText(), Integer.parseInt(runeSetNumText.getText()));
+                    String fileName = FILES.formatFileName(monNameText.getText(), Integer.parseInt(runeSetNumText.getText()));
                     mainRunes.startRunes(fileName);
                     
                     //Remove the current window
@@ -64,26 +64,5 @@ public class GetNameAndNum extends JFrame
                 }
             }
         });
-    }
-    
-    private String formatFileName(String name, int num)
-    {
-        //Get the proper Monster name
-        String monName = Monster.toProperName(name);
-        
-        //Try to set the rune number
-        int runeSetNum = 0;
-        try
-        {
-            runeSetNum = num;
-        }
-        catch (NumberFormatException e) //Unable to parse the input to an int
-        {
-            System.err.println("Unable to read the rune set number");
-            System.exit(1);
-        }
-        
-        //Return the formatted file name
-        return "%s%d.csv".formatted(monName, runeSetNum);
     }
 }

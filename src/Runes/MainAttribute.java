@@ -1,5 +1,7 @@
 package Runes;
 
+import static Runes.RuneAttribute.CRIT_RATE;
+
 /**
  * This class contains the information for rune attributes
  *
@@ -7,17 +9,18 @@ package Runes;
  */
 public class MainAttribute
 {
-    private final int num, amount;
+    private final RuneAttribute attribute;
+    private final int amount;
     
     /**
      * Creates a new MainAttribute
      *
-     * @param num    The attribute number. See {@link Rune} for attribute numbers
-     * @param amount The attribute's amount
+     * @param attribute The attribute. See {@link RuneAttribute} for attribute numbers
+     * @param amount    The attribute's amount
      */
-    public MainAttribute(int num, int amount)
+    public MainAttribute(RuneAttribute attribute, int amount)
     {
-        this.num = num;
+        this.attribute = attribute;
         this.amount = amount;
     }
     
@@ -36,9 +39,9 @@ public class MainAttribute
      *
      * @return The attribute number
      */
-    public int getNum()
+    public RuneAttribute getAttribute()
     {
-        return num;
+        return attribute;
     }
     
     /**
@@ -49,24 +52,20 @@ public class MainAttribute
     public String toString()
     {
         //Get the affected stat
-        String s = switch (num)
+        String s = switch (attribute)
         {
-            case 1, 2 -> "Attack ";
-            case 3, 4 -> "Defense ";
-            case 5, 6 -> "HP ";
-            case 7 -> "Speed ";
-            case 8 -> "Crit Rate ";
-            case 9 -> "Crit Damage ";
-            case 10 -> "Resistance ";
-            case 11 -> "Accuracy ";
+            case ATK, ATK_PERCENT -> "Attack ";
+            case DEF, DEF_PERCENT -> "Defense ";
+            case HP, HP_PERCENT -> "HP ";
+            case SPD -> "Speed ";
+            case CRIT_RATE -> "Crit Rate ";
+            case CRIT_DMG -> "Crit Damage ";
+            case RES -> "Resistance ";
+            case ACC -> "Accuracy ";
             default -> "";
         };
         
         s += amount;
-        if ((num % 2 == 0 && num <= 6) || num >= 8)
-        {
-            s += "%";
-        }
-        return s;
+        return (attribute.toString().endsWith("PERCENT") || attribute.getNum() >= CRIT_RATE.getNum()) ? s + "%" : s;
     }
 }

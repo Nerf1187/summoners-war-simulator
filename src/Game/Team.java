@@ -2,9 +2,10 @@ package Game;
 
 import Errors.*;
 import Monsters.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Effects.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -12,7 +13,7 @@ import java.util.*;
  *
  * @author Anthony (Tony) Youssef
  */
-public class Team
+public class Team implements Iterable<Monster>
 {
     private final String name;
     private final ArrayList<Monster> monsters;
@@ -29,6 +30,12 @@ public class Team
     {
         this.name = name;
         this.monsters = mons;
+    }
+    
+    @Override
+    public Iterator<Monster> iterator()
+    {
+        return monsters.iterator();
     }
     
     /**
@@ -81,13 +88,19 @@ public class Team
      *
      * @return The Monster with the highest full attack bar
      */
-    public Monster MonsterWithHighestFullAtkBar()
+    public Monster monsterWithHighestFullAtkBar()
     {
         double highest = 0;
         Monster highestMon = null;
         //Search through each Monster on the team
         for (Monster m : monsters)
         {
+            //Do nothing if the Monster is dead
+            if (m.isDead())
+            {
+                continue;
+            }
+            
             //Only check if the attack bar is full
             if (m.getAtkBar() >= Monster.MAX_ATK_BAR_VALUE && m.getAtkBar() > highest)
             {
@@ -134,31 +147,31 @@ public class Team
      */
     public String toString()
     {
-        return print(-1, -1);
+        return print(null, -1);
     }
     
     /**
      * Formats the Team into a readable String with elemental relationships included on each Monster
      *
-     * @param elementNum The element number to compare each Monster to
+     * @param element The element number to compare each Monster to
      * @param enemyTeam  Whether this Team is the enemy Team or friendly Team (1 for true, 0 for false, -1 for no elemental relationships)
      * @return The formatted String
      */
-    public String print(int elementNum, int enemyTeam)
+    public String print(Element element, int enemyTeam)
     {
         //Initialize lists
         ArrayList<String> names = new ArrayList<>();
         ArrayList<Double> hp = new ArrayList<>(), atkBar = new ArrayList<>();
         ArrayList<ArrayList<Buff>> buffs = new ArrayList<>();
         ArrayList<ArrayList<Debuff>> debuffs = new ArrayList<>();
-        ArrayList<ArrayList<Stat>> otherEffects = new ArrayList<>();
+        ArrayList<ArrayList<Effect>> otherEffects = new ArrayList<>();
         
         for (Monster mon : monsters)
         {
             if (mon.isDead())
             {
                 //Add dead String
-                names.add(ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + mon.getName(false, true) + ConsoleColors.RESET);
+                names.add("" + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + mon.getName(false, true) + ConsoleColor.RESET);
                 hp.add(null);
                 atkBar.add(null);
                 buffs.add(null);
@@ -170,8 +183,8 @@ public class Team
                 //Add elemental relationships
                 if (enemyTeam != -1)
                 {
-                    names.add(ConsoleColors.BLACK_BOLD + ((enemyTeam == 1) ? elementalRelationship(elementNum, mon.getElement()) :
-                            ConsoleColors.GREEN_BACKGROUND) + mon.getName(false, true) + ConsoleColors.RESET);
+                    names.add("" + ConsoleColor.BLACK_BOLD + ((enemyTeam == 1) ? element.relationWith(mon.getElement()) :
+                            ConsoleColor.GREEN_BACKGROUND) + mon.getName(false, true) + ConsoleColor.RESET);
                 }
                 else //Do not add elemental relationships
                 {
@@ -186,71 +199,15 @@ public class Team
                     atkBarPercent = atkBarPercent.substring(0, 4);
                 }
                 atkBar.add(Double.parseDouble(atkBarPercent));
-                //Add stats
+                //Add effects
                 buffs.add(mon.getAppliedBuffs());
                 debuffs.add(mon.getAppliedDebuffs());
-                otherEffects.add(mon.getOtherStats());
+                otherEffects.add(mon.getOtherEffects());
             }
         }
         
         //Return formatted String
-        return formatLines(names, hp, atkBar, buffs, debuffs, otherEffects);
-    }
-    
-    /**
-     * Formats the lines for printing
-     *
-     * @param names        the names of each Monster
-     * @param hp           The HP ratio of each Monster
-     * @param atkBar       The attack bar ratio of each Monster
-     * @param buffs        The buffs for each Monster
-     * @param debuffs      The debuffs for each Monster
-     * @param otherEffects Other effects for each Monster
-     * @return The formatted lines
-     */
-    private String formatLines(ArrayList<String> names, ArrayList<Double> hp, ArrayList<Double> atkBar, ArrayList<ArrayList<Buff>> buffs, ArrayList<ArrayList<Debuff>> debuffs, ArrayList<ArrayList<Stat>> otherEffects)
-    {
-        //Initialize lines
-        ArrayList<String> firstLineInfo = new ArrayList<>();
-        ArrayList<String> secondLineInfo = new ArrayList<>();
-        ArrayList<String> thirdLineInfo = new ArrayList<>();
-        ArrayList<String> fourthLineInfo = new ArrayList<>();
-        
-        //Add each Monster's basic info
-        for (int i = 0; i < names.size(); i++)
-        {
-            if (names.get(i).contains(ConsoleColors.BLACK)) //Add dead Monster
-            {
-                firstLineInfo.add(names.get(i));
-            }
-            else //Add living Monster
-            {
-                firstLineInfo.add("%s (%sHp = %s%%%s, %sAttack Bar = %s%%%s)".formatted(names.get(i), ConsoleColors.GREEN, hp.get(i), ConsoleColors.RESET, ConsoleColors.CYAN, atkBar.get(i), ConsoleColors.RESET));
-            }
-        }
-        
-        //Add each Monster's buffs
-        for (int i = 0; i < names.size(); i++)
-        {
-            secondLineInfo.add(buffs.get(i) == null ? "" : "Buffs: %s".formatted(buffs.get(i)));
-        }
-        
-        //Add each Monster's debuffs
-        for (int i = 0; i < names.size(); i++)
-        {
-            thirdLineInfo.add(debuffs.get(i) == null ? "" : "Debuffs: %s".formatted(debuffs.get(i)));
-        }
-        
-        //Add each Monster's other effects
-        int count = 0;
-        for (int i = 0; i < names.size(); i++)
-        {
-            fourthLineInfo.add(otherEffects.get(i) == null ? "" : "Other Effects: %s (%d)".formatted(otherEffects.get(i), count));
-            count++;
-        }
-        
-        //Space the lines properly and return the result
-        return toStringSpacing(firstLineInfo, secondLineInfo, thirdLineInfo, fourthLineInfo) + ConsoleColors.RESET;
+        return CONSOLE_INTERFACE.OUTPUT.formatLines(names, hp, atkBar, buffs, debuffs, otherEffects);
     }
     
     /**
@@ -293,259 +250,6 @@ public class Team
     }
     
     /**
-     * Finds the correct elemental relationship between the given elements. (Assumes Monsters are from different Teams)
-     *
-     * @param e1 The first element
-     * @param e2 the second element
-     * @return The color of the relationship (green background for advantageous; yellow background for neutral; red background for disadvantageous)
-     */
-    public static String elementalRelationship(int e1, int e2)
-    {
-        //Advantageous
-        if ((e1 == Monster.FIRE && e2 == Monster.WIND) || (e1 == Monster.WATER && e2 == Monster.FIRE) || (e1 == Monster.WIND && e2 == Monster.WATER) || (e1 == Monster.LIGHT && e2 == Monster.DARK) || (e1 == Monster.DARK && e2 == Monster.LIGHT))
-        {
-            return ConsoleColors.GREEN_BACKGROUND;
-        }
-        //Neutral
-        if ((e1 == e2) || (e1 == Monster.LIGHT) || (e1 == Monster.DARK) || (e2 == Monster.LIGHT) || (e2 == Monster.DARK))
-        {
-            return ConsoleColors.YELLOW_BACKGROUND;
-        }
-        //Disadvantageous
-        return ConsoleColors.RED_BACKGROUND;
-    }
-    
-    /**
-     * A helper method to find the correct spacing for the {@link Team#toString()} method
-     *
-     * @param line1 The first line of the String (each entry in the list is a separate Monster)
-     * @param line2 The second line of the String (each entry in the list is a separate Monster)
-     * @param line3 The third line of the String (each entry in the list is a separate Monster)
-     * @param line4 The fourth line of the String (each entry in the list is a separate Monster)
-     * @return The String with the correct spacing
-     */
-    private String toStringSpacing(ArrayList<String> line1, ArrayList<String> line2, ArrayList<String> line3, ArrayList<String> line4)
-    {
-        //Initialize lines
-        ArrayList<ArrayList<String>> lines = new ArrayList<>();
-        lines.add(line1);
-        lines.add(line2);
-        lines.add(line3);
-        lines.add(line4);
-        
-        //Find the longest line and it's length
-        int longestLength = 0;
-        ArrayList<String> longestLine = new ArrayList<>();
-        for (ArrayList<String> list : lines)
-        {
-            int currentLength = 0;
-            //Calculate line length without colors
-            for (String s : list)
-            {
-                currentLength += lengthWithoutColors(s);
-            }
-            
-            //Update longest line
-            if (currentLength > longestLength)
-            {
-                longestLength = currentLength;
-                longestLine = list;
-            }
-        }
-        //Format the longest line
-        for (int j = 0; j < longestLine.size() - 1; j++)
-        {
-            longestLine.set(j, "%s        ".formatted(longestLine.get(j)));
-        }
-        
-        //Format all other lines
-        //Do it 4 times to make sure all lines are formatted properly
-        for (int i = 0; i < 4; i++)
-        {
-            for (ArrayList<String> line : lines)
-            {
-                if (line.equals(longestLine))
-                {
-                    if (!line.equals(line1) && i == 1)
-                    {
-                        //Tab each entry of the line
-                        for (int j = 0; j < line.size() - 1; j++)
-                        {
-                            line.set(j, "       %s".formatted(line.get(j)));
-                        }
-                    }
-                    continue;
-                }
-                int length = 0;
-                int currentLength = 0;
-                
-                for (int j = 0; j < line.size() - 1; j++)
-                {
-                    //Length of the longest line at Monster j
-                    length += lengthWithoutColors(longestLine.get(j));
-                    
-                    //Length of current line at Monster j
-                    currentLength += lengthWithoutColors(line.get(j));
-                    
-                    //Indent lines 2-4
-                    if (!line.equals(line1) && i == 1)
-                    {
-                        line.set(j, "       %s".formatted(line.get(j)));
-                        currentLength += "       ".length();
-                    }
-                    
-                    //Add spaces to the longest line at Monster j in case the current line at Monster j is longer than the longest line at Monster j
-                    while (length < currentLength)
-                    {
-                        length++;
-                        longestLine.set(j, "%s ".formatted(longestLine.get(j)));
-                    }
-                    
-                    //Add spaces to the current line to correctly align it with the longest line
-                    while (currentLength < length)
-                    {
-                        currentLength++;
-                        line.set(j, "%s ".formatted(line.get(j)));
-                    }
-                }
-                
-                //Make sure there is space between each Monster
-                for (int j = 0; j < line.size() - 1; j++)
-                {
-                    if (!line.get(j).endsWith(" ") && !line.get(j + 1).startsWith(" "))
-                    {
-                        line.set(j, "%s     ".formatted(line.get(j)));
-                    }
-                }
-            }
-        }
-        
-        //This might not be necessary, but I'm honestly too scared to change it
-        for (ArrayList<String> list : lines)
-        {
-            //Tab the last entry in every line except the first
-            if (!list.equals(line1))
-            {
-                list.set(list.size() - 1, "       %s".formatted(list.getLast()));
-            }
-        }
-        
-        //Format all lines to correct positioning
-        return formatString(lines);
-    }
-    
-    /**
-     * A method to properly format each line in {@link Team#toStringSpacing(ArrayList, ArrayList, ArrayList, ArrayList)}
-     *
-     * @param lines Each line to format (Should be a length of 4)
-     * @return The properly formatted String
-     */
-    private static String formatString(ArrayList<ArrayList<String>> lines)
-    {
-        String s = "";
-        //Line 1 - Monster info
-        for (int i = 0; i < lines.get(0).size(); i++)
-        {
-            s += lines.getFirst().get(i);
-        }
-        s += "\n";
-        
-        //Line 2 - Buffs
-        for (int i = 0; i < lines.get(0).size(); i++)
-        {
-            s += ConsoleColors.BLUE + lines.get(1).get(i);
-        }
-        s += "\n";
-        
-        //Line 3 - Debuffs
-        for (int i = 0; i < lines.get(0).size(); i++)
-        {
-            s += ConsoleColors.RED + lines.get(2).get(i);
-        }
-        s += "\n";
-        
-        //Line 4 - Other effects
-        for (int i = 0; i < lines.get(0).size(); i++)
-        {
-            s += ConsoleColors.PURPLE + lines.get(3).get(i);
-        }
-        return s;
-    }
-    
-    /**
-     * If the given String contains a color, finds the length without the color, otherwise returns the length of the String
-     *
-     * @param string The String to find the length of
-     * @return The length of the String without colors
-     */
-    private int lengthWithoutColors(String string)
-    {
-        int length = string.length();
-        if (string.contains(ConsoleColors.GREEN))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.CYAN))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.BLUE_BOLD_BRIGHT))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.RED_BOLD_BRIGHT))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.YELLOW_BOLD_BRIGHT))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.WHITE_BOLD_BRIGHT))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.PURPLE_BOLD_BRIGHT))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.BLACK))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.WHITE_BACKGROUND))
-        {
-            length -= 5;
-        }
-        if (string.contains(ConsoleColors.BLACK_BOLD))
-        {
-            length -= 7;
-        }
-        if (string.contains(ConsoleColors.GREEN_BACKGROUND))
-        {
-            length -= 5;
-        }
-        if (string.contains(ConsoleColors.YELLOW_BACKGROUND))
-        {
-            length -= 5;
-        }
-        if (string.contains(ConsoleColors.RED_BACKGROUND))
-        {
-            length -= 5;
-        }
-        
-        for (int i = 0; i < string.length() - 4; i++)
-        {
-            if (string.startsWith(ConsoleColors.RESET, i))
-            {
-                length -= 4;
-            }
-        }
-        
-        return length;
-    }
-    
-    /**
      * Formats a String for a single Monster from the team
      *
      * @param mon  The Monster to print
@@ -558,10 +262,10 @@ public class Team
         
         if (self)
         {
-            return "%s%s%s%s (%d)%s".formatted(ConsoleColors.GREEN_BACKGROUND, ConsoleColors.BLACK_BOLD, mon.shortToString(false), ConsoleColors.PURPLE, count, ConsoleColors.RESET);
+            return "%s%s%s%s (%d)%s".formatted(ConsoleColor.GREEN_BACKGROUND, ConsoleColor.BLACK_BOLD, mon.shortToString(false), ConsoleColor.PURPLE, count, ConsoleColor.RESET);
         }
         
-        return "%s%s (%d)%s".formatted(mon.shortToString(true), ConsoleColors.PURPLE, count, ConsoleColors.RESET);
+        return "%s%s (%d)%s".formatted(mon.shortToString(true), ConsoleColor.PURPLE, count, ConsoleColor.RESET);
     }
     
     /**
@@ -762,7 +466,7 @@ public class Team
     {
         try
         {
-            monsters.replaceAll(Monster::createNewMonFromMon);
+            monsters.replaceAll(MONSTERS::createNewMonFromMon);
             return true;
         }
         catch (Exception e)
@@ -778,7 +482,6 @@ public class Team
     {
         monsters.forEach(Monster::reset);
     }
-    
     
     /**
      * Compares this with the provided Team
@@ -799,26 +502,6 @@ public class Team
     public int numOfLivingMons()
     {
         return monsters.stream().mapToInt(mon -> !mon.isDead() ? 1 : 0).sum();
-    }
-    
-    /**
-     * Checks whether the given list has the given Monster name (case-insensitive)
-     *
-     * @param name       The name to search for
-     * @param pickedMons The List to search in
-     * @return True if at least one Monster's name in the List equals the given String, false otherwise
-     */
-    protected static boolean teamHasMon(String name, ArrayList<Monster> pickedMons)
-    {
-        //Search the list for the Monster
-        for (Monster mon : pickedMons)
-        {
-            if (mon.getName(false, false).equalsIgnoreCase(name))
-            {
-                return true;
-            }
-        }
-        return false;
     }
     
     /**
@@ -875,33 +558,6 @@ public class Team
     public void increaseLosses()
     {
         losses++;
-    }
-    
-    /**
-     * Calculates any damage reduction for the attack
-     *
-     * @param attackedTeam The team containing the Monster being attacked
-     * @param dmg          The initial damage to be dealt
-     * @param target       The Monster being attacked
-     * @return The new damage to be dealt
-     */
-    public double dmgReduction(Team attackedTeam, double dmg, Monster target)
-    {
-        double lowestDmg = dmg;
-        //Get the lowest possible damage reduction without stacking
-        for (Monster m : attackedTeam.getMonsters())
-        {
-            //Get potential reduced damage
-            double newDmg = m.dmgReductionProtocol(dmg, m.equals(target));
-            boolean reduce = newDmg != dmg;
-            //Compare damage reduction
-            if (reduce && newDmg < lowestDmg)
-            {
-                lowestDmg = newDmg;
-            }
-        }
-        //Minimum of 1 damage
-        return Math.max(lowestDmg, 1);
     }
     
     /**

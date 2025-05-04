@@ -3,10 +3,10 @@ package Monsters.Fire;
 import Abilities.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Runes.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Util.Util.RUNES;
 import java.util.*;
 
 /**
@@ -14,7 +14,6 @@ import java.util.*;
  */
 public class Laika extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -32,26 +31,26 @@ public class Laika extends Monster
      */
     public Laika(String runeFileName)
     {
-        super("Laika" + count, FIRE, 11_040, 571, 834, 100, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Laika" + count, Element.FIRE, 11_040, 571, 834, 100, 15, 50, 15, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
     
     private void setAbilities()
     {
-        abilities.add(new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " + "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
-                false, false));
+        Ability a1 = new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " + "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
+                false, false);
         
-        abilities.add(new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1,
-                "Channels burning rage to inflict damage that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false, true, false));
+        Ability a2 = new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1,
+                "Channels burning rage to inflict damage that ignores all damage reduction effects to the enemy. The damage increases according to the number of dead allies.", 2, false, true, false);
         
         //@Passive:Creation
-        abilities.add(new Passive("Noble Blood", "Your attacks won't land as Glancing Hits and the inflicted damage of one attack won't exceed 24% of the MAX HP. Additionally, counterattacks the attacker with a 50% chance when you're attacked.", 0));
+        Ability a3 = new Passive("Noble Blood", "Your attacks won't land as Glancing Hits and the inflicted damage of one attack won't exceed 24% of the MAX HP. Additionally, counterattacks the attacker with a 50% chance when you're attacked.", 0);
         
-        abilities.add(new Leader_Skill(Stat.DEF, 0.5, FIRE));
+        Ability a4 = new Leader_Skill(RuneAttribute.DEF, 0.5, Element.FIRE);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)
@@ -83,7 +82,7 @@ public class Laika extends Monster
             //Apply continuous damage if the attack landed as a crit
             if (abilityNum == 1)
             {
-                target.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 2, this);
+                target.addAppliedDebuff(DebuffEffect.CONTINUOUS_DMG, 100, 2, this);
             }
         }
         
@@ -108,7 +107,7 @@ public class Laika extends Monster
         //Counter with a 50% chance if the attack was a crit
         if (new Random().nextInt(101) < 50 && this.passiveCanActivate())
         {
-            addAppliedBuff(Buff.COUNTER, 0, this);
+            addAppliedBuff(BuffEffect.COUNTER, 0, this);
         }
         super.attacked(attacker);
     }

@@ -1,10 +1,9 @@
 package Game;
 
 import Monsters.*;
+import Util.Util.*;
 import java.util.*;
 
-import static Game.Auto_Play.generateCombinations;
-import static Game.Main.printMonsToPick;
 import static Game.Main.scan;
 
 /**
@@ -28,16 +27,16 @@ public class Test_One_Team
         //Get Monsters from the global database
         ArrayList<Monster> allMons = Monster.getMonstersFromDatabase();
         //Generate combinations
-        ArrayList<ArrayList<Monster>> allTeams = generateCombinations(allMons, 4, false);
+        ArrayList<ArrayList<Monster>> allTeams = STATISTICS.generateCombinations(allMons, 4, false);
         System.out.println("Battling...");
         //Simulate battles
         for (ArrayList<Monster> enemyMons : allTeams)
         {
             Team enemyTeam = new Team("Team 2", enemyMons);
             //Reset teams
-            Auto_Play.resetTeamForMemory(mainTeam.getMonsters());
-            Auto_Play.resetTeamForMemory(enemyTeam.getMonsters());
-            Main.setRuneEffectsAndNames(mainTeam, enemyTeam);
+            TEAMS.resetTeamForMemory(mainTeam.getMonsters());
+            TEAMS.resetTeamForMemory(enemyTeam.getMonsters());
+            MONSTERS.setNamesAndRuneEffects(mainTeam, enemyTeam);
             Game g = Auto_Play.battle(mainTeam, enemyTeam);
             numOfBattles++;
             //Increase wins if the testing team won
@@ -66,7 +65,7 @@ public class Test_One_Team
             do
             {
                 //Print potential Monsters
-                printMonsToPick(monstersPicked);
+                CONSOLE_INTERFACE.OUTPUT.printMonsToPick(monstersPicked);
                 
                 //Print current team
                 System.out.print("\nCurrent team: ");
@@ -79,7 +78,7 @@ public class Test_One_Team
                 System.out.println("\nChoose your monster");
                 inputMon = scan.nextLine();
             }
-            while (!Monster.stringIsMonsterName(inputMon) || Team.teamHasMon(inputMon, monstersPicked));
+            while (!MONSTERS.stringIsMonsterName(inputMon) || TEAMS.teamHasMon(inputMon, monstersPicked));
             
             //Add Monster to team
             //Attempt to add the Monster to the team

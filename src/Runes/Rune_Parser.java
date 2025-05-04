@@ -3,6 +3,7 @@ package Runes;
 import Game.*;
 import Monsters.*;
 import Runes.Monster_Runes.*;
+import Util.Util.MONSTERS;
 import lib.json.*;
 import lib.json.parser.*;
 import java.awt.*;
@@ -11,6 +12,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 import static Game.Main.scan;
+import static Util.Util.CONSOLE_INTERFACE.OUTPUT.printfWithColor;
 
 /**
  * This class parses a JSON file containing a user's account info (provided by <a href='https://tool.swop.one'>SWOP</a>) for rune information and either replaces existing files or creates new ones
@@ -24,14 +26,14 @@ public class Rune_Parser
      */
     private JSONObject monsterIds;
     
+    //Keeps track of Monster IDs that have already been parsed in case of duplicate Monsters
+    private final HashMap<Long, Integer> doneIds = new HashMap<>();
+    
     /**
      * Runs the Rune Parser class
      */
     public void main()
     {
-        //Keeps track of Monster IDs that have already been parsed in case of duplicate Monsters
-        final HashMap<Long, Integer> doneIds = new HashMap<>();
-        
         File file = getFileFromUser("Select account file to open", "*.json");
         
         if (file == null)
@@ -68,7 +70,7 @@ public class Rune_Parser
             
             AtomicBoolean allSuccess = new AtomicBoolean(true);
             
-            //Go through each available Monster to parse there runes if they are in the program
+            //Go through each available Monster to parse their runes if they are in the program
             units.forEach(k -> {
                 JSONObject mon = (JSONObject) k;
                 //Get the monster's ID
@@ -154,7 +156,7 @@ public class Rune_Parser
                                 oldFile.renameTo(new File(newPath));
                                 f.delete();
                                 //Print error message
-                                System.out.printf("%sUnable to replace %s's runes%s%n", ConsoleColors.RED, name + fileNum, ConsoleColors.RESET);
+                                printfWithColor("Unable to replace %s's runes%n", ConsoleColor.RED, name + fileNum);
                                 allSuccess.set(false);
                             }
                         }
@@ -166,7 +168,7 @@ public class Rune_Parser
                                 //Delete the new file if unable to rename
                                 f.delete();
                                 //Print error message
-                                System.out.printf("%sUnable to replace %s's runes%s%n", ConsoleColors.RED, name + fileNum, ConsoleColors.RESET);
+                                printfWithColor("Unable to replace %s's runes%n", ConsoleColor.RED, name + fileNum);
                                 allSuccess.set(false);
                             }
                         }
@@ -193,7 +195,7 @@ public class Rune_Parser
                             allSuccess.set(false);
                             //Delete new file and print error message
                             f.delete();
-                            System.out.printf("%sUnable to add %s's runes%s%n", ConsoleColors.RED, name, ConsoleColors.RESET);
+                            printfWithColor("Unable to add %s's runes%n", ConsoleColor.RED, name);
                         }
                     }
                 }
@@ -203,25 +205,17 @@ public class Rune_Parser
                 }
                 
                 //Add one to the number of times the Monster ID has been parsed if the ID is already in the HashMap
-                if (doneIds.containsKey(monsterId))
-                {
-                    doneIds.put(monsterId, doneIds.get(monsterId) + 1);
-                }
-                else
-                {
-                    //Put the Monster ID into the HashMap with an original value of 1
-                    doneIds.put(monsterId, 1);
-                }
+                doneIds.put(monsterId, doneIds.getOrDefault(monsterId, 0) + 1);
             });
             
             //Print a message at the end depending on if there were any errors
             if (allSuccess.get())
             {
-                System.out.printf("%sAll rune files updated/created successfully.%s", ConsoleColors.GREEN, ConsoleColors.RESET);
+                printfWithColor("All rune files updated/created successfully.", ConsoleColor.GREEN);
             }
             else
             {
-                System.out.printf("%n%sAt least 1 rune file was not able to be updated/created.%s", ConsoleColors.YELLOW, ConsoleColors.RESET);
+                printfWithColor("%nAt least 1 rune file was not able to be updated/created.", ConsoleColor.YELLOW);
             }
         }
         catch (Exception e)
@@ -290,7 +284,7 @@ public class Rune_Parser
      */
     private boolean monsterIsPartOfProgram(long id)
     {
-        return Monster.stringIsMonsterName(getMonsterName((int) id));
+        return MONSTERS.stringIsMonsterName(getMonsterName((int) id));
     }
     
     /**
@@ -314,7 +308,7 @@ public class Rune_Parser
     private String createRuneLine(JSONObject monsterObj, int runeNum)
     {
         //Initialize line
-        String returnString = "";
+        StringBuilder returnString = new StringBuilder();
         //Get runes section
         JSONArray runes = (JSONArray) monsterObj.get("runes");
         //Do nothing if there are no runes available
@@ -328,12 +322,12 @@ public class Rune_Parser
         JSONArray secondaryEffects = (JSONArray) rune.get("sec_eff"); //Get rune secondary effects
         
         //Add rune info to line.
-        returnString += String.format("%d,%d,%d", programTypeNum((long) rune.get("set_id"), monsterObj, runeNum), programStatNum((long) primaryEffect.getFirst()), (long) primaryEffect.getLast());
+        returnString.append(String.format("%d,%d,%d", programTypeNum((long) rune.get("set_id"), monsterObj, runeNum), programStatNum((long) primaryEffect.getFirst()), (long) primaryEffect.getLast()));
         
         //Add prefix effect if there is one
         if ((long) prefixEffect.getFirst() != 0)
         {
-            returnString += String.format(",%d,%d", programStatNum((long) prefixEffect.getFirst()), (long) prefixEffect.getLast());
+            returnString.append(String.format(",%d,%d", programStatNum((long) prefixEffect.getFirst()), (long) prefixEffect.getLast()));
         }
         
         //Add each secondary effect to the line
@@ -343,10 +337,10 @@ public class Rune_Parser
             int STAT_TYPE = 0;
             int STAT_BASE_AMOUNT = 1;
             int STAT_EXTRA_AMOUNT = 3;
-            returnString += String.format(",%d,%d", programStatNum((long) stat.get(STAT_TYPE)), (long) stat.get(STAT_BASE_AMOUNT) + (long) stat.get(STAT_EXTRA_AMOUNT));
+            returnString.append(String.format(",%d,%d", programStatNum((long) stat.get(STAT_TYPE)), (long) stat.get(STAT_BASE_AMOUNT) + (long) stat.get(STAT_EXTRA_AMOUNT)));
         }
         
-        return returnString;
+        return returnString.toString();
     }
     
     /**
@@ -383,34 +377,33 @@ public class Rune_Parser
      */
     private int programTypeNum(long oldNum, JSONObject monsterObj, int runeNum)
     {
-        return switch ((int) oldNum)
+        return (switch ((int) oldNum)
         {
-            case 1 -> Rune.ENERGY;
-            case 2 -> Rune.GUARD;
-            case 3 -> Rune.SWIFT;
-            case 4 -> Rune.BLADE;
-            case 5 -> Rune.RAGE;
-            case 6 -> Rune.FOCUS;
-            case 7 -> Rune.ENDURE;
-            case 8 -> Rune.FATAL;
-            case 10 -> Rune.DESPAIR;
-            case 11 -> Rune.VAMPIRE;
-            case 13 -> Rune.VIOLENT;
-            case 14 -> Rune.NEMESIS;
-            case 15 -> Rune.WILL;
-            case 16 -> Rune.SHIELD;
-            case 17 -> Rune.REVENGE;
-            case 18 -> Rune.DESTROY;
-            case 19 -> Rune.FIGHT;
-            case 20 -> Rune.DETERMINATION;
-            case 21 -> Rune.ENHANCE;
-            case 22 -> Rune.ACCURACY;
-            case 23 -> Rune.TOLERANCE;
-            case 24 -> Rune.SEAL;
+            case 1 -> RuneType.ENERGY;
+            case 2 -> RuneType.GUARD;
+            case 3 -> RuneType.SWIFT;
+            case 4 -> RuneType.BLADE;
+            case 5 -> RuneType.RAGE;
+            case 6 -> RuneType.FOCUS;
+            case 7 -> RuneType.ENDURE;
+            case 8 -> RuneType.FATAL;
+            case 10 -> RuneType.DESPAIR;
+            case 11 -> RuneType.VAMPIRE;
+            case 13 -> RuneType.VIOLENT;
+            case 14 -> RuneType.NEMESIS;
+            case 15 -> RuneType.WILL;
+            case 16 -> RuneType.SHIELD;
+            case 17 -> RuneType.REVENGE;
+            case 18 -> RuneType.DESTROY;
+            case 19 -> RuneType.FIGHT;
+            case 20 -> RuneType.DETERMINATION;
+            case 21 -> RuneType.ENHANCE;
+            case 22 -> RuneType.ACCURACY;
+            case 23 -> RuneType.TOLERANCE;
+            case 24 -> RuneType.SEAL;
             case 25 -> getNewRuneNumber(monsterObj, runeNum); //Intangible
-            case 99 -> 99; //Immemorial
-            default -> -1;
-        };
+            default -> RuneType.NONE;
+        }).getNum();
     }
     
     /**
@@ -420,18 +413,55 @@ public class Rune_Parser
      * @param runeNum    The current rune number
      * @return The new rune set number
      */
-    private int getNewRuneNumber(JSONObject monsterObj, int runeNum)
+    private RuneType getNewRuneNumber(JSONObject monsterObj, int runeNum)
     {
+        int fileNum = doneIds.getOrDefault((long) monsterObj.get("unit_master_id"), 0) + 1;
+        RuneType oldRuneSet = getOldRuneSet(getMonsterName((long) monsterObj.get("unit_master_id")), fileNum, runeNum);
+        
         String r;
         do
         {
             System.out.println("The program currently does not support intangible runes, please enter the set it represents.");
             System.out.println("Current Monster: " + getMonsterName((long) monsterObj.get("unit_master_id")));
             System.out.println("Current Rune: " + (runeNum + 1));
+            
+            if (oldRuneSet != RuneType.NONE)
+            {
+                System.out.println("Current Rune Set: " + oldRuneSet);
+            }
+            
             r = scan.nextLine();
         }
-        while (Rune.stringToNum(r) == -1);
-        return Rune.stringToNum(r);
+        while (RuneType.stringToType(r) == RuneType.NONE);
+        return RuneType.stringToType(r);
+    }
+    
+    private RuneType getOldRuneSet(String monName, int fileNum, int runeNum)
+    {
+        File oldFile = new File("%s/%s%d.csv".formatted(MonsterRunes.path, monName, fileNum));
+        
+        try (Scanner read = new Scanner(oldFile))
+        {
+            for (int i = 0; i < runeNum; i++)
+            {
+                read.nextLine();
+            }
+            return RuneType.numToType(Integer.parseInt(read.nextLine().split(",")[0]));
+        }
+        catch (NumberFormatException e)
+        {
+            System.err.println("Unable to read current rune type from file.");
+            return RuneType.NONE;
+        }
+        catch (FileNotFoundException e)
+        {
+            return RuneType.NONE;
+        }
+        catch (Exception e)
+        {
+            System.err.println("Unknown error occurred");
+            return RuneType.NONE;
+        }
     }
     
     /**
@@ -442,21 +472,21 @@ public class Rune_Parser
      */
     private int programStatNum(long oldNum)
     {
-        return switch ((int) oldNum)
+        return (switch ((int) oldNum)
         {
-            case 1 -> Rune.HP;
-            case 2 -> Rune.HPPERCENT;
-            case 3 -> Rune.ATK;
-            case 4 -> Rune.ATKPERCENT;
-            case 5 -> Rune.DEF;
-            case 6 -> Rune.DEFPERCENT;
-            case 8 -> Rune.SPD;
-            case 9 -> Rune.CRITRATE;
-            case 10 -> Rune.CRITDMG;
-            case 11 -> Rune.RES;
-            case 12 -> Rune.ACC;
-            default -> -1;
-        };
+            case 1 -> RuneAttribute.HP;
+            case 2 -> RuneAttribute.HP_PERCENT;
+            case 3 -> RuneAttribute.ATK;
+            case 4 -> RuneAttribute.ATK_PERCENT;
+            case 5 -> RuneAttribute.DEF;
+            case 6 -> RuneAttribute.DEF_PERCENT;
+            case 8 -> RuneAttribute.SPD;
+            case 9 -> RuneAttribute.CRIT_RATE;
+            case 10 -> RuneAttribute.CRIT_DMG;
+            case 11 -> RuneAttribute.RES;
+            case 12 -> RuneAttribute.ACC;
+            default -> RuneAttribute.NONE;
+        }).getNum();
     }
     
     /**
@@ -478,12 +508,12 @@ public class Rune_Parser
      */
     private int programArtifactStatNum(long oldNum)
     {
-        return switch ((int) oldNum)
+        return (switch ((int) oldNum)
         {
-            case 100 -> Rune.HP;
-            case 101 -> Rune.ATK;
-            case 102 -> Rune.DEF;
-            default -> -1;
-        };
+            case 100 -> RuneAttribute.HP;
+            case 101 -> RuneAttribute.ATK;
+            case 102 -> RuneAttribute.DEF;
+            default -> RuneAttribute.NONE;
+        }).getNum();
     }
 }

@@ -1,13 +1,9 @@
 package GUI;
 
 import javax.swing.*;
-import Monsters.*;
-import Runes.Monster_Runes.*;
+import Util.Util.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.*;
-
-import static GUI.CreateRuneFile.stringIsInt;
 
 /**
  * This class is used to duplicate a rune file
@@ -24,13 +20,13 @@ public class DuplicateRuneFile extends JFrame
     private JButton submitButton;
     
     /**
-     * Creates the GUI
+     * Creates the GUIS
      *
      * @param oldFileName The name of the file to duplicate
      */
     public DuplicateRuneFile(String oldFileName)
     {
-        //General GUI stuff
+        //General GUIS stuff
         add(panel);
         setTitle("Enter new information");
         setSize(800, 400);
@@ -46,27 +42,25 @@ public class DuplicateRuneFile extends JFrame
             {
                 return;
             }
-            if (!num.isEmpty() && !stringIsInt(num))
+            if (!num.isEmpty() && !STRINGS.stringIsInt(num))
             {
                 return;
             }
-            name = Monster.toProperName(name);
+            name = MONSTERS.toProperName(name);
             //Get default number
             if (num.isEmpty())
             {
                 int numOfSameMonsterRuneSets = 0;
                 int lastNum = 0;
                 
-                //Get the rune files in the Monster runes directory
-                List<File> runeSets = Runes.runeSets;
-                for (File set : runeSets)
+                for (File set : FILES.getRuneSets())
                 {
                     int lastNameIndex = 0;
-                    String fileName = set.getName().substring(0, oldFileName.indexOf(".csv"));
+                    String fileName = STRINGS.substringUpToString(set.getName(), ".csv");
                     //Get file name without its number
                     for (int i = fileName.length() - 1; i > 0; i--)
                     {
-                        if (!stringIsInt(fileName.substring(i, i + 1)))
+                        if (!STRINGS.stringIsInt(fileName.substring(i, i + 1)))
                         {
                             lastNameIndex = i;
                             break;
@@ -93,7 +87,7 @@ public class DuplicateRuneFile extends JFrame
             String newFileName = "%s%s.csv".formatted(name, num);
             
             //Attempt to duplicate file and display a message showing the result
-            if (!duplicateFile(oldFileName, newFileName))
+            if (!FILES.duplicateFile(oldFileName, newFileName))
             {
                 new Message("Error, can not duplicate file", true);
             }
@@ -128,56 +122,12 @@ public class DuplicateRuneFile extends JFrame
     }
     
     /**
-     * Runs the GUI
+     * Runs the GUIS
      *
      * @param oldFileName The name of the file to duplicate
      */
     public static void run(String oldFileName)
     {
         new DuplicateRuneFile(oldFileName);
-    }
-    
-    /**
-     * Duplicates the requested file
-     *
-     * @param oldFileName The name of the file to duplicate
-     * @param newFileName The duplicated file's new name
-     * @return True if and only if the file was successfully duplicated
-     */
-    private boolean duplicateFile(String oldFileName, String newFileName)
-    {
-        //Make sure file names are not the same
-        if (oldFileName.equalsIgnoreCase(newFileName))
-        {
-            return false;
-        }
-        //Make sure the new file name is valid
-        if (!Runes.validFileName(newFileName, 'c') || !Runes.validFileName(oldFileName, 'r'))
-        {
-            return false;
-        }
-        try
-        {
-            //Write every line from the old file to the new one
-            Scanner oldFile = new Scanner(new File("%s/%s".formatted(MonsterRunes.path, oldFileName)));
-            
-            File newFile = new File("%s/%s".formatted(MonsterRunes.path, newFileName));
-            
-            FileWriter newFileWriter = new FileWriter(newFile);
-            while (oldFile.hasNextLine())
-            {
-                newFileWriter.write("%s\n".formatted(oldFile.nextLine()));
-            }
-            //Close the file reader
-            oldFile.close();
-            //Close the file writer
-            newFileWriter.close();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        
-        return true;
     }
 }

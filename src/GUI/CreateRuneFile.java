@@ -4,12 +4,13 @@ import javax.swing.*;
 import Monsters.*;
 import Runes.Monster_Runes.*;
 import Runes.*;
+import Util.Util.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 
 /**
- * Creates a GUI to create the code for rune classes
+ * Creates a GUIS to create the code for rune classes
  *
  * @author Anthony (Tony) Youssef
  */
@@ -25,16 +26,17 @@ public class CreateRuneFile extends JFrame
     private JLabel runeTypeLabel;
     private JComboBox<String> runeTypes;
     private JLabel currentRuneNumLabel;
-    private JButton quitButton;
+    private JButton quitSaveButton;
+    private JButton quitNoSaveButton;
     private String mainAttribute, runeType;
     private final ArrayList<String> subAttributes = new ArrayList<>();
-    private static FileWriter fw = null;
+    private static String csvRunes = "";
     
     /**
-     * Creates the GUI and implements the keyboard shortcuts
+     * Creates the GUIS and implements the keyboard shortcuts
      *
      * @param runeNum    Current rune number
-     * @param singleRune True if the GUI should create one rune then stop, false otherwise
+     * @param singleRune True if the GUIS should create one rune then stop, false otherwise
      * @param fileName   The name of the file to write to
      * @throws IndexOutOfBoundsException If runeNum is out of range
      */
@@ -46,19 +48,16 @@ public class CreateRuneFile extends JFrame
             throw new IndexOutOfBoundsException("runeNum must be between 1 and 8 inclusive");
         }
         //Add all rune attributes
-        addAllAttributes(attributes);
+        GUIS.addAllAttributes(attributes);
         //Prevent keyboard inputs
         attributes.setFocusTraversalKeysEnabled(false);
         
-        //Remove blank option
-        runeTypes.removeItem(0);
-        
         //Add al rune set types
-        addAllTypes(runeTypes);
+        GUIS.addAllTypes(runeTypes);
         //Prevent keyboard inputs
         runeTypes.setFocusTraversalKeysEnabled(false);
         
-        //General GUI stuff
+        //General GUIS stuff
         add(panel);
         setTitle("Select main attribute");
         setSize(900, 400);
@@ -71,13 +70,17 @@ public class CreateRuneFile extends JFrame
         {
             case 7 ->
             {
-                runeTypes.setSelectedItem("ElementArtifact");
+                runeTypes.setSelectedItem("Element Artifact");
+                runeTypes.setEditable(false);
                 attributes.requestFocusInWindow();
+                amountTextField.setEditable(false);
             }
             case 8 ->
             {
-                runeTypes.setSelectedItem("TypeArtifact");
+                runeTypes.setSelectedItem("Type Artifact");
+                runeTypes.setEditable(false);
                 attributes.requestFocusInWindow();
+                amountTextField.setEditable(false);
             }
             default -> runeTypes.requestFocusInWindow();
         }
@@ -139,22 +142,22 @@ public class CreateRuneFile extends JFrame
         addAttribute.addActionListener(_ -> {
             if (!amountTextField.getText().isBlank())
             {
-                if (stringIsInt(amountTextField.getText()))
+                if (STRINGS.stringIsInt(amountTextField.getText()))
                 {
                     //Add selected attribute and amount as a main attribute if there is none yet
                     if (mainAttribute == null)
                     {
-                        mainAttribute = "Rune.%s, %s".formatted(Objects.requireNonNull(attributes.getSelectedItem()).toString().toUpperCase(), amountTextField.getText());
-                        mainAttributeLabel.setText("Add sub attributes, press \"done\" when done.");
+                        mainAttribute = "Rune.%s, %s".formatted(STRINGS.toEnumCase(Objects.requireNonNull(attributes.getSelectedItem()).toString()), amountTextField.getText());
+                        mainAttributeLabel.setText("Add sub attributes, press \"Submit Rune\" when done.");
                         setTitle("Select sub attributes");
                     }
                     else //Add the selected attribute and amount as a sub attribute
                     {
-                        subAttributes.add("Rune.%s, %s".formatted(Objects.requireNonNull(attributes.getSelectedItem()).toString().toUpperCase(), amountTextField.getText()));
+                        subAttributes.add("Rune.%s,%s".formatted(Objects.requireNonNull(attributes.getSelectedItem()).toString().toUpperCase(), amountTextField.getText()));
                     }
                     //Remove choice
                     attributes.removeItem(attributes.getSelectedItem());
-                    runeType = "Rune.%s".formatted(Objects.requireNonNull(runeTypes.getSelectedItem()).toString().toUpperCase());
+                    runeType = "Rune.%s".formatted(STRINGS.toEnumCase(Objects.requireNonNull(runeTypes.getSelectedItem()).toString()));
                     amountTextField.setText("");
                     attributes.requestFocusInWindow();
                 }
@@ -177,21 +180,21 @@ public class CreateRuneFile extends JFrame
             if (mainAttribute != null)
             {
                 //Format sub attributes into String
-                String subs = "";
+                StringBuilder subs = new StringBuilder();
                 for (String s : subAttributes)
                 {
-                    subs += "%s, ".formatted(s);
+                    subs.append("%s,".formatted(STRINGS.toEnumCase(s)));
                 }
-                if (!subs.isEmpty())
+                if (subs.length() > 0)
                 {
-                    subs = subs.substring(0, subs.length() - 2);
+                    subs = new StringBuilder(subs.substring(0, subs.length() - 1));
                 }
                 //Write rune to file
                 if (!singleRune)
                 {
-                    writeRuneToFile(fw, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
-                            Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
+                    csvRunes += RUNES.runeToCSV(RuneType.stringToType(runeType.substring(5)).getNum(), mainAttribute.substring(5, mainAttribute.indexOf(",")), Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs.toString());
                 }
+                
                 //Dispose the current rune creator
                 dispose();
                 if (singleRune) //Write a single rune to the file
@@ -201,15 +204,18 @@ public class CreateRuneFile extends JFrame
                         //Create a temp file to parse new rune from
                         File f = new File("%s/temp.csv".formatted(MonsterRunes.path));
                         FileWriter writer = new FileWriter(f);
-                        writeRuneToFile(writer, Rune.stringToNum(runeType.substring(5)), mainAttribute.substring(5, mainAttribute.indexOf(",")),
-                                Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)), subs);
+                        String csv = RUNES.runeToCSV(RuneType.stringToType(runeType.substring(5)).getNum(),
+                                mainAttribute.substring(5, mainAttribute.indexOf(",")),
+                                Integer.parseInt(mainAttribute.substring(mainAttribute.indexOf(", ") + 2)),
+                                subs.toString());
+                        writer.write(csv);
                         writer.close();
                         
-                        Rune newRune = MonsterRunes.getRunesFromFile("temp.csv", new Monster()).getFirst();
+                        Rune newRune = RUNES.getRunesFromFile("temp.csv", new Monster()).getFirst();
                         //Delete temp file
                         f.delete();
                         //Attempt to replace rune in file
-                        if (EditRuneFile.editFile(fileName, runeNum, newRune))
+                        if (FILES.editFile(fileName, runeNum, newRune))
                         {
                             new Message("Success", false);
                         }
@@ -228,7 +234,7 @@ public class CreateRuneFile extends JFrame
                 //Exit after last rune
                 if (runeNum == 8)
                 {
-                    System.exit(0);
+                    quitSaveButton.doClick();
                 }
                 else //Create another window for the next rune
                 {
@@ -240,8 +246,24 @@ public class CreateRuneFile extends JFrame
                 amountTextField.requestFocusInWindow();
             }
         });
-        //Stop creating runes
-        quitButton.addActionListener(_ -> System.exit(0));
+        
+        //Save and exit
+        quitSaveButton.addActionListener(_ -> {
+            try
+            {
+                FileWriter fw = new FileWriter("%s/%s".formatted(MonsterRunes.path, fileName));
+                fw.write(csvRunes);
+                fw.close();
+                new Message("Saved", false);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
+        
+        //Exit without saving
+        quitNoSaveButton.addActionListener(_ -> new ConfirmationWindow("Are you sure you don't want to save?", () -> System.exit(0)));
         
         attributes.addFocusListener(new FocusAdapter()
         {
@@ -294,103 +316,10 @@ public class CreateRuneFile extends JFrame
     }
     
     /**
-     * Writes a rune to a csv file
-     *
-     * @param fw         The FileWriter to use
-     * @param type       The type of the rune
-     * @param mainName   The name of the rune's main attribute
-     * @param mainAmount The amount of the rune's main attribute
-     * @param subs       The rune's sub attributes. Format: "name, amount, name, amount..."
-     */
-    public static void writeRuneToFile(FileWriter fw, int type, String mainName, int mainAmount, String subs)
-    {
-        //Get the main attribute number
-        int mainNum = Rune.stringToNum(mainName);
-        
-        //Unknown attribute or type
-        if (mainNum == -1 || type == -1)
-        {
-            throw new RuntimeException("Can not find Main Attribute or type, %s".formatted(String.format("Main Attribute: %s, type: %s", mainName, Rune.numToType(type))));
-        }
-        
-        try
-        {
-            //Format sub attributes
-            ArrayList<String> subAttributes = new ArrayList<>(Arrays.asList(subs.split(", ")));
-            
-            ArrayList<Integer> subNums = new ArrayList<>();
-            int count = 0;
-            if (subAttributes.size() != 1)
-            {
-                for (String sub : subAttributes)
-                {
-                    //Attempt to add attribute number
-                    if (count % 2 == 0)
-                    {
-                        int temp = Rune.stringToNum(sub.substring(5));
-                        if (temp == -1)
-                        {
-                            throw new RuntimeException("Can not find Sub Attribute: %s".formatted(sub));
-                        }
-                        subNums.add(temp);
-                    }
-                    else //Add attribute amount
-                    {
-                        subNums.add(Integer.parseInt(sub));
-                    }
-                    count++;
-                }
-            }
-            
-            //Write the rune type and main attribute to file
-            fw.write(String.format("%d,%d,%d", type, mainNum, mainAmount));
-            //Write sub attributes to file
-            for (Integer num : subNums)
-            {
-                fw.write(",%d".formatted(num));
-            }
-            fw.write("\n");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    /**
-     * Writes a rune to a file
-     *
-     * @param fw          The FileWriter to use
-     * @param runeToWrite The rune to write to the file
-     */
-    public static void writeRuneToFile(FileWriter fw, Rune runeToWrite)
-    {
-        //Get the rune type and main attribute
-        int type = runeToWrite.getType();
-        int mainNum = runeToWrite.getMainAttribute().getNum();
-        int mainAmount = runeToWrite.getMainAttribute().getAmount();
-        try
-        {
-            //Write the rune type and main attribute
-            fw.write(String.format("%d,%d,%d", type, mainNum, mainAmount));
-            //Write each sub attribute
-            for (SubAttribute subAttribute : runeToWrite.getSubAttributes())
-            {
-                fw.write(String.format(",%d,%d", subAttribute.getNum(), subAttribute.getAmount()));
-            }
-            fw.write("\n");
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    /**
-     * Initializes all the necessary variables and starts the GUI.
+     * Initializes all the necessary variables and starts the GUIS.
      *
      * @param fileName   The name of the file to write to if there is one, otherwise should be {"0"}
-     * @param singleRune True if the GUI creates one rune, false otherwise
+     * @param singleRune True if the GUIS creates one rune, false otherwise
      * @param startPlace The rune place number to start with
      */
     public static void run(String fileName, boolean singleRune, int startPlace)
@@ -399,112 +328,13 @@ public class CreateRuneFile extends JFrame
         if (fileName.equals("0"))
         {
             //Get valid file name
-            fileName = Runes.getFileName();
+            fileName = FILES.getFileName();
             if ((fileName).equals("tempFile") || (fileName).equals("oldTempFile"))
             {
                 new Message("Please choose a different Monster name", true, () -> System.exit(1));
             }
-            try
-            {
-                //Create a new FileWriter for the file name
-                fw = new FileWriter("%s/%s.csv".formatted(MonsterRunes.path, fileName));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
-        else //File name provided
-        {
-            try
-            {
-                if (!singleRune)
-                {
-                    //Create a FileWriter for the provided file name if the program is creating more than one rune
-                    fw = new FileWriter("%s/%s".formatted(MonsterRunes.path, fileName));
-                }
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
         }
         
-        //Close the FileWriter if the program unnaturally stops
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try
-            {
-                fw.close();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }));
         new CreateRuneFile(startPlace, singleRune, fileName);
-    }
-    
-    /**
-     * Adds all the rune attributes to the given JComboBox
-     *
-     * @param selector The JComboBox to add the attributes to
-     */
-    public static void addAllAttributes(JComboBox<String> selector)
-    {
-        //Remove all previous items then add all the attributes
-        selector.removeAllItems();
-        selector.addItem("Atk");
-        selector.addItem("AtkPercent");
-        selector.addItem("Def");
-        selector.addItem("DefPercent");
-        selector.addItem("HP");
-        selector.addItem("HPPercent");
-        selector.addItem("Spd");
-        selector.addItem("CritRate");
-        selector.addItem("CritDmg");
-        selector.addItem("Res");
-        selector.addItem("Acc");
-    }
-    
-    /**
-     * Adds all the rune types to the given JComboBox
-     *
-     * @param selector The JComboBox to add the types to
-     */
-    public static void addAllTypes(JComboBox<String> selector)
-    {
-        //Read from the rune key file
-        Scanner read = new Scanner(Objects.requireNonNull(Rune.class.getResourceAsStream("Rune key.csv")));
-        //Add each rune type
-        while (read.hasNextLine())
-        {
-            String[] line = read.nextLine().split(",");
-            selector.addItem(line[1]);
-        }
-        
-        //Add artifact types
-        selector.addItem("ElementArtifact");
-        selector.addItem("TypeArtifact");
-    }
-    
-    /**
-     * Tests if the given String is an int
-     *
-     * @param s The string to test
-     * @return True if s is an int
-     */
-    public static boolean stringIsInt(String s)
-    {
-        try
-        {
-            //Parse the string for an int and return true if no errors
-            Integer.parseInt(s);
-            return true;
-        }
-        catch (NumberFormatException e)
-        {
-            //Return false if String cannot be parsed
-            return false;
-        }
     }
 }

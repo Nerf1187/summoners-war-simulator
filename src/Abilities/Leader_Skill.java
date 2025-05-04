@@ -2,10 +2,9 @@ package Abilities;
 
 import Game.*;
 import Monsters.*;
-import Stats.*;
+import Runes.*;
 
-import static Monsters.Monster.*;
-import static Runes.Rune.*;
+import static Runes.RuneAttribute.*;
 
 /**
  * The subclass for all leader skills
@@ -13,42 +12,34 @@ import static Runes.Rune.*;
 public class Leader_Skill extends Ability
 {
     private boolean applied = false;
-    private final String statName, elementName;
-    private final int statNum, elementNum;
+    private final RuneAttribute attribute;
+    private final String statName;
+    private final Element element;
+    
     private final double amount;
     
     /**
      * Constructs a new Leader skill but does not apply it.
      *
-     * @param stat    The stat that the skill affects. See {@link Stat} for stat numbers
-     * @param amount  The percentage that the skill increases the stat by (0-1)
-     * @param element The element for which the skill applies to. See {@link Monster} for element numbers
+     * @param attribute    The attribute that the skill affects.
+     * @param amount  The percentage that the skill increases the attribute by (0-1)
+     * @param element The element for which the skill applies to.
      */
-    public Leader_Skill(int stat, double amount, int element)
+    public Leader_Skill(RuneAttribute attribute, double amount, Element element)
     {
-        this.statNum = stat;
+        this.attribute = attribute;
         this.amount = amount;
-        this.elementNum = element;
+        this.element = element;
         
-        //Set element name
-        elementName = switch (element)
-        {
-            case FIRE -> "Fire";
-            case WATER -> "Water";
-            case WIND -> "Wind";
-            case LIGHT -> "Light";
-            case DARK -> "Dark";
-            default -> "";
-        };
         //Set stat name
-        statName = switch (stat)
+        statName = switch (attribute)
         {
             case HP -> "HP";
             case SPD -> "Speed";
             case DEF -> "Defense";
             case ATK -> "Attack";
-            case CRITRATE -> "Crit Rate";
-            case CRITDMG -> "Crit Damage";
+            case CRIT_RATE -> "Crit Rate";
+            case CRIT_DMG -> "Crit Damage";
             case RES -> " Resistance";
             case ACC -> "Accuracy";
             default -> "";
@@ -71,11 +62,11 @@ public class Leader_Skill extends Ability
         //Apply the skill to each Monster on the team
         for (Monster mon : applyToTeam.getMonsters())
         {
-            if (elementNum != Monster.ALL && elementNum != mon.getElement())
+            if (element != Element.ALL && element != mon.getElement())
             {
                 continue;
             }
-            switch (statNum)
+            switch (attribute)
             {
                 case ATK -> mon.setAtk(mon.getAtk() + mon.getBaseAtk() * amount);
                 case DEF -> mon.setDef(mon.getDef() + mon.getBaseDef() * amount);
@@ -85,8 +76,8 @@ public class Leader_Skill extends Ability
                     mon.setCurrentHp(mon.getMaxHp());
                 }
                 case SPD -> mon.setSpd(mon.getSpd() + mon.getBaseSpd() * amount);
-                case CRITRATE -> mon.setCritRate(mon.getCritRate() + amount);
-                case CRITDMG -> mon.setCritDmg(mon.getCritDmg() + amount);
+                case CRIT_RATE -> mon.setCritRate(mon.getCritRate() + amount);
+                case CRIT_DMG -> mon.setCritDmg(mon.getCritDmg() + amount);
                 case RES -> mon.setResistance(mon.getResistance() + amount);
                 case ACC -> mon.setAccuracy(mon.getAccuracy() + amount);
             }
@@ -100,7 +91,8 @@ public class Leader_Skill extends Ability
      */
     public String toString()
     {
-        return String.format("Leader skill: Increases the %s of ally monsters%s by %d%%", statName, ((elementName != null) ? " with " + elementName + " " +
-                                                                                                                             "attribute" : ""), (int) ((statNum <= SPD) ? (amount * 100) : amount));
+        return String.format("Leader skill: Increases the %s of ally monsters%s by %d%%", statName,
+                ((element.toString() != null) ? " with " + element +  " attribute" : ""),
+                (int) ((attribute.getNum() <= SPD.getNum()) ? (amount * 100) : amount));
     }
 }

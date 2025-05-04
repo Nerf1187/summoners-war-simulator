@@ -3,8 +3,8 @@ package GUI;
 import javax.swing.*;
 import javax.swing.table.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
 import Runes.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -21,14 +21,13 @@ public class ViewRunes extends JFrame
     private JButton toEditButton;
     
     private static ArrayList<String[]> tableValues;
-    private int selectedRow = -1;
     
     /**
-     * Creates the GUI.
+     * Creates the GUIS.
      */
     private ViewRunes(String fileName)
     {
-        //General GUI stuff
+        //General GUIS stuff
         add(panel);
         setTitle("View %s".formatted(fileName));
         setSize(900, 400);
@@ -47,14 +46,14 @@ public class ViewRunes extends JFrame
     }
     
     /**
-     * Runs the GUI
+     * Runs the GUIS
      *
      * @param fileName The name of the file to view
      */
     public static void run(String fileName)
     {
         //Get the Monster's runes
-        ArrayList<Rune> runes = MonsterRunes.getRunesFromFile(fileName, new Monster());
+        ArrayList<Rune> runes = RUNES.getRunesFromFile(fileName, new Monster());
         ArrayList<String[]> rowValues = new ArrayList<>();
         int i = 0;
         for (Rune rune : runes)
@@ -63,26 +62,26 @@ public class ViewRunes extends JFrame
             //Rune number
             rowValues.get(i)[0] = "%d".formatted(i + 1);
             //Rune type
-            rowValues.get(i)[1] = (Rune.numToType(rune.getType()));
+            rowValues.get(i)[1] = rune.getType().toString();
             //Main attribute
             rowValues.get(i)[2] = (rune.getMainAttribute().toString());
             //Sub attributes
-            String tempText = "";
+            StringBuilder tempText = new StringBuilder();
             String bufferText = ",            ";
             for (SubAttribute subAttribute : rune.getSubAttributes())
             {
-                tempText += subAttribute.toString() + bufferText;
+                tempText.append(subAttribute.toString()).append(bufferText);
             }
             //Make sure there is a sub attribute
             if (tempText.length() > 2)
             {
-                tempText = tempText.substring(0, tempText.length() - bufferText.length());
+                tempText = new StringBuilder(tempText.substring(0, tempText.length() - bufferText.length()));
             }
             else
             {
-                tempText = "None";
+                tempText = new StringBuilder("None");
             }
-            rowValues.get(i)[3] = (tempText);
+            rowValues.get(i)[3] = (tempText.toString());
             i++;
         }
         tableValues = rowValues;

@@ -2,10 +2,10 @@ package Monsters.Water;
 
 import Abilities.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Runes.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -13,8 +13,6 @@ import java.util.*;
  */
 public class Praha extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
-    
     private static int count = 1;
     
     /**
@@ -32,29 +30,29 @@ public class Praha extends Monster
      */
     public Praha(String runeFileName)
     {
-        super("Praha" + count, WATER, 11_040, 714, 692, 100, 15, 50, 15, 25);
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Praha" + count, Element.WATER, 11_040, 714, 692, 100, 15, 50, 15, 25);
+        super.setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
     
     private void setAbilities()
     {
-        abilities.add(new Attack_Ability("Passing Time (1)", 1.3 * 1.30, 0, 3, "Attacks the enemy 3 times and recovers 10% of the Attack Bar each time the attack lands as a Critical Hit.", 0, false, false, false));
+        Ability a1 = new Attack_Ability("Passing Time (1)", 1.3 * 1.30, 0, 3, "Attacks the enemy 3 times and recovers 10% of the Attack Bar each time the attack lands as a Critical Hit.", 0, false, false, false);
         
-        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.NULL, 1, 1);
-        ArrayList<Integer> ability2DebuffChances = abilityChances(90);
-        abilities.add(new Attack_Ability("Predicted Future (2)", 3.0 * 1.30, 0, 1, "Attacks all enemies with an 90% chance to remove beneficial effects, inflicting Continuous Damage equal to the number of removed beneficial effects for 2 turns.",
-                ability2Debuffs, ability2DebuffChances, 3, false, false, true));
+        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(DebuffEffect.NULL.getNum(), 1, 1);
+        ArrayList<Integer> ability2DebuffChances = MONSTERS.abilityChances(90);
+        Ability a2 = new Attack_Ability("Predicted Future (2)", 3.0 * 1.30, 0, 1, "Attacks all enemies with an 90% chance to remove beneficial effects, inflicting Continuous Damage equal to the number of removed beneficial effects for 2 turns.",
+                ability2Debuffs, ability2DebuffChances, 3, false, false, true);
         
-        ArrayList<Buff> ability3Buffs = abilityBuffs(Buff.ATK_SPD_UP, 2);
-        ArrayList<Integer> ability3BuffChances = abilityChances(100);
-        abilities.add(new Heal_Ability("Daydream (3)", 50 * 1.2, 1, "Recovers the HP of all allies by 50% by putting yourself to an irresistible sleep for 1 turn. In addition, puts all enemies to sleep for 1 turn with a 100% chance and increases " +
-                                                                    "Attack Speed of all allies for 2 turns.", ability3Buffs, ability3BuffChances, 4, true));
+        ArrayList<Buff> ability3Buffs = MONSTERS.abilityBuffs(BuffEffect.ATK_SPD_UP.getNum(), 2);
+        ArrayList<Integer> ability3BuffChances = MONSTERS.abilityChances(100);
+        Ability a3 = new Heal_Ability("Daydream (3)", 50 * 1.2, 1, "Recovers the HP of all allies by 50% by putting yourself to an irresistible sleep for 1 turn. In addition, puts all enemies to sleep for 1 turn with a 100% chance and increases " +
+                                                                    "Attack Speed of all allies for 2 turns.", ability3Buffs, ability3BuffChances, 4, true);
         
-        abilities.add(new Leader_Skill(Stat.DEF, 41, ALL));
+        Ability a4 = new Leader_Skill(RuneAttribute.DEF, 41, Element.ALL);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)
@@ -69,13 +67,13 @@ public class Praha extends Monster
         {
             //Check if the ability should remove beneficial effects for each enemy and apply the relevant DoT
             applyToTeam(game.getOtherTeam(), (mon -> {
-                if (mon.containsDebuff(Debuff.NULL))
+                if (mon.containsDebuff(DebuffEffect.NULL))
                 {
-                    mon.removeDebuff(Debuff.NULL);
+                    mon.removeDebuff(DebuffEffect.NULL);
                     int buffs = mon.strip();
                     for (int i = 0; i < buffs; i++)
                     {
-                        mon.addGuaranteedAppliedDebuff(Debuff.CONTINUOUS_DMG, 2, this);
+                        mon.addGuaranteedAppliedDebuff(DebuffEffect.CONTINUOUS_DMG, 2, this);
                     }
                 }
             }));
@@ -84,9 +82,9 @@ public class Praha extends Monster
         if (abilityNum == 3)
         {
             //Put self to sleep and attempt to put every enemy to sleep
-            this.addGuaranteedAppliedDebuff(Debuff.SLEEP, 1, this);
+            this.addGuaranteedAppliedDebuff(DebuffEffect.SLEEP, 1, this);
             applyToTeam(game.getOtherTeam(), (mon -> {
-                mon.addAppliedDebuff(Debuff.SLEEP, 100, 1, this);
+                mon.addAppliedDebuff(DebuffEffect.SLEEP, 100, 1, this);
             }));
         }
         
@@ -94,7 +92,7 @@ public class Praha extends Monster
         return true;
     }
     
-    public void selfAfterHitProtocol(Monster target, int abilityNum)
+    public void selfAfterHitProtocol(Monster target, int abilityNum, int count)
     {
         //Increase attack bar if ability 1 was used and the hit crit the enemy
         if (abilityNum == 1 && target.wasCrit())
@@ -102,6 +100,6 @@ public class Praha extends Monster
             this.increaseAtkBarByPercent(10);
         }
         
-        super.selfAfterHitProtocol(target, abilityNum);
+        super.selfAfterHitProtocol(target, abilityNum, count);
     }
 }

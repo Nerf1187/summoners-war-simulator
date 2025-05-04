@@ -2,8 +2,8 @@ package Monsters.Dark;
 
 import Abilities.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Buffs.*;
+import Effects.Buffs.*;
+import Util.Util.*;
 import java.util.*;
 
 /**
@@ -11,7 +11,6 @@ import java.util.*;
  */
 public class Rasheed extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -29,28 +28,28 @@ public class Rasheed extends Monster
      */
     public Rasheed(String runeFileName)
     {
-        super("Rasheed" + count, DARK, 10_875, 549, 538, 96, 15, 50, 40, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Rasheed" + count, Element.DARK, 10_875, 549, 538, 96, 15, 50, 40, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
     
     private void setAbilities()
     {
-        abilities.add(new Attack_Ability("Absorb Mana (1)", 1.35 * (1.8 + (0.12 * getMaxHp()) / getAtk()), 0.5, 1, "Attacks the enemy and recovers the HP by 50% of the damage dealt. This attack will deal more damage according to your MAX HP.", 0,
-                false, false, false));
+        Ability a1 = new Attack_Ability("Absorb Mana (1)", 1.35 * (1.8 + (0.12 * getMaxHp()) / getAtk()), 0.5, 1, "Attacks the enemy and recovers the HP by 50% of the damage dealt. This attack will deal more damage according to your MAX HP.", 0,
+                false, false, false);
         
-        ArrayList<Buff> ability2Buffs = abilityBuffs(Buff.EXTEND_BUFF, 0, Buff.SHORTEN_DEBUFF, 0);
-        ArrayList<Integer> ability2BuffChances = abilityChances(100, 100);
-        abilities.add(new Heal_Ability("Block Flow (2)", 0 /*Calculated at nextTurn()*/, 1,
+        ArrayList<Buff> ability2Buffs = MONSTERS.abilityBuffs(BuffEffect.EXTEND_BUFF.getNum(), 0, BuffEffect.SHORTEN_DEBUFF.getNum(), 0);
+        ArrayList<Integer> ability2BuffChances = MONSTERS.abilityChances(100, 100);
+        Ability a2 = new Heal_Ability("Block Flow (2)", 0 /*Calculated at nextTurn()*/, 1,
                 "Extends the time of the beneficial effects and shortens the time of the harmful effects granted on all allies, and recovers their HP by 10%. The recovery amount increases by 10% per harmful effect or beneficial effect " +
-                "granted on the allies.", ability2Buffs, ability2BuffChances, 3, true));
+                "granted on the allies.", ability2Buffs, ability2BuffChances, 3, true);
         
-        abilities.add(new Attack_Ability("Soul Control (3)", 1.2 * ((0.18 * getMaxHp()) / getAtk()), 0, 3,
+        Ability a3 = new Attack_Ability("Soul Control (3)", 1.2 * ((0.18 * getMaxHp()) / getAtk()), 0, 3,
                 "Attacks the enemy target 3 times to inflict great damage. This attack will deal more damage according to your MAX HP. Also, if the enemy dies, creates a shield by the target's MAX HP on all allies for 2 turns. The amount of shield" +
-                " created cannot exceed twice your MAX HP.", 3, false, false, false));
+                " created cannot exceed twice your MAX HP.", 3, false, false, false);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)

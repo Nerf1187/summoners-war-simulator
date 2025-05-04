@@ -3,18 +3,18 @@ package Monsters.Fire;
 import Abilities.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Runes.*;
+import Effects.Debuffs.*;
+import Util.Util.*;
 import java.util.*;
+
+import static Util.Util.CONSOLE_INTERFACE.OUTPUT.printfWithColor;
 
 /**
  * Fire Grim Reaper
  */
 public class Sath extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
-    
     private static int count = 1;
     
     private final int finalCritRate;
@@ -34,8 +34,8 @@ public class Sath extends Monster
      */
     public Sath(String runeFileName)
     {
-        super("Sath" + count, FIRE, 9_885, 505, 867, 91, 15, 50, 15, 0);
-        setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Sath" + count, Element.FIRE, 9_885, 505, 867, 91, 15, 50, 15, 0);
+        setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         finalCritRate = this.getCritRate();
         count++;
@@ -43,21 +43,21 @@ public class Sath extends Monster
     
     private void setAbilities()
     {
-        abilities.add(new Attack_Ability("Grim Scythe (1)", 4.4 * 1.2, 0, 1, "Reaps the life of the enemy with a deadly scythe. " +
-                                                                             "Acquires an additional turn if the enemy dies.", 0, false, false, false));
+        Ability a1 = new Attack_Ability("Grim Scythe (1)", 4.4 * 1.2, 0, 1, "Reaps the life of the enemy with a deadly scythe. " +
+                                                                             "Acquires an additional turn if the enemy dies.", 0, false, false, false);
         
-        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(Debuff.CONTINUOUS_DMG, 2, 0);
-        ArrayList<Integer> ability2DebuffChances = abilityChances(100);
-        abilities.add(new Attack_Ability("Deadly Swing (2)", 2.7 * 1.2, 0, 1, "Attacks all enemies with a deadly scythe and " +
-                                                                              "inflicts Continuous Damage for 2 turns. The critical Rate increases to 100% if the enemy's HP is 30% or lower", ability2Debuffs, ability2DebuffChances, 3, false, false, true));
+        ArrayList<Debuff> ability2Debuffs = abilityDebuffs(DebuffEffect.CONTINUOUS_DMG.getNum(), 2, 0);
+        ArrayList<Integer> ability2DebuffChances = MONSTERS.abilityChances(100);
+        Ability a2 = new Attack_Ability("Deadly Swing (2)", 2.7 * 1.2, 0, 1, "Attacks all enemies with a deadly scythe and " +
+                                                                              "inflicts Continuous Damage for 2 turns. The critical Rate increases to 100% if the enemy's HP is 30% or lower", ability2Debuffs, ability2DebuffChances, 3, false, false, true);
         
         //@Passive:Creation
-        abilities.add(new Passive("Living Hell", "Increases the amount of damage all allies and enemies receive from Continuous Damage by two times. " +
-                                                 "Disturbs the HP recovery for 2 turns with a 75% chance and inflicts Continuous Damage if you attack an enemy on your turn. If you attack an enemy who already has Continuous Damage, your attacks won't land as a Glancing Hit."));
+        Ability a3 = new Passive("Living Hell", "Increases the amount of damage all allies and enemies receive from Continuous Damage by two times. " +
+                                                 "Disturbs the HP recovery for 2 turns with a 75% chance and inflicts Continuous Damage if you attack an enemy on your turn. If you attack an enemy who already has Continuous Damage, your attacks won't land as a Glancing Hit.");
         
-        abilities.add(new Leader_Skill(Stat.ATK, 0.3, FIRE));
+        Ability a4 = new Leader_Skill(RuneAttribute.ATK, 0.3, Element.FIRE);
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3, a4);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)
@@ -66,7 +66,7 @@ public class Sath extends Monster
         //Prevent the attack from landing as a glancing hit if the target has continuous damage
         if (this.passiveCanActivate())
         {
-            if (target.containsDebuff(Debuff.CONTINUOUS_DMG))
+            if (target.containsDebuff(DebuffEffect.CONTINUOUS_DMG))
             {
                 setAbilityGlancingRateChange(-999_999);
             }
@@ -95,8 +95,8 @@ public class Sath extends Monster
             //Apply unrecoverable and DOT
             if (this.passiveCanActivate())
             {
-                target.addAppliedDebuff(Debuff.UNRECOVERABLE, 75, 2, this);
-                target.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 1, this);
+                target.addAppliedDebuff(DebuffEffect.UNRECOVERABLE, 75, 2, this);
+                target.addAppliedDebuff(DebuffEffect.CONTINUOUS_DMG, 100, 1, this);
             }
             
             //Gain an extra turn if the target died
@@ -104,7 +104,7 @@ public class Sath extends Monster
             {
                 if (isPrint())
                 {
-                    System.out.printf("%sExtra turn!%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
+                    printfWithColor("Extra turn!", ConsoleColor.GREEN);
                 }
                 setAtkBar(2_000);
             }
@@ -135,7 +135,7 @@ public class Sath extends Monster
             //Prevent attack from landing as a glancing hit if the target has continuous damage
             if (this.passiveCanActivate())
             {
-                if (m.containsDebuff(Debuff.CONTINUOUS_DMG))
+                if (m.containsDebuff(DebuffEffect.CONTINUOUS_DMG))
                 {
                     setAbilityGlancingRateChange(-999_999);
                 }
@@ -146,14 +146,14 @@ public class Sath extends Monster
             {
                 setCritRate(999_999);
             }
-            attack(m, abilities.get(1), false);
+            attack(m, abilities.get(1));
             
             //@Passive
             //Apply unrecoverable and continuous damage
             if (this.passiveCanActivate())
             {
-                m.addAppliedDebuff(Debuff.UNRECOVERABLE, 75, 2, this);
-                m.addAppliedDebuff(Debuff.CONTINUOUS_DMG, 100, 1, this);
+                m.addAppliedDebuff(DebuffEffect.UNRECOVERABLE, 75, 2, this);
+                m.addAppliedDebuff(DebuffEffect.CONTINUOUS_DMG, 100, 1, this);
             }
         }
     }

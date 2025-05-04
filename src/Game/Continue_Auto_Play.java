@@ -2,6 +2,7 @@ package Game;
 
 import Monsters.*;
 import Runes.*;
+import Util.Util.*;
 import java.io.*;
 import java.util.*;
 
@@ -18,7 +19,25 @@ public class Continue_Auto_Play
     {
         //Get the file from the user and read it
         File file = Rune_Parser.getFileFromUser("Select file to continue", "*.csv");
-        ArrayList<Team> teams = Read_Results.readFile(file);
+        if (file == null)
+        {
+            System.out.println("No file selected, exiting program.");
+            return;
+        }
+        
+        //Ask if the user wants to save time or memory
+        String response = CONSOLE_INTERFACE.INPUT.getSpecificString("Do you want to prioritize speed or memory? (\"s\" for speed, \"m\" for memory, \"info\" to learn more)",
+                "s", "m", "info");
+        
+        while (response.equalsIgnoreCase("info"))
+        {
+            System.out.println("Choosing speed is much faster but takes up more RAM and takes longer to create the teams.");
+            System.out.println("Choosing memory takes up less RAM and creates the teams faster but takes much longer to finish.");
+            response = CONSOLE_INTERFACE.INPUT.getSpecificString("Do you want to prioritize speed or memory? (\"s\" for speed, \"m\" for memory, \"info\" to learn more)",
+                    "s", "m", "info");
+        }
+        boolean prioritizeSpd = response.equalsIgnoreCase("s");
+        ArrayList<Team> teams = FILES.readFile(file, prioritizeSpd);
         if (teams == null)
         {
             System.exit(1);
@@ -29,6 +48,7 @@ public class Continue_Auto_Play
         String lastLine = "";
         int lastColumn = 1;
         
+        //This section figures out where to start running and tries to find how much time passed in the previous program run
         try
         {
             lastLineIndex++;
@@ -43,7 +63,7 @@ public class Continue_Auto_Play
             for (String name : nameLibrary)
             {
                 //Ensure the Monster exists
-                Monster m = Monster.createNewMonFromName(name.split(":")[0], false);
+                Monster m = MONSTERS.createNewMonFromName(name.split(":")[0], false);
                 if (m == null)
                 {
                     throw new NumberFormatException();
@@ -62,7 +82,7 @@ public class Continue_Auto_Play
             String[] line = lastLine.split(",");
             if (line.length != 2)
             {
-                System.out.println("Can not continue simulations from this file.");
+                System.err.println("Can not continue simulations from this file.");
                 System.exit(1);
             }
             i = Integer.parseInt(line[0]);
@@ -86,7 +106,7 @@ public class Continue_Auto_Play
             }
             
             //Continue the simulations
-            new Auto_Play().main(teams, monLibrary, totalTime, battleTime, i, j);
+            new Auto_Play().main(teams, monLibrary, totalTime, battleTime, i, j, prioritizeSpd);
         }
         catch (FileNotFoundException e)
         {
@@ -98,13 +118,8 @@ public class Continue_Auto_Play
             //Generate and display a relevant error message
             System.err.printf("Error line %d: %s\n", lastLineIndex, lastLine);
             lastColumn += "Error line %d: ".formatted(lastLineIndex).length();
-            String temp = "";
-            for (int i = 0; i < lastColumn - 1; i++)
-            {
-                temp += " ";
-            }
             
-            System.err.println(temp + "^");
+            System.err.println(" ".repeat(Math.max(0, lastColumn - 1)) + "^");
         }
         catch (Exception e)
         {

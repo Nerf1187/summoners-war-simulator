@@ -1,12 +1,14 @@
 package Hub;
 
 import javax.swing.*;
+import Developer_Website.*;
 import GUI.*;
 import Game.*;
 import Runes.*;
 
 /**
  * This class acts as a main hub for every other runnable class. From here, users can access and run any runnable class they want by clicking a button
+ *
  * @author Anthony (Tony) Youssef
  */
 public class MainHub extends JFrame
@@ -20,9 +22,10 @@ public class MainHub extends JFrame
     private JButton readResultsButton;
     private JButton runeParserButton;
     private JButton continueAutoPlayButton;
+    private JButton websiteButton;
     
     /**
-     * Initializes the GUI and links each button to its respective class
+     * Initializes the GUIS and links each button to its respective class
      */
     public MainHub()
     {
@@ -56,16 +59,22 @@ public class MainHub extends JFrame
             new Read_Results().main();
         });
         
-        runeParserButton.setFocusable(false);
-        runeParserButton.addActionListener(_ -> {
-            dispose();
-            new Rune_Parser().main();
-        });
-        
         continueAutoPlayButton.setFocusable(false);
         continueAutoPlayButton.addActionListener(_ -> {
             dispose();
             new Continue_Auto_Play().main();
+        });
+        
+        websiteButton.setFocusable(false);
+        websiteButton.addActionListener(_ -> {
+            dispose();
+            new WebsiteRunner().main();
+        });
+        
+        runeParserButton.setFocusable(false);
+        runeParserButton.addActionListener(_ -> {
+            dispose();
+            new Rune_Parser().main();
         });
         
         add(panel);

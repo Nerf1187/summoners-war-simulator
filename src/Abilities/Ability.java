@@ -2,9 +2,9 @@ package Abilities;
 
 import Errors.*;
 import Game.*;
-import Stats.Buffs.*;
-import Stats.Debuffs.*;
-import Stats.*;
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Effects.*;
 import java.util.*;
 
 /**
@@ -15,8 +15,7 @@ import java.util.*;
  */
 public class Ability
 {
-    private double dmg;
-    private final double healingPercent;
+    private double atkMultiplier, healingPercent;
     private final int maxCooldown, numOfActivations;
     private int turnsRemaining = 0, numOfBeneficialEffectsToRemoveOverride = -1;
     protected String description;
@@ -69,7 +68,7 @@ public class Ability
         }
         
         //Set values
-        this.dmg = multiplier;
+        this.atkMultiplier = multiplier;
         this.healingPercent = healingPercent;
         this.description = description;
         if (!debuffs.isEmpty())
@@ -260,7 +259,7 @@ public class Ability
      */
     public double getDmgMultiplier()
     {
-        return dmg;
+        return atkMultiplier;
     }
     
     /**
@@ -271,6 +270,11 @@ public class Ability
     public double getHealingPercent()
     {
         return healingPercent;
+    }
+    
+    public void setHealingPercent(double healingPercent)
+    {
+        this.healingPercent = healingPercent;
     }
     
     /**
@@ -399,11 +403,11 @@ public class Ability
     public String toString()
     {
         String cooldown = (this.turnsRemaining != 0) ?
-                ConsoleColors.BLUE + "Reusable in " + this.turnsRemaining + " turns " + ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND : "";
-        String reusableIn = (this.turnsRemaining == 0 && maxCooldown != 0) ? ConsoleColors.BLUE + " (Cooldown: " + (maxCooldown - 1) + " turns)" : "";
+                ConsoleColor.BLUE + "Reusable in " + this.turnsRemaining + " turns " + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND : "";
+        String reusableIn = (this.turnsRemaining == 0 && maxCooldown != 0) ? ConsoleColor.BLUE + " (Cooldown: " + (maxCooldown - 1) + " turns)" : "";
         
-        return (!passive) ? name + ": " + cooldown + description + reusableIn + ConsoleColors.RESET :
-                name + " (Passive): " + cooldown + description + reusableIn + ConsoleColors.RESET;
+        return (!passive) ? name + ": " + cooldown + description + reusableIn + ConsoleColor.RESET :
+                name + " (Passive): " + cooldown + description + reusableIn + ConsoleColor.RESET;
     }
     
     /**
@@ -422,10 +426,10 @@ public class Ability
             {
                 //Gray out ability if it has a cooldown and the Monster is silenced
                 String cooldown = (this.turnsRemaining != 0) ? "Reusable in " + this.turnsRemaining + " turns, " : "";
-                String reusableIn = (this.turnsRemaining == 0) ? ConsoleColors.BLUE + " (Cooldown: " + maxCooldown + " turns)" : "";
+                String reusableIn = (this.turnsRemaining == 0) ? ConsoleColor.BLUE + " (Cooldown: " + maxCooldown + " turns)" : "";
                 s += (!passive) ?
-                        ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + name + ": " + cooldown + description + reusableIn + ConsoleColors.RESET :
-                        ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + name + " (Passive): " + cooldown + description + reusableIn + ConsoleColors.RESET;
+                        "" + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + name + ": " + cooldown + description + reusableIn + ConsoleColor.RESET :
+                        "" + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + name + " (Passive): " + cooldown + description + reusableIn + ConsoleColor.RESET;
             }
         }
         if (hasOblivion)
@@ -434,9 +438,9 @@ public class Ability
             {
                 //Gray out ability if it is a passive and the Monster has Oblivion
                 String cooldown = (this.turnsRemaining != 0) ? "Reusable in " + this.turnsRemaining + " turns, " : "";
-                String reusableIn = (this.turnsRemaining == 0 && this.maxCooldown != 0) ? ConsoleColors.BLUE + " (Cooldown: " + maxCooldown + " turns)"
+                String reusableIn = (this.turnsRemaining == 0 && this.maxCooldown != 0) ? ConsoleColor.BLUE + " (Cooldown: " + maxCooldown + " turns)"
                         : "";
-                s += ConsoleColors.BLACK + ConsoleColors.WHITE_BACKGROUND + name + " (Passive): " + cooldown + description + reusableIn + ConsoleColors.RESET;
+                s += "" + ConsoleColor.BLACK + ConsoleColor.WHITE_BACKGROUND + name + " (Passive): " + cooldown + description + reusableIn + ConsoleColor.RESET;
             }
         }
         return (s.isEmpty()) ? this.toString() : s;
@@ -474,7 +478,7 @@ public class Ability
      */
     public void setDmgMultiplier(double num)
     {
-        dmg = Math.max(0, num);
+        atkMultiplier = Math.max(0, num);
     }
     
     /**
@@ -512,7 +516,7 @@ public class Ability
      * @param buffNum The number of the buff to check for
      * @return True if the ability can apply the buff, false otherwise
      */
-    public boolean canApplyBuff(int buffNum)
+    public boolean canApplyBuff(BuffEffect buffNum)
     {
         return this.canApplyStat(new Buff(buffNum));
     }
@@ -523,7 +527,7 @@ public class Ability
      * @param debuffNum The number of the debuff to check for
      * @return True if the ability can apply the debuff, false otherwise
      */
-    public boolean canApplyDebuff(int debuffNum)
+    public boolean canApplyDebuff(DebuffEffect debuffNum)
     {
         return this.canApplyStat(new Debuff(debuffNum));
     }
@@ -534,7 +538,7 @@ public class Ability
      * @param s The buff or debuff to check for
      * @return True if the ability can apply the buff or debuff, false otherwise
      */
-    public boolean canApplyStat(Stat s)
+    public boolean canApplyStat(Effect s)
     {
         return switch (s)
         {
@@ -579,19 +583,19 @@ public class Ability
         }
         
         int sum = 0;
-        if (canApplyDebuff(Debuff.STRIP))
+        if (canApplyDebuff(DebuffEffect.STRIP))
         {
             sum += 5;
         }
-        if (canApplyBuff(Buff.BUFF_STEAL))
+        if (canApplyBuff(BuffEffect.BUFF_STEAL))
         {
             sum += 3;
         }
-        if (canApplyDebuff(Debuff.REMOVE_BENEFICIAL_EFFECT))
+        if (canApplyDebuff(DebuffEffect.REMOVE_BENEFICIAL_EFFECT))
         {
             sum += 2;
         }
-        if (canApplyDebuff(Debuff.SHORTEN_BUFFS))
+        if (canApplyDebuff(DebuffEffect.SHORTEN_BUFFS))
         {
             sum += 1;
         }
@@ -603,17 +607,30 @@ public class Ability
      * Use {@link Ability#resetBeneficialEffectRemoversOverride()} to reset and remove the override
      * @param debuffNums The debuff numbers to use to calculate the override
      */
-    public void addBeneficialEffectRemoversOverride(int... debuffNums)
+    public void addBeneficialEffectRemoversOverride(DebuffEffect... debuffNums)
     {
         int sum = 0;
-        for (int debuffNum : debuffNums)
+        for (DebuffEffect debuffNum : debuffNums)
         {
             sum += switch (debuffNum)
             {
-                case Debuff.STRIP -> 5;
-                case Buff.BUFF_STEAL -> 3;
-                case Debuff.REMOVE_BENEFICIAL_EFFECT -> 2;
-                case Debuff.SHORTEN_BUFFS -> 1;
+                case DebuffEffect.STRIP -> 5;
+                case DebuffEffect.REMOVE_BENEFICIAL_EFFECT -> 2;
+                case DebuffEffect.SHORTEN_BUFFS -> 1;
+                default -> 0;
+            };
+        }
+        this.numOfBeneficialEffectsToRemoveOverride = sum * this.numOfActivations;
+    }
+    
+    public void addBeneficialEffectRemoversOverride(BuffEffect... buffNums)
+    {
+        int sum = 0;
+        for (BuffEffect buffEffect : buffNums)
+        {
+            sum += switch (buffEffect)
+            {
+                case BuffEffect.BUFF_STEAL -> 3;
                 default -> 0;
             };
         }

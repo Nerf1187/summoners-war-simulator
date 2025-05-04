@@ -3,16 +3,17 @@ package Monsters.Fire;
 import Abilities.*;
 import Game.*;
 import Monsters.*;
-import Runes.Monster_Runes.*;
-import Stats.Debuffs.*;
+import Effects.Debuffs.*;
+import Util.Util.*;
 import java.util.*;
+
+import static Util.Util.CONSOLE_INTERFACE.OUTPUT.printfWithColor;
 
 /**
  * Fire Inugami (2A)
  */
 public class Raoq extends Monster
 {
-    private final ArrayList<Ability> abilities = new ArrayList<>();
     private static int count = 1;
     
     /**
@@ -30,25 +31,25 @@ public class Raoq extends Monster
      */
     public Raoq(String runeFileName)
     {
-        super("Raoq" + count, FIRE, 9_720, 582, 801, 108, 15, 50, 15, 0);
-        super.setRunes(MonsterRunes.getRunesFromFile(runeFileName, this));
+        super("Raoq" + count, Element.FIRE, 9_720, 582, 801, 108, 15, 50, 15, 0);
+        super.setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
     }
     
     private void setAbilities()
     {
-        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(Debuff.DEC_DEF, 2, 0);
-        ArrayList<Integer> ability1DebuffChances = abilityChances(80);
-        abilities.add(new Attack_Ability("Scratch (1)", 4.5 * 1.2, 0, 1, "Attacks with giant claws to weaken the enemy's defense for 2 turns with a 70% " +
-                                                                         "chance and attacks consecutively with a 30% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false));
+        ArrayList<Debuff> ability1Debuffs = abilityDebuffs(DebuffEffect.DEC_DEF.getNum(), 2, 0);
+        ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(80);
+        Ability a1 = new Attack_Ability("Scratch (1)", 4.5 * 1.2, 0, 1, "Attacks with giant claws to weaken the enemy's defense for 2 turns with a 70% " +
+                                                                         "chance and attacks consecutively with a 30% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false);
         
-        abilities.add(new Attack_Ability("Team Up (2)", 4.5 * 1.2, 0, 1, "Teams up with two other allies to attack an enemy.", 3, false, false, false));
+        Ability a2 = new Attack_Ability("Team Up (2)", 4.5 * 1.2, 0, 1, "Teams up with two other allies to attack an enemy.", 3, false, false, false);
         
         //@Passive:Creation
-        abilities.add(new Passive("Annihilate", "If you kill the enemy, you will get an extra turn instantly and your skill cooldown time will decrease by 1 turn."));
+        Ability a3 = new Passive("Annihilate", "If you kill the enemy, you will get an extra turn instantly and your skill cooldown time will decrease by 1 turn.");
         
-        super.setAbilities(abilities);
+        super.setAbilities(a1, a2, a3);
     }
     
     public boolean nextTurn(Monster target, int abilityNum)
@@ -139,7 +140,7 @@ public class Raoq extends Monster
         {
             if (isPrint())
             {
-                System.out.printf("%sExtra turn!%s%n", ConsoleColors.GREEN, ConsoleColors.RESET);
+                printfWithColor("Extra turn!", ConsoleColor.GREEN);
             }
             setAtkBar(2_000);
             abilities.get(2).decCooldown();
