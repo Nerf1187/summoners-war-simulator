@@ -16,7 +16,7 @@
 * There are currently 35 monsters implemented (found [here](src/Monsters/Monster%20database.csv)).
   Feel free to make more if you know how and want to.
   If you do, read [this](Monster%20Creation%20Instructions.md) for instructions.
-  All characters should be accurate as of May 5, 2025.
+  All characters should be accurate as of September 20, 2025.
   Each Monster has at least one rune set already but feel free to make your own.
 
 
