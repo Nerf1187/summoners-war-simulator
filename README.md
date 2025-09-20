@@ -1,7 +1,7 @@
 * All characters, names, effects, abilities, runes, etc. belong to Summoners War: Sky Arena and Com2uS Studios.
 
 
-* Java 24 with Preview features or higher is required
+* Java 25 with Preview features or higher is required
 
 
 * This is a personal project I developed to help further my programming skills.
