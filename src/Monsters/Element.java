@@ -42,6 +42,7 @@ public enum Element
      * Finds the elemental relationship between this and another Element. (Assumes Elements are from different Teams)
      *
      * @param other The element to compare to.
+     *
      * @return The color of the relationship (green background for advantageous; yellow background for neutral; red background for disadvantageous)
      */
     public ConsoleColor relationWith(Element other)

@@ -5,6 +5,7 @@ import Effects.Buffs.*;
 import Effects.Debuffs.*;
 import Monsters.*;
 import Runes.*;
+import Util.*;
 import Util.Util.*;
 import java.util.*;
 
@@ -38,7 +39,6 @@ public class Ariel extends Monster
     
     private void setAbilities()
     {
-        
         ArrayList<Debuff> ability1Debuffs = abilityDebuffs(DebuffEffect.REMOVE_BENEFICIAL_EFFECT.getNum(), 0, 1);
         ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(75);
         Ability a1 = new Attack_Ability("Heavenly Sword (1)", 1.3 * (1.9 + (getDef() * 3.0) / getAtk()), 0, 1,

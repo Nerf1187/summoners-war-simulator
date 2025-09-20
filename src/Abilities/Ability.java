@@ -16,7 +16,8 @@ import java.util.*;
 public class Ability
 {
     private double atkMultiplier, healingPercent;
-    private final int maxCooldown, numOfActivations;
+    private final int maxCooldown;
+    private int numOfActivations;
     private int turnsRemaining = 0, numOfBeneficialEffectsToRemoveOverride = -1;
     protected String description;
     protected final String name;
@@ -272,9 +273,23 @@ public class Ability
         return healingPercent;
     }
     
+    /**
+     * Sets the healing multiplier
+     *
+     * @param healingPercent The new healing multiplier
+     */
     public void setHealingPercent(double healingPercent)
     {
         this.healingPercent = healingPercent;
+    }
+    
+    /**
+     * Sets the description
+     * @param description The new description
+     */
+    public void setDescription(String description)
+    {
+        this.description = description;
     }
     
     /**
@@ -415,6 +430,7 @@ public class Ability
      *
      * @param hasSilence  Whether the Monster has the Silence debuff
      * @param hasOblivion Whether the Monster has the Oblivion debuff
+     *
      * @return The formatted String
      */
     public String toString(boolean hasSilence, boolean hasOblivion)
@@ -450,6 +466,7 @@ public class Ability
      * Checks if the Ability can be used this turn
      *
      * @param hasSilence Whether the Monster has the silence debuff
+     *
      * @return Whether the Ability can be used
      */
     public boolean isViableAbility(boolean hasSilence)
@@ -472,6 +489,16 @@ public class Ability
     }
     
     /**
+     * Sets the number of activations to the specified value.
+     *
+     * @param num the number of activations to be set
+     */
+    public void setNumOfActivations(int num)
+    {
+        numOfActivations = num;
+    }
+    
+    /**
      * Sets the damage multiplier
      *
      * @param num The new damage multiplier
@@ -485,6 +512,7 @@ public class Ability
      * Compares this Ability to another.
      *
      * @param ability The Ability to compare
+     *
      * @return True if the two abilities' names are the same, false otherwise
      */
     public boolean equals(Ability ability)
@@ -514,6 +542,7 @@ public class Ability
      * Checks if the ability can apply the given buff
      *
      * @param buffNum The number of the buff to check for
+     *
      * @return True if the ability can apply the buff, false otherwise
      */
     public boolean canApplyBuff(BuffEffect buffNum)
@@ -525,6 +554,7 @@ public class Ability
      * Checks if the ability can apply the given debuff
      *
      * @param debuffNum The number of the debuff to check for
+     *
      * @return True if the ability can apply the debuff, false otherwise
      */
     public boolean canApplyDebuff(DebuffEffect debuffNum)
@@ -536,6 +566,7 @@ public class Ability
      * Checks if the ability can apply the given buff or debuff
      *
      * @param s The buff or debuff to check for
+     *
      * @return True if the ability can apply the buff or debuff, false otherwise
      */
     public boolean canApplyStat(Effect s)
@@ -623,6 +654,13 @@ public class Ability
         this.numOfBeneficialEffectsToRemoveOverride = sum * this.numOfActivations;
     }
     
+    /**
+     * Updates the override value for the number of beneficial effects to remove by summing
+     * up the contributions of specified buff effects and multiplying by the number of activations.
+     *
+     * @param buffNums An array of {@link BuffEffect} representing the types of buff effects
+     *                 to consider when calculating the override value.
+     */
     public void addBeneficialEffectRemoversOverride(BuffEffect... buffNums)
     {
         int sum = 0;

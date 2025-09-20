@@ -36,6 +36,18 @@ public class Debuff extends Effect
     }
     
     /**
+     * Creates a new Debuff.
+     *
+     * @param debuff              The type of debuff to apply.
+     * @param numTurns            The number of turns for which the debuff will be applied.
+     * @param goesThroughImmunity Determines whether the debuff ignores immunity (true if it ignores, false otherwise).
+     */
+    public Debuff(DebuffEffect debuff, int numTurns, boolean goesThroughImmunity)
+    {
+        this(debuff, numTurns, goesThroughImmunity ? 1 : 0);
+    }
+    
+    /**
      * Creates a new Debuff that applies for one turn and does not go through immunity
      *
      * @param debuff The debuff number
@@ -69,6 +81,7 @@ public class Debuff extends Effect
      * Compares two debuffs
      *
      * @param other The other debuff to compare to
+     *
      * @return True if the two debuffs have the same debuff number
      */
     public boolean equals(Debuff other)

@@ -13,7 +13,7 @@
 * Read [How to run.txt](How%20to%20run.md) for a description of each runnable class and instructions for how to run them
 
 
-* There are currently 33 monsters implemented (found [here](src/Monsters/Monster%20database.csv)).
+* There are currently 35 monsters implemented (found [here](src/Monsters/Monster%20database.csv)).
   Feel free to make more if you know how and want to.
   If you do, read [this](Monster%20Creation%20Instructions.md) for instructions.
   All characters should be accurate as of May 5, 2025.

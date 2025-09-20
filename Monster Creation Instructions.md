@@ -14,6 +14,7 @@ This file is only needed if you intend to create a new Monster.
 
 5. Create any other methods as needed (ex. Miho has an attacked() and afterHitProtocol() function for her passive).
    If the Monster creates or uses any effects that are not buffs or debuffs, create a reset() method that handles how to dispose of them when resetting the Monster.
+   Make sure to add the new extra effect to [OtherEffect](src/Effects/OtherEffect.java) and [Other effects key](src/Effects/Other%20effects%20key.csv)
 
 
 6. Add the Monster's name and element to the [database](src/Monsters/Monster%20database.csv), and it will automatically be added to the program.

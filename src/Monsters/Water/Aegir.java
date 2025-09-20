@@ -60,7 +60,7 @@ public class Aegir extends Monster
         
         Ability a3 = new Attack_Ability("Confiscate (3)", 4 * 1.25, 0, 2, "Attacks the enemy 2 times, with each strike having a 75% chance to steal 1 beneficial effect from the enemy. Absorbs the Attack Bar by 50% each if you attack the " +
                                                                            "enemy with no beneficial effects. Goes under [Berserk] state for 3 turns afterwards. Under Berserk state, the defense is decreased by 30%, damage dealt to enemies is "
-                                                                           + "increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", ability2Buffs, ability2BuffChances, 3, false, false, false, 0);
+                                                                           + "increased by 100%, Attack Speed is increased by 20% and HP is recovered by 10% of the damage dealt.", 3, false, false, false);
         
         a3.addBeneficialEffectRemoversOverride(BuffEffect.BUFF_STEAL);
         
@@ -95,7 +95,7 @@ public class Aegir extends Monster
             //Remove Berserk if it exists
             if (hasBerserk)
             {
-                removeOtherEffect(OtherEffect.BERSERK);
+                removeAllOf(OtherEffect.BERSERK);
             }
             //Add Berserk
             addOtherEffect(berserk);
@@ -110,9 +110,9 @@ public class Aegir extends Monster
         }
         
         //Life steal
-        if (hasBerserk && !containsDebuff(DebuffEffect.UNRECOVERABLE))
+        if (hasBerserk)
         {
-            this.setCurrentHp(Math.max(getMaxHp(), (int) (this.getCurrentHp() + this.getDmgDealtThisTurn() * 0.1)));
+            this.heal(this, this.getDmgDealtThisTurn() * 0.1);
         }
         
         //Remove Berserk if it's effect is over
@@ -131,7 +131,7 @@ public class Aegir extends Monster
      */
     private void removeBerserk()
     {
-        this.removeOtherEffect(OtherEffect.BERSERK);
+        this.removeAllOf(OtherEffect.BERSERK);
         this.setAtk(1.0 * getAtk() / 2);
         this.setSpd(normalSpd);
         this.setDef(normalDef);
@@ -155,22 +155,24 @@ public class Aegir extends Monster
      * @param target     The target Monster of the attack
      * @param abilityNum The chosen ability number
      */
-    public void selfAfterHitProtocol(Monster target, int abilityNum, int count)
+    public void attackerAfterHitProtocol(Monster target, int abilityNum, int count)
     {
-        if (abilityNum == 3 && new Random().nextInt(101) <= 75)
+        int chance = new Random().nextInt(101);
+        boolean resistanceCheck = resistanceCheck(target);
+        if (abilityNum == 3 && chance <= 75 && resistanceCheck)
         {
-            if (!target.getAppliedDebuffs().isEmpty())
+            if (!target.getAppliedBuffs().isEmpty())
             {
                 this.stealBuff(target);
             }
-            else if (this.resistanceCheck(target))
+            else
             {
                 target.decreaseAtkBarByPercent(50);
                 this.increaseAtkBarByPercent(50);
             }
         }
         
-        super.selfAfterHitProtocol(target, abilityNum, count);
+        super.attackerAfterHitProtocol(target, abilityNum, count);
     }
     
     public void kill()

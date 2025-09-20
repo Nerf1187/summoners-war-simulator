@@ -164,6 +164,7 @@ function getWindowScrollingElement() {
  * @param  {[Boolean]} relativeToNonStaticParent  Whether the rect should be relative to the relative parent of (including) the contaienr
  * @param  {[Boolean]} undoScale                  Whether the container's scale() should be undone
  * @param  {[HTMLElement]} container              The parent the element will be placed in
+ *
  * @return {Object}                               The boundingClientRect of el, with specified adjustments
  */
 function getRect(el, relativeToContainingBlock, relativeToNonStaticParent, undoScale, container) {
@@ -256,7 +257,7 @@ function getRect(el, relativeToContainingBlock, relativeToNonStaticParent, undoS
 
 /**
  * Returns the content rect of the element (bounding rect minus border and padding)
- * @param {HTMLElement} el 
+ * @param {HTMLElement} el
  */
 function getContentRect(el) {
 	let rect = getRect(el);
@@ -279,6 +280,7 @@ function getContentRect(el) {
  * @param  {HTMLElement}  el           The element who's side being scrolled out of view is in question
  * @param  {String}       elSide       Side of the element in question ('top', 'left', 'right', 'bottom')
  * @param  {String}       parentSide   Side of the parent in question ('top', 'left', 'right', 'bottom')
+ *
  * @return {HTMLElement}               The parent scroll element that the el's side is scrolled past, or null if there is no such element
  */
 function isScrolledPast(el, elSide, parentSide) {
@@ -314,6 +316,7 @@ function isScrolledPast(el, elSide, parentSide) {
  * @param  {HTMLElement} el       The parent element
  * @param  {Number} childNum      The index of the child
  * @param  {Object} options       Parent Sortable's options
+ *
  * @return {HTMLElement}          The child at index childNum, or null if not found
  */
 function getChild(el, childNum, options, includeDragEl) {
@@ -343,6 +346,7 @@ function getChild(el, childNum, options, includeDragEl) {
  * Gets the last child in the el, ignoring ghostEl or invisible elements (clones)
  * @param  {HTMLElement} el       Parent element
  * @param  {selector} selector    Any other elements that should be ignored
+ *
  * @return {HTMLElement}          The last child, ignoring ghostEl
  */
 function lastChild(el, selector) {
@@ -368,6 +372,7 @@ function lastChild(el, selector) {
  * elements
  * @param  {HTMLElement} el
  * @param  {selector} selector
+ *
  * @return {number}
  */
 function index(el, selector) {
@@ -391,6 +396,7 @@ function index(el, selector) {
  * Returns the scroll offset of the given element, added with all the scroll offsets of parent elements.
  * The value is returned in real pixels.
  * @param  {HTMLElement} el
+ *
  * @return {Array}             Offsets in the format of [left, top]
  */
 function getRelativeScrollOffset(el) {
@@ -416,6 +422,7 @@ function getRelativeScrollOffset(el) {
  * Returns the index of the object within the given array
  * @param  {Array} arr   Array that may or may not hold the object
  * @param  {Object} obj  An object that has a key-value pair unique to and identical to a key-value pair in the object you want to find
+ *
  * @return {Number}      The index of the object in the array, or -1
  */
 function indexOfObject(arr, obj) {

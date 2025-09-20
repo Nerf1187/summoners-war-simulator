@@ -69,8 +69,8 @@ public class Praha extends Monster
             applyToTeam(game.getOtherTeam(), (mon -> {
                 if (mon.containsDebuff(DebuffEffect.NULL))
                 {
-                    mon.removeDebuff(DebuffEffect.NULL);
-                    int buffs = mon.strip();
+                    mon.removeAllOf(DebuffEffect.NULL);
+                    int buffs = mon.strip(this);
                     for (int i = 0; i < buffs; i++)
                     {
                         mon.addGuaranteedAppliedDebuff(DebuffEffect.CONTINUOUS_DMG, 2, this);
@@ -92,7 +92,7 @@ public class Praha extends Monster
         return true;
     }
     
-    public void selfAfterHitProtocol(Monster target, int abilityNum, int count)
+    public void attackerAfterHitProtocol(Monster target, int abilityNum, int count)
     {
         //Increase attack bar if ability 1 was used and the hit crit the enemy
         if (abilityNum == 1 && target.wasCrit())
@@ -100,6 +100,6 @@ public class Praha extends Monster
             this.increaseAtkBarByPercent(10);
         }
         
-        super.selfAfterHitProtocol(target, abilityNum, count);
+        super.attackerAfterHitProtocol(target, abilityNum, count);
     }
 }

@@ -39,7 +39,7 @@ public class Laika extends Monster
     
     private void setAbilities()
     {
-        Ability a1 = new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous " + "Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
+        Ability a1 = new Attack_Ability("Dragon's Might (1)", 4.3 * 1.3, 0.5, 1, "Attacks the enemy, inflicting Continuous Damage for 2 turns if the attack lands as a critical hit. Also recovers HP by 50% of the inflicted damage.", 0, false,
                 false, false);
         
         Ability a2 = new Attack_Ability("Justice (2)", 0 /*calculated at nextTurn()*/, 0, 1,

@@ -252,6 +252,32 @@ public class Util
             }
             return "%s%d.%d seconds".formatted(returnString, seconds, nanoseconds);
         }
+        
+        /**
+         * Counts the number of times a given substring appears in a string.
+         *
+         * @param str       The string to search in.
+         * @param substring The substring to count.
+         * @return The count of occurrences of the substring, or 0 if the substring is not found.
+         */
+        public static int count(String str, String substring)
+        {
+            if (str == null || substring == null || substring.isEmpty() || !str.contains(substring))
+            {
+                return 0;
+            }
+            
+            int count = 0;
+            int index = 0;
+            
+            while ((index = str.indexOf(substring, index)) != -1)
+            {
+                count++;
+                index += substring.length(); //Move to the next possible position
+            }
+            
+            return count;
+        }
     }
     
     /**
@@ -314,7 +340,7 @@ public class Util
          */
         public static String toProperName(String name)
         {
-            return STRINGS.toTitleCase(name).replaceAll(" ", "_");
+            return STRINGS.toTitleCase(name).replaceAll(" ", "_").replaceAll(" ?\\[.*]", "");
         }
         
         /**
@@ -351,7 +377,7 @@ public class Util
         public static Monster createNewMonFromName(String name, int runeSetNum, boolean scanLine)
         {
             //Replace spaces with underscores
-            name = name.replaceAll(" ", "_");
+            name = name.replaceAll(" ?\\[.*]", "").replaceAll(" ", "_");
             //Convert the name into a readable format
             name = toProperName(name);
             
@@ -450,6 +476,28 @@ public class Util
         }
         
         /**
+         * Formats the provided array of {@code Pair<BuffEffect, Integer>} into an {@code ArrayList<Buff>}.
+         * Each pair represents a buff effect type and its corresponding duration in turns.
+         *
+         * @param args A variable number of pairs where:
+         *             1. The first entry of the pair represents the {@code BuffEffect}.
+         *             2. The second entry of the pair represents the duration of the buff in turns.
+         * @return An {@code ArrayList<Buff>} containing the buffs specified by the input pairs.
+         */
+        @SafeVarargs
+        public static ArrayList<Buff> abilityBuffs(Pair<BuffEffect, Integer>... args)
+        {
+            //Format the args into buffs
+            ArrayList<Buff> buffs = new ArrayList<>();
+            for (Pair<BuffEffect, Integer> pair : args)
+            {
+                buffs.add(new Buff(pair.getFirst(), pair.getSecond()));
+            }
+            
+            return buffs;
+        }
+        
+        /**
          * Formats a set of numbers into an ArrayList of Debuffs based on the given parameters.
          * Ensures the input arguments are in the correct format and associates each Debuff with the provided caster.
          *
@@ -474,6 +522,32 @@ public class Util
             for (int i = 0; i < args.length; i += 3)
             {
                 Debuff d = new Debuff(DebuffEffect.numToDebuff(args[i]), args[i + 1], args[i + 2]);
+                d.setCaster(caster);
+                debuffs.add(d);
+            }
+            return debuffs;
+        }
+        
+        /**
+         * Formats a set of parameters into an ArrayList of Debuffs.
+         * Each Debuff is created based on the provided triplets (effect, duration, immunity)
+         * and is associated with the given caster.
+         *
+         * @param caster The Monster that casts the Debuffs.
+         * @param args   A variable number of triplets where:
+         *               1. The first entry represents the DebuffEffect.
+         *               2. The second entry represents the duration of the Debuff in turns.
+         *               3. The third entry represents whether the Debuff ignores immunity (true or false).
+         * @return An ArrayList of Debuffs created based on the provided arguments.
+         */
+        @SafeVarargs
+        public static ArrayList<Debuff> abilityDebuffs(Monster caster, Triplet<DebuffEffect, Integer, Boolean>... args)
+        {
+            //Format the args into debuffs
+            ArrayList<Debuff> debuffs = new ArrayList<>();
+            for (Triplet<DebuffEffect, Integer, Boolean> trip : args)
+            {
+                Debuff d = new Debuff(trip.getFirst(), trip.getSecond(), trip.getThird());
                 d.setCaster(caster);
                 debuffs.add(d);
             }
@@ -856,7 +930,7 @@ public class Util
                 {
                     System.out.printf("%s\t\t", mon.getName(true, false));
                 }
-                System.out.printf("Number of wins: %,d\tNumber of losses: %,d", team.getWins(), team.getLosses());
+                System.out.printf("%sNumber of wins: %,d\t%sNumber of losses: %,d", ConsoleColor.GREEN, team.getWins(), ConsoleColor.RED, team.getLosses());
                 
                 //Calculate the win-loss ratio
                 double ratio = 1.0 * team.getWins() / (team.getLosses() + team.getWins());
@@ -870,8 +944,7 @@ public class Util
                 }
                 
                 //Print win-loss ratio
-                System.out.printf("\tWin/Loss Ratio: %f", ratio);
-                System.out.println();
+                printfWithColor("\tWin/Loss Ratio: %f%%\n", ConsoleColor.YELLOW, ratio);
             }
             
             /**
@@ -897,7 +970,7 @@ public class Util
                 int i = 1;
                 for (Pair<String, String> p : list)
                 {
-                    System.out.printf("%d. \"%s\": %s%n", i++, p.getFirst(), p.getSecond());
+                    System.out.printf("%d. \"%s%s%s\": %s%s%n%s", i++, ConsoleColor.CYAN, p.getFirst(), ConsoleColor.RESET, ConsoleColor.GREEN, p.getSecond(), ConsoleColor.RESET);
                 }
             }
             
@@ -1059,9 +1132,9 @@ public class Util
                     }
                 }
                 //Format the longest line
-                for (int j = 0; j < longestLine.size() - 1; j++)
+                for (int i = 0; i < longestLine.size() - 1; i++)
                 {
-                    longestLine.set(j, "%s        ".formatted(longestLine.get(j)));
+                    longestLine.set(i, "%s        ".formatted(longestLine.get(i)));
                 }
                 
                 //Format all other lines
@@ -1189,10 +1262,7 @@ public class Util
                 int length = string.length();
                 for (ConsoleColor value : ConsoleColor.values())
                 {
-                    if (string.contains(value.toString()))
-                    {
-                        length -= value.toString().length();
-                    }
+                    length -= STRINGS.count(string, value.toString()) * value.toString().length();
                 }
                 
                 return length;
@@ -1251,7 +1321,7 @@ public class Util
                 }
                 
                 //Space the lines properly and return the result
-                return CONSOLE_INTERFACE.OUTPUT.toStringSpacing(firstLineInfo, secondLineInfo, thirdLineInfo, fourthLineInfo) + ConsoleColor.RESET;
+                return OUTPUT.toStringSpacing(firstLineInfo, secondLineInfo, thirdLineInfo, fourthLineInfo) + ConsoleColor.RESET;
             }
             
             /**
@@ -1271,23 +1341,27 @@ public class Util
                     case InvalidArgumentLength _ -> "Invalid line length";
                     case NumberFormatException _ -> "Unexpected character";
                     case InvalidClassException _ -> "Monster not found";
+                    case IndexOutOfBoundsException _ -> "Invalid Monster ID";
                     default -> "Unexpected error";
                 };
                 
                 //Could not read the file for some reason
-                System.err.printf("Error reading file. %s on line %d. ", msg, lineNum);
+                msg = "Error reading file. %s on line %d. ".formatted(msg, lineNum);
                 if (msg.contains("line length"))
                 {
-                    System.err.printf("(Expected %s, got %d)\n", e.getMessage(), (!list[0].isEmpty()) ? list.length : 0);
+                    msg += "(Expected %s, got %d)\n".formatted(e.getMessage(), (!list[0].isEmpty()) ? list.length : 0);
                 }
+                
+                System.err.print(msg);
                 System.err.printf("%s\n", line);
+                
                 StringBuilder errorMsg = new StringBuilder();
                 int lineLength = STRINGS.substringUpToString(line, list[lastI]).length();
                 if (msg.contains("line length"))
                 {
                     lineLength = line.length() - list[list.length - 1].length();
                 }
-                errorMsg.append(" ".repeat(Math.max(0, lineLength)));
+                errorMsg.append(" ".repeat(Math.max(0, lineLength + msg.length())));
                 System.err.println(errorMsg + "^");
             }
             
@@ -1300,7 +1374,7 @@ public class Util
              */
             public static void printfWithColor(String format, ConsoleColor color, Object... args)
             {
-                System.out.println(STRINGS.formatWithColor(format, color, args));
+                System.out.print(STRINGS.formatWithColor(format, color, args));
             }
         }
         
@@ -1752,6 +1826,7 @@ public class Util
                     if (neg)
                     {
                         Collections.reverse(tempTeams);
+                        index--;
                     }
                     
                     //Get team at requested index
@@ -1798,49 +1873,23 @@ public class Util
                         //Order the teams
                         case "order" ->
                         {
-                            int reversed = -1;
-                            String sortOption = "";
+                            String sortOption = INPUT.getSpecificString("Type \"wins\" to sort by wins, \"losses\" to sort by losses, \"ratio\" to sort by win/loss ratio, or \"back\" to go back", "wins", "losses", "ratio", "back");
                             
-                            //Get the value to sort by
-                            while (sortOption.isEmpty())
+                            if (sortOption.equals("back"))
                             {
-                                System.out.println("Type \"wins\" to sort by wins, \"losses\" to sort by losses, \"ratio\" to sort by win/loss ratio, or \"back\" to go back");
-                                String sortString = scan.nextLine();
-                                
-                                sortOption = switch (sortString.toLowerCase())
-                                {
-                                    case "wins", "losses", "ratio", "back" -> sortString;
-                                    default ->
-                                    {
-                                        System.out.println("Please enter a valid response");
-                                        yield "";
-                                    }
-                                };
-                                if (sortOption.equals("back"))
-                                {
-                                    yield 1;
-                                }
+                                yield 1;
                             }
                             
-                            //Get the sort order
-                            while (reversed == -1)
+                            int reversed = switch (INPUT.getSpecificString("Type \"normal\" to sort highest to lowest, \"reversed\" to sort lowest to highest, or \"back\" to go back", "normal", "reversed", "back"))
                             {
-                                System.out.println("Type \"normal\" to sort highest to lowest, \"reversed\" to sort lowest to highest, or \"back\" to go back");
-                                String reverseInput = scan.nextLine();
-                                
-                                switch (reverseInput.toLowerCase())
-                                {
-                                    case "reversed" -> reversed = 0;
-                                    case "normal" -> reversed = 1;
-                                    case "back" ->
-                                    {
-                                    }
-                                    default -> System.out.println("Please enter a valid input");
-                                }
-                                if (reverseInput.equalsIgnoreCase("back")) //Cancel operation
-                                {
-                                    yield 1;
-                                }
+                                case "reversed" -> 0;
+                                case "normal" -> 1;
+                                case null, default -> -1;
+                            };
+                            
+                            if (reversed == -1) //Cancel operation
+                            {
+                                yield 1;
                             }
                             
                             //Sort the teams as requested
@@ -1930,7 +1979,7 @@ public class Util
                                 input = input.substring(1);
                             }
                             //Get range
-                            int firstNum = Integer.parseInt(Util.STRINGS.substringUpToString(input, "-"));
+                            int firstNum = Integer.parseInt(STRINGS.substringUpToString(input, "-"));
                             int secondNum = Integer.parseInt(input.substring(input.indexOf("-") + 1));
                             
                             //Make the first number negative if needed
@@ -2514,7 +2563,7 @@ public class Util
                     {
                         throw new InvalidClassException("Monster " + name + " not found");
                     }
-                    library.put(key, Util.MONSTERS.createNewMonFromName(name, false));
+                    library.put(key, MONSTERS.createNewMonFromName(name, false));
                 }
                 ArrayList<Team> teams = new ArrayList<>();
                 
@@ -2553,6 +2602,12 @@ public class Util
                     for (int i = 0; i < 4; i++)
                     {
                         lastI = i;
+                        Monster temp = library.get(Integer.parseInt(list[i]));
+                        if (temp == null)
+                        {
+                            throw new IndexOutOfBoundsException("No library value found");
+                        }
+                        
                         String name = library.get(Integer.parseInt(list[i])).getName(false, false);
                         if (name == null)
                         {
@@ -2572,6 +2627,7 @@ public class Util
             }
             catch (Exception e)
             {
+                System.out.println();
                 CONSOLE_INTERFACE.OUTPUT.displayErrorMessage(e, line, lineNum, lastI);
                 return null;
             }
@@ -2722,13 +2778,15 @@ public class Util
         {
             while (true)
             {
+                final String help = "help", whitelist = "w", blacklist = "b", include = "i", no = "n";
+                
                 //Ask the user if they want to whitelist, blacklist, or do neither
-                System.out.println("Would you like to whitelist or blacklist any monsters? (\"w\" for whitelist, \"b\" for blacklist, \"n\" for no)");
+                System.out.printf("How would you like to filter? (Enter \"%s\" for filter options)%n", help);
                 String response = scan.nextLine();
                 switch (response.toLowerCase())
                 {
                     //Whitelist
-                    case "w" ->
+                    case whitelist ->
                     {
                         String monName = "";
                         ArrayList<Monster> whitelistedMonsters = new ArrayList<>();
@@ -2763,7 +2821,7 @@ public class Util
                         }
                     }
                     //Blacklist
-                    case "b" ->
+                    case blacklist ->
                     {
                         String monName = "";
                         ArrayList<Monster> blacklistedMonsters = new ArrayList<>();
@@ -2797,11 +2855,51 @@ public class Util
                             monName = "";
                         }
                     }
+                    //Include
+                    case include ->
+                    {
+                        //TODO and, or.      Limit selection
+                        
+                        String monName = "";
+                        ArrayList<Monster> includedMons = new ArrayList<>();
+                        while (true)
+                        {
+                            //Get Monster name
+                            while (!MONSTERS.stringIsMonsterName(monName, mons) && !monName.equals("exit"))
+                            {
+                                //Print current include Monsters
+                                System.out.println("Type the next monster to include or \"exit\" to exit");
+                                System.out.print("Current Monsters: ");
+                                includedMons.forEach(m -> System.out.printf("%s\t\t", m.getName(true, false)));
+                                System.out.println();
+                                //Get the next Monster
+                                monName = scan.nextLine();
+                            }
+                            //Exit filtering
+                            if (monName.equals("exit"))
+                            {
+                                Monster tag = new Monster();
+                                tag.setName("include");
+                                includedMons.addFirst(tag); //TODO Check for tag in return vals
+                                return includedMons;
+                            }
+                            //Move Monster to include
+                            if (includedMons.size() == 3 && limitSelection)
+                            {
+                                monName = "";
+                                System.err.println("Error, cannot select more than 3 monsters");
+                                continue;
+                            }
+                            moveToFilteredList(mons, monName, includedMons);
+                            monName = "";
+                        }
+                    }
                     //No filter
-                    case "n" ->
+                    case no ->
                     {
                         return mons;
                     }
+                    case help -> System.out.printf("\"%s\" for whitelist, \"%s\" for blacklist,  \"%s\" for include (i.e., team must include Monster(s)), \"%s\" for no%n", whitelist, blacklist, include, no);
                 }
             }
         }
@@ -2883,7 +2981,7 @@ public class Util
             ArrayList<Team> temp = sortHelper(teams, highToLow, sortOption, teams.size());
             teams.clear();
             teams.addAll(temp);
-            System.out.println("Done");
+            System.out.println("\nDone");
         }
         
         /**
@@ -2955,8 +3053,8 @@ public class Util
                 return false;
             }
             
-            double t1Ratio = 1.0 * t1.getWins() / t1.getLosses();
-            double t2Ratio = 1.0 * t2.getWins() / t2.getLosses();
+            double t1Ratio = 1.0 * t1.getWins() / (t1.getWins() + t1.getLosses());
+            double t2Ratio = 1.0 * t2.getWins() / (t2.getWins() + t2.getLosses());
             
             return (highToLow) ? switch (sortOption)
             {
@@ -3083,7 +3181,7 @@ public class Util
                     currentCombination.forEach(m -> {
                         try
                         {
-                            a.add(Util.MONSTERS.createNewMonFromMon(m));
+                            a.add(MONSTERS.createNewMonFromMon(m));
                         }
                         catch (Exception e)
                         {
@@ -3148,15 +3246,11 @@ public class Util
         public static long totalNumOfSims(int numOfCombos)
         {
             long result = 0;
-            try //to add recursively
+            try
             {
-                for (int i = numOfCombos; i > 0; i--)
-                {
-                    result += numOfCombos;
-                }
-                return result;
+                return ((long) numOfCombos * (numOfCombos + 1)) / 2;
             }
-            catch (Exception e) //Too many recursive calls
+            catch (Exception e)
             {
                 //Flag an error
                 Auto_Play.setSimsCalculationError(true);
@@ -3277,7 +3371,7 @@ public class Util
                 {
                     next.decreaseStatCooldowns();
                     next.setAtkBar(0);
-                    return CHOOSERS.TURN_RESULT.CONTINUE;
+                    return TURN_RESULT.CONTINUE;
                 }
                 
                 //Check if dead again
@@ -3287,14 +3381,14 @@ public class Util
                     if (next.isDead())
                     {
                         next.setAtkBar(-999);
-                        return CHOOSERS.TURN_RESULT.CONTINUE;
+                        return TURN_RESULT.CONTINUE;
                     }
                 }
                 
                 //Ends game if a team is dead
                 if (game.endGame())
                 {
-                    return CHOOSERS.TURN_RESULT.BREAK;
+                    return TURN_RESULT.BREAK;
                 }
                 
                 //Check for Provoke
@@ -3303,7 +3397,7 @@ public class Util
                 {
                     Monster caster = p.getCaster();
                     next.nextTurn(caster, 1);
-                    return CHOOSERS.TURN_RESULT.CONTINUE;
+                    return TURN_RESULT.CONTINUE;
                 }
                 
                 //Checks if any Monster on the other team has Threat
@@ -3319,7 +3413,7 @@ public class Util
                     next.nextTurn(target, abilityNum);
                 }
                 chooseTargetAndApplyNextTurn(next, abilityNum, (next.getAbility(abilityNum).targetsEnemy() ? other : highestAtkBar), true);
-                return CHOOSERS.TURN_RESULT.NORMAL;
+                return TURN_RESULT.NORMAL;
             }
             
             /**
@@ -3494,11 +3588,12 @@ public class Util
                     //Increase score for certain debuffs
                     for (Debuff debuff : targetDebuffs)
                     {
-                        switch (debuff.getDebuffEffect())
+                        currentPoints *= switch (debuff.getDebuffEffect())
                         {
-                            case DebuffEffect.DEC_DEF -> currentPoints *= 1.2;
-                            case DebuffEffect.BRAND -> currentPoints *= 1.15;
-                        }
+                            case DebuffEffect.DEC_DEF -> 1.2;
+                            case DebuffEffect.BRAND -> 1.15;
+                            default -> 1;
+                        };
                     }
                     
                     //Alter score for elemental relationship

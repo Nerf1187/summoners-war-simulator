@@ -60,6 +60,7 @@ public enum RuneAttribute
      * If no matching attribute is found, returns the NONE attribute.
      *
      * @param num The numerical value to be converted into a RuneAttribute.
+     *
      * @return The RuneAttribute corresponding to the provided numerical value,
      *         or NONE if no match is found.
      */

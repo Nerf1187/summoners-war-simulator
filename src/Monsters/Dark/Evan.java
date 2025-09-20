@@ -4,6 +4,7 @@ import Abilities.*;
 import Monsters.*;
 import Runes.*;
 import Effects.Debuffs.*;
+import Util.*;
 import Util.Util.*;
 import java.util.*;
 
@@ -48,8 +49,7 @@ public class Evan extends Monster
         
         //@Passive:Creation
         Ability a3 = (new Passive("Meticulous Attack", "Attacks additionally with an attack that cannot be counterattacked when you attack the enemy on your turn. The additional attack always lands as a Critical Hit, and the damage is increased" +
-                                                          " by" +
-                                                       " 100% if you attack a Light attribute Monster."));
+                                                          " by 100% if you attack a Light attribute Monster."));
         
         Ability a4 = (new Leader_Skill(RuneAttribute.ACC, 0.48, Element.ALL));
         

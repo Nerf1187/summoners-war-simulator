@@ -74,7 +74,7 @@ public class Coco extends Monster
             return false;
         }
         
-        //use up magic spheres on attack
+        //Use up magic spheres on attack
         for (int i = 0; i < numOfMagicSpheres.getNumOfSpecialEffects(); i++)
         {
             attack(target, magicSphereAttack);

@@ -32,7 +32,7 @@ button:hover {
 }
 
 button:active {
-    transform: scale(1.0) ;
+    transform: scale(1.0);
 }
 
 ul {
@@ -80,6 +80,20 @@ ul {
 
 .dragging {
     background: #C8EBFB;
+}
+
+.conditions {
+    margin-left: 20px;
+}
+
+.condition {
+    margin-bottom: 15px;
+    border-bottom: solid black 2px;
+    padding-bottom: 15px;
+}
+
+.extra-inputs {
+    margin-left: 20px;
 }
 
 #submit, #copy-button {

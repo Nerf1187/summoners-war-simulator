@@ -1,9 +1,9 @@
 package Monsters.Fire;
 
 import Abilities.*;
+import Effects.Buffs.*;
 import Monsters.*;
 import Runes.*;
-import Effects.Buffs.*;
 import Util.Util.*;
 import java.util.*;
 
@@ -13,6 +13,8 @@ import java.util.*;
 public class Trevor extends Monster
 {
     private static int count = 1;
+    
+    private int lastHP;
     
     /**
      * Creates the Monster with the default rune set
@@ -33,6 +35,8 @@ public class Trevor extends Monster
         setRunes(RUNES.getRunesFromFile(runeFileName, this));
         setAbilities();
         count++;
+        
+        lastHP = this.getCurrentHp();
     }
     
     private void setAbilities()
@@ -41,16 +45,16 @@ public class Trevor extends Monster
         ArrayList<Buff> ability1Buffs = MONSTERS.abilityBuffs(BuffEffect.ATK_UP.getNum(), 2);
         ArrayList<Integer> ability1BuffChances = MONSTERS.abilityChances(100);
         Ability a1 = new Attack_Ability("Combat Knife (1)", 1.35 * 1.9, 0, 2, "Swings a dagger to attack the enemy 2 times and " +
-                                                                               "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0);
+                                                                              "subsequently increases your Attack Power for 2 turns.", ability1Buffs, ability1BuffChances, 0, false, false, false, 0);
         
         Ability a2 = new Attack_Ability("Relentless Strike (2)", 1.3 * 5.7, 0.3, 1, "Increases the Critical Rate for 2 turns " +
-                                                                                     "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage. This attack won't land as a Glancing Hit", 3,
+                                                                                    "and instantly attacks an enemy with a powerful strike. In addition, recovers your HP by 30% of the inflicted damage. This attack won't land as a Glancing Hit", 3,
                 false,
                 false, false);
         
         //@Passive:Creation
-        Ability a3 = new Passive("Brawler's Will", "As your HP decreases, the damage inflicted to the enemy will increase and the damage you receive " +
-                                                    "will decrease. The damage you receive will decrease by 20% additionally if you are under harmful effects.");
+        Ability a3 = new Passive("Brawler's Will",
+                "Increases the damage dealt and decreases the damage taken as your HP decreases. Counterattacks with [Relentless Strike] when your HP falls to below 30% or below by receiving damage from an enemy.");
         
         
         Ability a4 = new Leader_Skill(RuneAttribute.ATK, 0.33, Element.ALL);
@@ -97,10 +101,35 @@ public class Trevor extends Monster
         }
         
         //@Passive
-        //Reduce damage based on current HP and whether Trevor has any debuffs
+        //Reduce damage based on current HP
         double ratio = (1.0 * this.getCurrentHp() / this.getMaxHp());
         num -= (num * ((1 - ratio) * 0.75));
         
-        return (!this.getAppliedDebuffs().isEmpty()) ? num * 0.8 : num;
+        return num;
+    }
+    
+    public void targetBeforeHitProtocol(Monster attacker)
+    {
+        super.targetBeforeHitProtocol(attacker);
+        
+        lastHP = this.getCurrentHp();
+    }
+    
+    public void attacked(Monster attacker)
+    {
+        super.attacked(attacker);
+        
+        if (lastHP <= this.getMaxHp() * 0.3)
+        {
+            lastHP = this.getCurrentHp();
+            return;
+        }
+        
+        if (this.getCurrentHp() <= this.getMaxHp() * 0.3)
+        {
+            this.attack(attacker, this.getAbility(2), false, 1);
+        }
+        
+        lastHP = this.getCurrentHp();
     }
 }

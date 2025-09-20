@@ -37,6 +37,7 @@ public class Defend extends Buff
      * Compares two Defend buffs
      *
      * @param defend The other Defend buff to compare to
+     *
      * @return True if both Defend buffs have the same caster
      */
     public boolean equals(Defend defend)

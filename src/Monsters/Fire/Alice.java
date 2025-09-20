@@ -57,7 +57,7 @@ public class Alice extends Monster
                 "Escorts the ally with the lowest HP for 3 turns, then charges towards the enemy target. Deals damage that increases according to your Defense on the attacked target and stuns for 1 turn.", ability2Debuffs,
                 ability2DebuffChances, 3, false, false, false);
         
-        ArrayList<Buff> ability3Buffs = MONSTERS.abilityBuffs(BuffEffect.DEF_UP.getNum(), 1);
+        ArrayList<Buff> ability3Buffs = MONSTERS.abilityBuffs(BuffEffect.DEF_UP.getNum(), 2);
         ArrayList<Integer> ability3BuffChances = MONSTERS.abilityChances(100);
         Ability a3 = new Ability("Macaron Shield (3)", 0, 0, 1,
                 "Increases the Defense of all allies for 1 turn and decreases the damage that your allies take by 200% of your Defense until the next turn starts. You will gain immunity to inability effects and have your Attack Speed at 100. you " +
@@ -76,7 +76,7 @@ public class Alice extends Monster
         //Remove damage reduction
         setDmgReductionActive(false);
         setCurrentSpd(maxSpd);
-        this.removeOtherEffect(OtherEffect.MACARON_SHIELD);
+        this.removeAllOf(OtherEffect.MACARON_SHIELD);
         
         //Reset speed
         setCurrentSpd(getMaxSpd());
@@ -173,12 +173,13 @@ public class Alice extends Monster
     public void afterTurnProtocol(Object o, boolean attack)
     {
         super.afterTurnProtocol(o, attack);
+        
         //Remove stun effects if Macaron shield is active
         if (dmgReductionIsActive())
         {
-            removeDebuff(DebuffEffect.STUN);
-            removeDebuff(DebuffEffect.FREEZE);
-            removeDebuff(DebuffEffect.SLEEP);
+            removeAllOf(DebuffEffect.STUN);
+            removeAllOf(DebuffEffect.FREEZE);
+            removeAllOf(DebuffEffect.SLEEP);
         }
     }
     
@@ -186,7 +187,7 @@ public class Alice extends Monster
     {
         //Remove Macaron shield when resetting
         dmgReductionActive = false;
-        this.removeOtherEffect(OtherEffect.MACARON_SHIELD);
+        this.removeAllOf(OtherEffect.MACARON_SHIELD);
         super.reset();
     }
     
@@ -196,7 +197,7 @@ public class Alice extends Monster
         if (this.isDead())
         {
             dmgReductionActive = false;
-            this.removeOtherEffect(OtherEffect.MACARON_SHIELD);
+            this.removeAllOf(OtherEffect.MACARON_SHIELD);
         }
     }
     

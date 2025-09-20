@@ -83,7 +83,7 @@ public class Verad extends Monster
             //Remove temporary debuff and re-apply Freeze
             if (isFrozenAfterAttack)
             {
-                target.removeDebuff(DebuffEffect.NULL);
+                target.removeAllOf(DebuffEffect.NULL);
                 target.addGuaranteedAppliedDebuff(DebuffEffect.FREEZE, (isFrozenBeforeAttackByVerad) ? 2 : 1, this);
             }
         }

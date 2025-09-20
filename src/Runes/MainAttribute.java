@@ -66,6 +66,6 @@ public class MainAttribute
         };
         
         s += amount;
-        return (attribute.toString().endsWith("PERCENT") || attribute.getNum() >= CRIT_RATE.getNum()) ? s + "%" : s;
+        return (attribute.toString().toLowerCase().endsWith("percent") || attribute.getNum() >= CRIT_RATE.getNum()) ? s + "%" : s;
     }
 }

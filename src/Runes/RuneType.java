@@ -65,6 +65,7 @@ public enum RuneType
      * Formats the rune type number into a String
      *
      * @param num The number to convert
+     *
      * @return The rune type or {@link #NONE} if the number doesn't correspond to an existing rune set
      */
     public static RuneType numToType(int num)
@@ -83,6 +84,7 @@ public enum RuneType
      * Converts a given variable name into a set number
      *
      * @param type A String containing the variable name
+     *
      * @return The attribute number with the given variable name if possible, {@link RuneType#NONE} otherwise
      */
     public static RuneType stringToType(String type)

@@ -101,12 +101,12 @@ public class Auto_Play extends Thread
     /**
      * Continues simulations from a previous instance of Auto_Play
      *
-     * @param teams       The teams to use
-     * @param library     The names of every Monster used
-     * @param totalTime   The total time when the previous Auto Play stopped
-     * @param _battleTime The battle time when the previous Auto Play stopped
-     * @param _i          The last i value from the previous instance
-     * @param _j          The last j value from the previous instance
+     * @param teams         The teams to use
+     * @param library       The names of every Monster used
+     * @param totalTime     The total time when the previous Auto Play stopped
+     * @param _battleTime   The battle time when the previous Auto Play stopped
+     * @param _i            The last i value from the previous instance
+     * @param _j            The last j value from the previous instance
      * @param prioritizeSpd Whether the user wants to save time or memory
      */
     public void main(ArrayList<Team> teams, ArrayList<String> library, long totalTime, long _battleTime, int _i, int _j, boolean prioritizeSpd)
@@ -146,7 +146,7 @@ public class Auto_Play extends Thread
      * Sets the status of the simulation calculation error.
      *
      * @param simsCalculationError A boolean value indicating whether there is a simulation
-     *                              calculation error (true for error, false otherwise).
+     *                             calculation error (true for error, false otherwise).
      */
     public static void setSimsCalculationError(boolean simsCalculationError)
     {
@@ -174,6 +174,12 @@ public class Auto_Play extends Thread
         {
             //Filter Monsters
             ArrayList<Monster> allMons = FILTER_AND_SORT.filterMonsters(Monster.getMonstersFromDatabase(), true);
+            boolean tag = allMons.getFirst().getName(false, false).contains("include");
+            if (tag)
+            {
+                allMons.removeFirst();
+            }
+            
             //Add Monster names to the keys list
             for (Monster mon : allMons)
             {
@@ -189,13 +195,39 @@ public class Auto_Play extends Thread
                 System.out.println("Choosing speed is much faster but takes up more RAM and takes longer to create the teams.");
                 System.out.println("Choosing memory takes up less RAM and creates the teams faster but takes much longer to finish.");
                 response = CONSOLE_INTERFACE.INPUT.getSpecificString("Do you want to prioritize speed or memory? (\"s\" for speed, \"m\" for memory, \"info\" to learn more)",
-                    "s", "m", "info");
+                        "s", "m", "info");
             }
             prioritizeSpeed = response.equalsIgnoreCase("s");
             
             //Create teams
             System.out.println("Creating teams...");
-            ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = STATISTICS.generateCombinations(allMons, 4, prioritizeSpeed);
+            ArrayList<ArrayList<Monster>> allPossibleTeamMonsters = STATISTICS.generateCombinations((tag) ? Monster.getMonstersFromDatabase() : allMons, 4, prioritizeSpeed);
+            
+            if (tag)
+            {
+                System.out.println("Applying filter...");
+                System.out.print("0%\r");
+                
+                for (int i = allPossibleTeamMonsters.size() - 1; i >= 0; i--)
+                {
+                    System.out.printf("%d%%\r", (i + 2 + allPossibleTeamMonsters.size()) * 100 / allPossibleTeamMonsters.size());
+                    mid:
+                    for (Monster check : allMons)
+                    {
+                        for (Monster possible : allPossibleTeamMonsters.get(i))
+                        {
+                            if (check.getName(false, false).equals(possible.getName(false, false)))
+                            {
+                                continue mid;
+                            }
+                        }
+                        allPossibleTeamMonsters.remove(i);
+                        break mid;
+                    }
+                }
+                System.out.println("100%\nDone\n");
+            }
+            
             //Add teams to list
             for (ArrayList<Monster> list : allPossibleTeamMonsters)
             {
@@ -214,13 +246,14 @@ public class Auto_Play extends Thread
             totalSims = -1;
         }
         
-        System.out.println("Simulations started");
         
         //Check for pausing
         Auto_Play thread = new Auto_Play();
         thread.start();
         
         boolean firstRun = true;
+        
+        System.out.println("Simulations started");
         
         //Start overall timer
         totalRunningTime.play();
@@ -236,6 +269,16 @@ public class Auto_Play extends Thread
             {
                 i = j - 1;
             }
+            
+            if (prioritizeSpeed)
+            {
+                TEAMS.resetTeamForTime(current);
+            }
+            else //Save memory
+            {
+                TEAMS.resetTeamForMemory(current.getMonsters());
+            }
+            
             for (j = i + 1; j < allPossibleTeams.size(); j++)
             {
                 if (firstRun)
@@ -244,10 +287,21 @@ public class Auto_Play extends Thread
                     firstRun = false;
                 }
                 
+                final Team contender = allPossibleTeams.get(j);
+                
+                if (prioritizeSpeed)
+                {
+                    TEAMS.resetTeamForTime(contender);
+                }
+                else //Save memory
+                {
+                    TEAMS.resetTeamForMemory(contender.getMonsters());
+                }
+                
                 //Pause program
                 if (pause && numOfCompletedSimulations != 0)
                 {
-                    //Pause program and update best teams
+                    //Pause program and update the best teams
                     totalRunningTime.pause();
                     updateBestTeams();
                     
@@ -283,20 +337,12 @@ public class Auto_Play extends Thread
                     System.out.println("Running");
                     totalRunningTime.play();
                 }
-                final Team contender = allPossibleTeams.get(j);
                 
-                //Reset teams
-                if (prioritizeSpeed)
+                if (!prioritizeSpeed)
                 {
-                    TEAMS.resetTeamForTime(current);
-                    TEAMS.resetTeamForTime(contender);
-                }
-                else //Save memory
-                {
-                    TEAMS.resetTeamForMemory(current.getMonsters());
-                    TEAMS.resetTeamForMemory(contender.getMonsters());
                     MONSTERS.setNamesAndRuneEffects(current, contender);
                 }
+                
                 //Start battle timer
                 battleTime.play();
                 //Simulate the battle
@@ -310,6 +356,16 @@ public class Auto_Play extends Thread
                 {
                     game.getWinningTeam().increaseWins();
                     game.getLosingTeam().increaseLosses();
+                }
+                
+                //Reset teams
+                if (prioritizeSpeed)
+                {
+                    TEAMS.resetTeamForTime(current);
+                }
+                else //Save memory
+                {
+                    TEAMS.resetTeamForMemory(current.getMonsters());
                 }
             }
         }
@@ -438,14 +494,14 @@ public class Auto_Play extends Thread
      * Retrieves the current progress information of the simulations.
      *
      * @return An array of objects containing the progress information:
-     *         i - the current value of the outer loop index,
-     *         j - the current value of the inner loop index,
-     *         completed - the number of completed simulations,
-     *         totalRunningTime - the total running time of the simulations,
-     *         battleTime - the time spent on battles.
+     * i - the current value of the outer loop index,
+     * j - the current value of the inner loop index,
+     * completed - the number of completed simulations,
+     * totalRunningTime - the total running time of the simulations,
+     * battleTime - the time spent on battles.
      */
     public static Object[] getProgressInfo()
     {
-        return new Object[] {i, j, completed, totalRunningTime, battleTime};
+        return new Object[]{i, j, completed, totalRunningTime, battleTime};
     }
 }

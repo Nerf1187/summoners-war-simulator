@@ -56,6 +56,7 @@ public class Main
      * The battle continues until the game reaches an end state.
      *
      * @param game The game instance containing the setup and state for the battle.
+     *
      * @return The modified game instance after the battle concludes.
      */
     protected Game battle(Game game)
@@ -82,6 +83,7 @@ public class Main
      *
      * @param team1 The first team participating in the battle.
      * @param team2 The second team participating in the battle.
+     *
      * @return The Game instance representing the outcome of the battle.
      */
     protected Game battle(Team team1, Team team2)
@@ -110,6 +112,7 @@ public class Main
      *
      * @param teamToAdd The team to add the new Monster to
      * @param inputMon  The name of the Monster
+     *
      * @return True if the Monster was successfully added, false otherwise
      */
     public static boolean addMonToTeam(ArrayList<Monster> teamToAdd, String inputMon)

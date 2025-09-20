@@ -1,5 +1,11 @@
 package Effects;
 
+import Effects.Buffs.*;
+import Effects.Debuffs.*;
+import Util.*;
+
+import java.util.*;
+
 import static Effects.OtherEffect.*;
 
 /**
@@ -10,7 +16,7 @@ import static Effects.OtherEffect.*;
 public class Effect
 {
     private int numTurns;
-    private OtherEffect otherEffect = NULL;
+    private OtherEffect otherEffect;
     private int numOfSpecialEffects = 0;
     
     /**
@@ -20,6 +26,28 @@ public class Effect
      */
     public Effect(int numTurns)
     {
+        this(NULL, numTurns);
+    }
+    
+    /**
+     * Creates a new Effect and sets its number of turns remaining to max
+     *
+     * @param otherEffect The OtherEffect to use
+     */
+    public Effect(OtherEffect otherEffect)
+    {
+        this(otherEffect, 999_999);
+    }
+    
+    /**
+     * Creates a new Effect
+     *
+     * @param otherEffect The OtherEffect to use
+     * @param numTurns The number of turns this Effect should last
+     */
+    public Effect(OtherEffect otherEffect, int numTurns)
+    {
+        this.otherEffect = otherEffect;
         this.numTurns = numTurns;
     }
     
@@ -85,6 +113,7 @@ public class Effect
      * Compares two Effects
      *
      * @param effect The other Effect to compare
+     *
      * @return True if both Effects have the same effect number and the effect is not {@link OtherEffect#NULL}, false otherwise
      */
     public boolean equals(Effect effect)
@@ -103,6 +132,7 @@ public class Effect
         {
             case BERSERK, THUNDERER -> "%s (%d turns remaining)".formatted(otherEffect, getNumTurns());
             case TOTEM, MAGIC_SPHERE -> "%s (%d)".formatted(otherEffect, numOfSpecialEffects);
+            case RIDER -> "%s".formatted(otherEffect);
             default -> "";
         };
     }
@@ -125,5 +155,26 @@ public class Effect
     public void setNumOfSpecialEffects(int numOfSpecialEffects)
     {
         this.numOfSpecialEffects = numOfSpecialEffects;
+    }
+    
+    public Effect stringToEffect(String s)
+    {
+        s = Util.STRINGS.toEnumCase(s);
+        
+        try
+        {
+            return new Buff(BuffEffect.valueOf(s));
+        }
+        catch (IllegalArgumentException e)
+        {
+            try
+            {
+                return new Debuff(DebuffEffect.valueOf(s));
+            }
+            catch (IllegalArgumentException e1)
+            {
+                return new Effect(0);
+            }
+        }
     }
 }

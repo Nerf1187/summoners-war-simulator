@@ -242,6 +242,7 @@ public class EditRuneFile extends JFrame
      * @param oldAttributeName   The name of the old attribute
      * @param newAttributeName   The name of the new attribute
      * @param newAttributeAmount The amount for the new attribute input 0 when changing the type
+     *
      * @return True if the attribute was successfully changed, false otherwise
      */
     private boolean replaceAttribute(Rune rune, String oldAttributeName, String newAttributeName, int newAttributeAmount)

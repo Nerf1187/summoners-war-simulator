@@ -67,7 +67,7 @@ public class Loren extends Monster
         return true;
     }
     
-    public void selfAfterHitProtocol(Monster target, int abilityNum, int count)
+    public void attackerAfterHitProtocol(Monster target, int abilityNum, int count)
     {
         //@Passive
         //Decrease the target's attack bar and apply Defense down
@@ -77,6 +77,6 @@ public class Loren extends Monster
             target.addAppliedDebuff(DebuffEffect.DEC_DEF, 75, 1, this);
         }
         
-        super.selfAfterHitProtocol(target, abilityNum, count);
+        super.attackerAfterHitProtocol(target, abilityNum, count);
     }
 }

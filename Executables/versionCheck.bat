@@ -1,5 +1,5 @@
 @echo off
-set minVersion=24
+set minVersion=25
 for /f "tokens=2 delims== " %%i in ('java -XshowSettings:properties -version 2^>^&1 ^| find "java.version"') do (
     set "javaVersion=%%i"
     goto Check

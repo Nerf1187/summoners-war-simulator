@@ -1,7 +1,7 @@
 # How to run
 
 Go to the [Executables](Executables) Directory, then open the folder of the class you want to run and double-click the .bat file (titled "RUN ME").
-You must have Java 23 or higher installed to run the program
+You must have Java 24 (with preview features) or higher installed to run the program
 
 # Main
 
@@ -10,19 +10,18 @@ Teams cannot have repeat Monsters (ex. Team 1 cannot have two Lushens, even if t
 
 # Auto Play
 
-The [Auto_Play](src/Game/Auto_Play.java) class is currently set up to run every possible team composition against each other and print the four best
-teams when it is finished.
-Press enter at any time to pause the program and view the best teams at the time.
-Ending the program will also display the top four teams at the time.
+The [Auto_Play](src/Game/Auto_Play.java) class is currently set up to run every possible team composition against each other.
+Press enter at any time to pause the program and enter different commands.
+Ending the program will also display the top four teams at the time and automatically save the results if enough simulations have passed.
 The program will only run with default rune sets and NO leader skills to limit the number of simulations
 
 # Test One Team
 
-The [Test_One_Team](src/Game/Test_One_Team.java) allows you to create a Team and simulate it in a battle against every other possible Team
+The [Test_One_Team](src/Game/Test_One_Team.java) class allows you to create a Team and simulate it in a battle against every other possible Team
 
 # Runes
 
-The [Runes](src/GUI/Runes.java) class is an easier way to work with rune sets.
+The [Runes](src/GUI/Runes.java) class shows a GUI allowing you to create, edit, view, delete, and duplicate rune files.
 You will first be asked to enter a Monster name and rune set number then choose what action to complete.
 The program will handle everything to do with the files themselves. Just supply the information requested
 
@@ -33,8 +32,8 @@ File names are determined by the date and time of their creation if possible, ot
 
 # Rune parser
 
-The [Rune_Parser](src/Runes/Rune_Parser.java) class allows you to import runes from a JSON file and either create new rune sets or replace and update the files already in the project.
-Visit <a href="https://tool.swop.one">Summoner's War Optimizer</a> to learn how to get a JSON file for your Summoners War account.
+The [Rune_Parser](src/Runes/Rune_Parser.java) class allows you to import runes from a JSON file and either create new rune sets or replace and update the files already saved.
+Visit <a href="https://tool.swop.one">Summoner's War Optimizer</a> to learn how to get a JSON file for your Summoner's War account.
 
 # Developer Website
 

@@ -195,7 +195,7 @@ public class Chakra extends Monster
         {
             this.addGuaranteedAppliedDebuff(DebuffEffect.STUN, 2, this);
         }
-        this.removeOtherEffect(t);
+        this.removeAllOf(t);
         this.setSpd(normalSpd);
         thundererActive = false;
     }

@@ -11,10 +11,12 @@ public class StopWatch
      * Time of last play
      */
     private Instant start;
+    
     /**
      * Time since first start (in nanoseconds)
      */
     private long elapsedNanoseconds;
+    
     /**
      * Flag for if the timer is paused
      */
@@ -94,8 +96,11 @@ public class StopWatch
      */
     public long getElapsedTime()
     {
-        pause();
-        play();
+        if (!paused)
+        {
+            pause();
+            play();
+        }
         return elapsedNanoseconds;
     }
 }

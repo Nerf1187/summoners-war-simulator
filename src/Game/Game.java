@@ -221,7 +221,7 @@ public class Game
             {
                 if (m.getProvoke().getCaster().isDead())
                 {
-                    m.removeDebuff(DebuffEffect.PROVOKE);
+                    m.removeAllOf(DebuffEffect.PROVOKE);
                 }
             }
         }
@@ -277,7 +277,7 @@ public class Game
         //Remove sleep if any damage was taken. Do this AFTER loop to not break program
         if (dmgTaken)
         {
-            next.removeDebuff(DebuffEffect.SLEEP);
+            next.removeAllOf(DebuffEffect.SLEEP);
         }
         
         //Try to stun Monster if a bomb exploded. Do this AFTER loop to not break program
@@ -323,6 +323,7 @@ public class Game
      * Finds the Team that contains the given Monster
      *
      * @param monster The Monster to search for
+     *
      * @return The Team with the given Monster
      */
     public Team getTeamFromMon(Monster monster)

@@ -1,4 +1,32 @@
 /**
+ * Contains any predefined extra input parameters for each condition
+ *
+ * @type {Object | null}
+ * */
+const effectConditions = {
+    "enemyKilled":                    null,
+    "targetWasCrit":                  null,
+    "targetNotCrit":                  null,
+    "buffRemoved":                    null,
+    "debuffRemoved":                  null,
+    "buffApplied":                    buffApplied,
+    "debuffApplied":                  debuffApplied,
+    "targetAttackBarReduced":         null,
+    "targetIsSelf":                   null,
+    "targetIsNotSelf":                null,
+    "selfHasEffect":                  selfHasEffect,
+    "targetHasEffect":                targetHasEffect,
+    "selfNotHasEffect":               selfNotHasEffect,
+    "targetNotHasEffect":             targetNotHasEffect,
+    "targetUnderHealthRatio":         targetUnderHealthRatio,
+    "targetOverHealthRatio":          targetOverHealthRatio,
+    "damageToTargetUnderHealthRatio": damageToTargetUnderHealthRatio,
+    "damageToTargetOverHealthRatio":  damageToTargetOverHealthRatio,
+    "targetStatUnderSelfStat":        targetStatUnderSelfStat,
+    "targetStatOverSelfStat":         targetStatOverSelfStat,
+};
+
+/**
  * Inputs for attack abilities
  * @type String
  */
@@ -68,7 +96,7 @@ const attackInputs = `
         <input type="checkbox" id="{name}-ignores-dmg-reduction">
         
         <!-- Ability hits team checkbox -->
-        <label for="{name}-hits-team">Hits Team?</label>
+        <label for="{name}-hits-team">Targets Whole Team?</label>
         <input type="checkbox" id="{name}-hits-team">
 `;
 
@@ -107,7 +135,7 @@ const healInputs = `
         <input type="number" id="{name}-cooldown">
         
         <!-- Ability targets team checkbox-->
-        <label for="{name}-targets-team">Hits Team?</label>
+        <label for="{name}-targets-team">Targets Whole Team?</label>
         <input type="checkbox" id="{name}-targets-team">
 `;
 
@@ -221,6 +249,22 @@ const parentInputs = `
 `;
 
 /**
+ * A 2D array of numbers containing information about buffs needing conditions to apply.
+ * Each inner array corresponds to the ability number, and each number represents the buff number for the ability that has conditions
+ *
+ * @type {[[Number]]}
+ */
+let conditionalBuffs = [];
+
+/**
+ * A 2D array of numbers containing information about debuffs needing conditions to apply.
+ * Each inner array corresponds to the ability number, and each number represents the debuff number for the ability that has conditions
+ *
+ * @type {[[Number]]}
+ */
+let conditionalDebuffs = [];
+
+/**
  * Contains all buffs formatted in individual HTML <option> tags
  * @type String
  */
@@ -239,10 +283,6 @@ window.onload = () => {
     //Get all buffs and debuffs from files
     getAllBuffs();
     getAllDebuffs();
-    
-    //Create the input form
-    const form = document.getElementById("form");
-    const formElements = form.elements;
     
     //Add ability button
     const addAbilityButton = document.getElementById("add-ability");
@@ -343,6 +383,10 @@ window.onload = () => {
                             <label for='\` + dynamicDivName + \`-buff\` + newBuffLength + \`-chance'>Chance</label>
                             <input type='number' id='\` + dynamicDivName + \`-buff\` + newBuffLength + \`-chance' required='' min='0' max='100' style='margin-right: 1px;'>%
                             
+                            <!-- Add conditional -->
+                            <div id='\` + dynamicDivName + \`-buff\` + newBuffLength + \`-conditions' class='conditions'></div>
+                            <button class='buff-button' style='margin-left: 10px;' onclick='event.preventDefault(); this.previousElementSibling.innerHTML += (createConditionalDivString(\` + newBuffLength + \`, \` + dynamicDivName + \`, true)); this.style.display = \` + '\`none\`;' + \`'>Add condition</button>
+                            
                             <!-- Remove buff -->
                             <button class='debuff-button' onclick='{this.parentElement.parentElement.renameAllChildrenEffects(\` + newBuffLength + \`); this.parentElement.remove();}' style='margin-left: 10px;'>Remove buff</button>
                         \`;
@@ -437,13 +481,16 @@ window.onload = () => {
                             <label for='\` + dynamicDivName + \`-debuff\` + newDebuffLength + \`-chance'>Chance</label>
                             <input type='number' id='\` + dynamicDivName + \`-debuff\` + newDebuffLength + \`-chance' required='' min='0' max='100' style='margin-right: 0'>%
                             
+                             <!-- Add conditional -->
+                            <div id='\` + dynamicDivName + \`-debuff\` + newDebuffLength + \`-conditions' class='conditions'></div>
+                            <button class='buff-button' style='margin-left: 10px;' onclick='event.preventDefault(); this.previousElementSibling.innerHTML += (createConditionalDivString(\` + newDebuffLength + \`, \` + dynamicDivName + \`, false)); this.style.display = \` + '\`none\`;' + \`'>Add condition</button>
+                            
                             <!-- Remove debuff -->
                             <button class='debuff-button' onclick='{this.parentElement.parentElement.renameAllChildrenEffects(\` + newDebuffLength + \`); this.parentElement.remove();}' style='margin-left: 10px;'>Remove debuff</button>
                         \`;
                         debuffs.appendChild(div);
                         
                         //Extra inputs for certain debuffs
-                        //TODO Add logic for SHORTEN_BUFF
                         let debuffSelector = document.getElementById(dynamicDivName + '-debuff' + newDebuffLength + '-selector')
                         debuffSelector.onchange = () => {
                             let element = document.getElementById(debuffSelector.id.substring(0, 8) + '-debuff' + debuffSelector.id.charAt(15) + '-extras');
@@ -451,6 +498,24 @@ window.onload = () => {
                             {
                                 element.style.display = (debuffSelector.value === 'Dec Atk Bar') ? 'inline-block' : 'none';
                                 element.children[1].value = (debuffSelector.value === 'Shorten Buff') ? -1 : '';
+                            }
+                            
+                            //Hide certain input fields for specific debuffs
+                            let turnInput = document.getElementById(debuffSelector.id.substring(0, 8) + '-debuff' + debuffSelector.id.charAt(15) + '-turns');
+                            
+                            switch (debuffSelector.value)
+                            {
+                                case 'Dec Atk Bar':
+                                case 'Remove Beneficial Effect':
+                                case 'Strip':
+                                    turnInput.placeholder = 0;
+                                    turnInput.value = '';
+                                    turnInput.readOnly = true;
+                                    break;
+                                default:
+                                    turnInput.placeholder = '';
+                                    turnInput.readOnly = false;
+                                    break;
                             }
                         };
                     }">Add Debuff</button>
@@ -486,9 +551,6 @@ window.onload = () => {
                 {
                     trueOldIndex = event.oldDraggableIndex;
                 }
-                
-                console.log(trueOldIndex);
-                console.log(event.item);
                 
                 if (trueOldIndex < event.newDraggableIndex)
                 {
@@ -553,7 +615,7 @@ window.onload = () => {
         });
         
         //Format code and return the result
-        return `
+        let returnVal = `
         package Monsters.${get("element").toTitleCase()};
         
         import Abilities.*;
@@ -561,6 +623,7 @@ window.onload = () => {
         import Effects.Buffs.*;
         import Effects.Debuffs.*;
         import Effects.*;
+        import Runes.*;
         import Util.Util.*;
         import java.util.*;
         
@@ -596,17 +659,21 @@ window.onload = () => {
             
             public boolean nextTurn(Monster target, int abilityNum)
             {
-                //TODO Add prechecks and modifications
+                //TODO Check prechecks and add modifications
                 //This is also where effects that are applied before the attack should be added
                 //Activate passive abilities here or after the if condition
-            
+                
+                ${formatBeforeTurnConditionalEffects()}
+                
                 boolean b = super.nextTurn(target, abilityNum);
                 if (!b)
                 {
                     return false;
                 }
                 
-                //TODO Add conditions
+                //TODO Check effect conditions if there are any
+                
+                ${formatAfterTurnConditionalEffects()}
                 
                 //TODO Check this line
                 //The result of the (possible) ternary operator should be the target monster or team
@@ -616,24 +683,250 @@ window.onload = () => {
             
             //TODO Add any extra functions
         }`;
+        //Reset variables
+        conditionalBuffs = [];
+        conditionalDebuffs = [];
+        abilityTypes = [];
+        abilityTargets = [];
+        
+        return returnVal;
     }
     
     /**
-     * Gets the input value with the given name
-     * @param {String} elementName The name of the element to retrieve
-     * @return {boolean | String | Number | null} The element value, or null if the element does not exist
+     * Formats a String containing any statements needed before the Monster's turn for conditional effects
+     *
+     * @returns {string} The formatted statements
      */
-    function get(elementName)
+    function formatBeforeTurnConditionalEffects()
     {
-        try
+        //Count the ability number
+        let count = 1;
+        let lines = "";
+        
+        for (let ability of conditionalBuffs)
         {
-            let item = formElements.namedItem(elementName);
-            return item.type !== "checkbox" ? item.value : item.checked;
+            //Do nothing if the ability has no conditional buffs
+            if (ability.length === 0)
+            {
+                count++;
+                continue;
+            }
+            
+            //For each buff number needing conditions, format the necessary code
+            for (let buffNum of ability)
+            {
+                //Get the div containing the conditions for the current buff
+                let conDiv = document.getElementById(`ability${count}-buff${buffNum}-conditions`);
+                
+                //Collect the necessary information about the buff
+                let effect = {
+                    effect:        get(`ability${count}-buff${buffNum}-selector`),
+                    chance:        get(`ability${count}-buff${buffNum}-chance`),
+                    amount:        get(`ability${count}-buff${buffNum}-amount`),
+                    turns:         get(`ability${count}-buff${buffNum}-turns`),
+                    immunityCheck: get(`ability${count}-buff${buffNum}-through-immunity`),
+                };
+                
+                //Add each line if it hasn't already been added
+                for (let line of createIfStatements(conDiv, effect).beforeTurnStatements)
+                {
+                    if (lines.includes(line))
+                    {
+                        continue;
+                    }
+                    lines += line + "\n";
+                }
+            }
         }
-        catch (e)
+        
+        //Reset ability count
+        count = 1;
+        
+        //Format the code for each ability
+        for (let ability of conditionalDebuffs)
         {
-            return null;
+            //Do nothing if there are no debuffs needing conditions for the ability
+            if (ability.length === 0)
+            {
+                count++;
+                continue;
+            }
+            
+            //Format the code for each debuff with conditions in the ability
+            for (let debuffNum of ability)
+            {
+                //Get the div containing the condition information
+                let conDiv = document.getElementById(`ability${count}-debuff${debuffNum}-conditions`);
+                
+                //Collect information for the debuff
+                let effect = {
+                    effect:        get(`ability${count}-debuff${debuffNum}-selector`),
+                    chance:        get(`ability${count}-debuff${debuffNum}-chance`),
+                    amount:        get(`ability${count}-debuff${debuffNum}-amount`),
+                    turns:         get(`ability${count}-debuff${debuffNum}-turns`),
+                    immunityCheck: get(`ability${count}-debuff${debuffNum}-through-immunity`),
+                };
+                
+                //Add each line if it hasn't been added already
+                for (let line of createIfStatements(conDiv, effect).beforeTurnStatements)
+                {
+                    if (lines.includes(line))
+                    {
+                        continue;
+                    }
+                    lines += line + "\n";
+                }
+            }
         }
+        return lines;
+    }
+    
+    /**
+     * Formats any statements needed after the Monster's turn for conditional effects.
+     * This function also formats the condition statement(s) and the apply effect statement.
+     *
+     * @returns {string} The formatted statements
+     */
+    function formatAfterTurnConditionalEffects()
+    {
+        //Keep track of the ability number
+        let count = 1;
+        let lines = "";
+        
+        for (let ability of conditionalBuffs)
+        {
+            //Do nothing if there are no buffs needing conditions for the ability
+            if (ability.length === 0)
+            {
+                count++;
+                continue;
+            }
+            
+            //Format the code for each buff needing conditions
+            for (let buffNum of ability)
+            {
+                //Get the div containing the condition information
+                let conDiv = document.getElementById(`ability${count}-buff${buffNum}-conditions`);
+                
+                //Collect information about the buff itself
+                let effect = {
+                    effect:        get(`ability${count}-buff${buffNum}-selector`),
+                    chance:        get(`ability${count}-buff${buffNum}-chance`),
+                    amount:        get(`ability${count}-buff${buffNum}-amount`),
+                    turns:         get(`ability${count}-buff${buffNum}-turns`),
+                    immunityCheck: get(`ability${count}-buff${buffNum}-through-immunity`),
+                };
+                
+                let statementInfo = createIfStatements(conDiv, effect);
+                let canOverwrite = statementInfo.canOverwriteForTeamAttack;
+                let hitsTeam = get(`ability${count}-hits-team`);
+                
+                //Put the statements in a loop if needed
+                if (hitsTeam && canOverwrite)
+                {
+                    lines += `applyToTeam(game.get${get(`ability${count}-type`) === "Attack" ? "Other" : "NextMons"}Team(), m -> {
+                    `;
+                }
+                
+                //Add each line if it hasn't been already
+                for (let line of statementInfo.afterTurnStatements)
+                {
+                    if (hitsTeam && canOverwrite)
+                    {
+                        line = line.replaceAll("target", "m");
+                    }
+                    if (lines.includes(line))
+                    {
+                        continue;
+                    }
+                    lines += line + "\n";
+                }
+                
+                //Format the if block and add it
+                lines += `if (abilityNum == ${count})
+                {
+                    ${statementInfo.ifStatement.replaceAll("target", (hitsTeam && canOverwrite) ? "m" : "target")}
+                    {
+                        ${statementInfo.applyEffectStatement.replaceAll("target", (hitsTeam && canOverwrite) ? "m" : "target")}
+                    }
+                }
+                `;
+                
+                //Add the last part of the loop if needed
+                if (hitsTeam && canOverwrite)
+                {
+                    lines += `
+                    });`;
+                }
+            }
+            count++;
+        }
+        
+        //Reset the ability count
+        count = 1;
+        
+        for (let ability of conditionalDebuffs)
+        {
+            //Do nothing if the ability has no debuffs needing conditions
+            if (ability.length === 0)
+            {
+                count++;
+                continue;
+            }
+            
+            //Format the code for each debuff needing conditions
+            for (let debuff of ability)
+            {
+                //Get the div containing the condition information
+                let conDiv = document.getElementById(`ability${count}-debuff${debuff}-conditions`);
+                
+                //Collect information about the debuff itself
+                let effect = {
+                    effect:        get(`ability${count}-debuff${debuff}-selector`),
+                    chance:        get(`ability${count}-debuff${debuff}-chance`),
+                    amount:        get(`ability${count}-debuff${debuff}-amount`),
+                    turns:         get(`ability${count}-debuff${debuff}-turns`),
+                    immunityCheck: get(`ability${count}-debuff${debuff}-through-immunity`),
+                };
+                
+                let statementInfo = createIfStatements(conDiv, effect);
+                let canOverwrite = statementInfo.canOverwriteForTeamAttack;
+                let hitsTeam = get(`ability${count}-hits-team`);
+                
+                //Put the code in a loop if needed
+                if (hitsTeam && canOverwrite)
+                {
+                    lines += `applyToTeam(game.get${get(`ability${count}-type`) === "Attack" ? "Other" : "NextMons"}Team(), m -> {
+                    `;
+                }
+                
+                for (let line of statementInfo.afterTurnStatements)
+                {
+                    if (hitsTeam && canOverwrite)
+                    {
+                        line = line.replaceAll("target", "m");
+                    }
+                    
+                    lines += line + "\n";
+                }
+                
+                lines += `if (abilityNum == ${count})
+                {
+                    ${statementInfo.ifStatement.replaceAll("target", (hitsTeam && canOverwrite) ? "m" : "target")}
+                    {
+                        ${statementInfo.applyEffectStatement.replaceAll("target", (hitsTeam && canOverwrite) ? "m" : "target")}
+                    }
+                }`;
+                
+                if (hitsTeam && canOverwrite)
+                {
+                    lines += `
+                    });
+                    `;
+                }
+            }
+        }
+        return lines;
     }
     
     /**
@@ -692,6 +985,7 @@ window.onload = () => {
      * Formats an individual ability
      * @param {Number} abilityNum The ability number
      * @param {Number} stringNum The ability input number
+     *
      * @returns {String} The formatted ability code
      */
     function formatAbilityCode(abilityNum, stringNum)
@@ -711,25 +1005,50 @@ window.onload = () => {
         {
             //Format debuffs
             hasDebuffs = formatDebuffs(abilityNum);
-            code += hasDebuffs;
-            if (hasDebuffs)
+            code += hasDebuffs[0];
+            if (hasDebuffs[0])
             {
                 code += "\n\t\t";
             }
             
+            if (hasDebuffs[1]?.length > 0)
+            {
+                conditionalDebuffs.push(hasDebuffs[1]);
+            }
+            else
+            {
+                conditionalDebuffs.push([]);
+            }
+            
             //Format buffs
             hasBuffs = formatBuffs(abilityNum);
-            code += hasBuffs;
-            if (hasBuffs)
+            code += hasBuffs[0];
+            if (hasBuffs[0])
             {
                 code += "\n\t\t";
             }
+            
+            if (hasBuffs[1]?.length > 0)
+            {
+                conditionalBuffs.push(hasBuffs[1]);
+            }
+            else
+            {
+                conditionalBuffs.push([]);
+            }
+            
+            hasBuffs = hasBuffs[0];
+            hasDebuffs = hasDebuffs[0];
         }
         
         //Add start ability code
         if (type === "Passive")
         {
             code += "\t\t//@Passive:Creation\n\t\t";
+        }
+        if (type === "Passive" || type === "Attack")
+        {
+            code += `${type}_`;
         }
         code += "Ability a" + abilityNum + " = new ";
         //code += "abilities.add(new ";
@@ -767,7 +1086,7 @@ window.onload = () => {
             }
             else
             {
-                code += "{skillUpDmg} * ({multiplier} + (get{stat}() * {amount}) / getAtk())".formatUnicorn({
+                code += "{skillUpDmg} * ({multiplier} + (get{stat}() * {amount}) / getAtk()), ".formatUnicorn({
                     skillUpDmg: (get(`${abilityName}-skill-up-dmg`).includes(".")) ? get(`${abilityName}-skill-up-dmg`) : "1." + get(`${abilityName}-skill-up-dmg`),
                     multiplier: get(`${abilityName}-multiplier`),
                     stat:       get(`${abilityName}-dmg-stat`),
@@ -835,11 +1154,11 @@ window.onload = () => {
         switch (type)
         {
             case "Attack":
-                code += "{ignoresDefense}, {ignoresDmgReduction},{ignore} {hitsTeam}".formatUnicorn({
+                code += "{ignoresDefense}, {ignoresDmgReduction},{hitsTeam}{ignore}".formatUnicorn({
                     ignoresDefense:      get(`${abilityName}-ignores-defense`),
                     ignoresDmgReduction: get(`${abilityName}-ignores-dmg-reduction`),
                     hitsTeam:            get(`${abilityName}-hits-team`),
-                    ignore:              (hasBuffs && !hasDebuffs) ? " 0," : ""
+                    ignore:              (hasBuffs && !hasDebuffs) ? ", 0" : ""
                 });
                 break;
             case "Heal":
@@ -874,7 +1193,8 @@ window.onload = () => {
     /**
      * Formats the debuffs for the ability
      * @param {Number} abilityNum The ability number
-     * @returns {String} The formatted debuffs
+     *
+     * @returns {[String, [Number]]} The formatted debuffs
      */
     function formatDebuffs(abilityNum)
     {
@@ -884,27 +1204,40 @@ window.onload = () => {
         let line2Code = "";
         let extraLines = [];
         let count = 1;
+        let debuffNumsWithConditions = [];
+        
         //Add debuffs until there are no more left
         while (true)
         {
             //Check if there are debuffs left
             if (get(`${abilityName}-debuff${count}-selector`))
             {
+                if (document.getElementById(`${abilityName}-debuff${count}-conditions`).children.length)
+                {
+                    debuffNumsWithConditions.push(count++);
+                    continue;
+                }
+                
+                let hasAmount = get(`${abilityName}-debuff${count}-amount`);
+                
                 //Add comma to line 1 if it is created
                 if (line1Code)
                 {
-                    line1Code += ", ";
+                    if (!hasAmount)
+                    {
+                        line1Code += ", ";
+                    }
                 }
                 else //Create line 1
                 {
                     line1Code = `ArrayList<Debuff> ${abilityName}Debuffs = abilityDebuffs(`;
                 }
                 
-                if (!get(`${abilityName}-debuff${count}-amount`))
+                if (!hasAmount)
                 {
                     //Write debuff info to line 1
                     line1Code += "DebuffEffect.{debuff}.getNum(), {turns}, {throughImmunity}".formatUnicorn({
-                        debuff:          get(`${abilityName}-debuff${count}-selector`).toUpperCase().replaceAll(" ", "_"),
+                        debuff:          get(`${abilityName}-debuff${count}-selector`).toEnumCase(),
                         turns:           get(`${abilityName}-debuff${count}-turns`),
                         throughImmunity: get(`${abilityName}-debuff${count}-through-immunity`) + 0,
                     });
@@ -942,13 +1275,14 @@ window.onload = () => {
             count++;
         }
         //Return formatted lines
-        return formatEffectLines(line1Code, line2Code, extraLines);
+        return [formatEffectLines(line1Code, line2Code, extraLines), debuffNumsWithConditions];
     }
     
     /**
      * Formats the buffs for an ability
      * @param abilityNum {Number} The ability number
-     * @returns {String} The formatted buffs
+     *
+     * @returns {[String, [Number]]} An array containing the formatted buffs and the buffs with conditions
      */
     function formatBuffs(abilityNum)
     {
@@ -958,29 +1292,40 @@ window.onload = () => {
         let line2Code = "";
         let extraLines = [];
         let count = 1;
+        let buffNumsWithConditions = [];
+        
         //Add buffs until there are none left
         while (true)
         {
             //Check if there are buffs left
             if (get(`${abilityName}-buff${count}-selector`))
             {
+                if (document.getElementById(`${abilityName}-buff${count}-conditions`).children.length)
+                {
+                    buffNumsWithConditions.push(count++);
+                    continue;
+                }
+                
+                let hasAmount = get(`${abilityName}-buff${count}-amount`);
                 //Add comma to line 1 if it is created
                 if (line1Code)
                 {
-                    line1Code += ", ";
+                    if (!hasAmount)
+                    {
+                        line1Code += ", ";
+                    }
                 }
                 else //Create line 1
                 {
                     line1Code = `ArrayList<Buff> ${abilityName}Buffs = MONSTERS.abilityBuffs(`;
                 }
                 
-                if (!get(`${abilityName}-buff${count}-amount`))
+                if (!hasAmount)
                 {
                     //Write buff info to line 1
                     line1Code += "BuffEffect.{buff}.getNum(), {turns}".formatUnicorn({
-                        buff:            get(`${abilityName}-buff${count}-selector`).toUpperCase().replaceAll(" ", "_"),
-                        turns:           get(`${abilityName}-buff${count}-turns`),
-                        throughImmunity: (get(`${abilityName}-buff${count}-through-immunity`) + 0)
+                        buff:  get(`${abilityName}-buff${count}-selector`).toUpperCase().replaceAll(" ", "_"),
+                        turns: get(`${abilityName}-buff${count}-turns`) || 0
                     });
                 }
                 else
@@ -1014,7 +1359,7 @@ window.onload = () => {
             count++;
         }
         //Return formatted lines
-        return formatEffectLines(line1Code, line2Code, extraLines);
+        return [formatEffectLines(line1Code, line2Code, extraLines), buffNumsWithConditions];
     }
     
     /**
@@ -1022,6 +1367,7 @@ window.onload = () => {
      * @param {string} line1 The first line of code
      * @param {string} line2 The second line of code
      * @param {string[]} extraLines Any extra lines of code
+     *
      * @returns {string} The formatted lines as a single string
      */
     function formatEffectLines(line1, line2, extraLines)
@@ -1140,6 +1486,10 @@ String.prototype.toTitleCase = function () {
     return this.replace(/\w\S*/g, text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase());
 };
 
+String.prototype.toEnumCase = function () {
+    return this.replaceAll(" ", "_").toUpperCase();
+};
+
 /**
  * Checks if the string is empty
  * @returns {boolean} True if the String contains nothing or only spaces, false otherwise
@@ -1173,6 +1523,7 @@ Number.prototype.formatNumbers = function () {
 /**
  * Parses an integer given a String.
  * @param {string} str The String to parse
+ *
  * @returns {Number | NaN} The parsed number. If the String contains any characters that are not numeric or contains a dash that is not the first
  * character, return NaN
  */
@@ -1193,6 +1544,7 @@ parseInt = function (str) {
 /**
  * Count the number of a certain item in the array
  * @param item {any} The item to count
+ *
  * @returns {number} The number of times the item appears in the array
  */
 Array.prototype.count = function (item) {
@@ -1224,6 +1576,27 @@ function getAllDebuffs()
             debuffOptions += "<option value=\"{debuff}\">{debuff}</option>\n".formatUnicorn({debuff: buff.split(",")[1]});
         }));
     });
+}
+
+/**
+ * Gets the input value with the given name
+ * @param {String} elementName The name of the element to retrieve
+ *
+ * @return {boolean | String | Number | null} The element value, or null if the element does not exist
+ */
+function get(elementName)
+{
+    try
+    {
+        let form = document.getElementById("form");
+        
+        let item = form.elements.namedItem(elementName);
+        return (item.type !== "checkbox") ? item.value : item.checked;
+    }
+    catch (e)
+    {
+        return null;
+    }
 }
 
 /**
@@ -1289,7 +1662,7 @@ HTMLElement.prototype.renameAllChildrenEffects = function (oldNum, decAbility = 
         element.id = newId;
         if (element.tagName.toLowerCase().includes("h"))
         {
-             element.innerHTML = ((element.innerHTML.includes("span")) ?
+            element.innerHTML = ((element.innerHTML.includes("span")) ?
                                  element.innerHTML.substring(0, element.innerHTML.indexOf("</span>") + "</span>".length) : "") +
                     newId.substring((element.tagName.includes("4")) ?
                                     "ability_-".length : 0, ((element.id.indexOf("buff") + 1) || index - 3) + 3).toTitleCase()

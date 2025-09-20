@@ -57,6 +57,7 @@ public class Buff extends Effect
      * Compares two Buffs
      *
      * @param other The other Buff to compare to
+     *
      * @return True if both buffs have the same Buff number, false otherwise
      */
     public boolean equals(Buff other)

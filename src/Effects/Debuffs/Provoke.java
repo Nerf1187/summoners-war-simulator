@@ -37,6 +37,7 @@ public class Provoke extends Debuff
      * Compares two Provokes
      *
      * @param provoke The other Provoke to compare to
+     *
      * @return True if both Provokes have the same caster, false otherwise
      */
     public boolean equals(Provoke provoke)

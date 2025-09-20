@@ -3,6 +3,7 @@ package Abilities;
 import Errors.*;
 import Effects.Buffs.*;
 import Effects.Debuffs.*;
+import Runes.*;
 import java.util.*;
 
 /**
@@ -10,6 +11,8 @@ import java.util.*;
  */
 public class Heal_Ability extends Ability
 {
+    private RuneAttribute healingMultiplierStat;
+    
     /**
      * Constructs a new Heal ability
      *
@@ -23,6 +26,7 @@ public class Heal_Ability extends Ability
      * @param buffChances             The chance that each buff will apply
      * @param cooldown                The cooldown of the ability
      * @param targetsMultipleMonsters Whether the Ability targets multiple Monsters
+     *
      * @throws InvalidArgumentLength If debuffs and debuffChances or buffs and buffChances are different lengths
      */
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
@@ -43,6 +47,7 @@ public class Heal_Ability extends Ability
      * @param buffsChance             The chances that each buff will apply
      * @param cooldown                The cooldown of the ability
      * @param targetsMultipleMonsters Whether the Ability targets multiple Monsters
+     *
      * @throws InvalidArgumentLength If buffs and buffChances are different lengths
      */
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, ArrayList<Buff> buffs,
@@ -64,5 +69,15 @@ public class Heal_Ability extends Ability
     public Heal_Ability(String name, double healingPercent, int numOfActivations, String description, int cooldown, boolean targetsMultipleMonsters)
     {
         super(name, 0, healingPercent, numOfActivations, description, cooldown, false, false, false, false, false, targetsMultipleMonsters);
+    }
+    
+    public void setHealingMultiplierStat(RuneAttribute healingMultiplierStat)
+    {
+        this.healingMultiplierStat = healingMultiplierStat;
+    }
+    
+    public RuneAttribute getHealingMultiplierStat()
+    {
+        return healingMultiplierStat;
     }
 }

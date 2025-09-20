@@ -41,7 +41,7 @@ public class Lavender extends Monster
         ArrayList<Integer> ability1DebuffChances = MONSTERS.abilityChances(50);
         Ability a1 = new Attack_Ability("Magic Kettle (1)", 3.8 * 1.30, 0, 1, "Attacks the enemy to prevent from receiving beneficial effects for 2 turns with a 50% chance.", ability1Debuffs, ability1DebuffChances, 0, false, false, false);
         
-        ArrayList<Debuff> ability2Debuffs = abilityDebuffs();
+        ArrayList<Debuff> ability2Debuffs = new ArrayList<>();
         ability2Debuffs.add(new DecAtkBar(25));
         ArrayList<Integer> ability2DebuffChances = MONSTERS.abilityChances(100);
         Ability a2 = new Attack_Ability("Spinning Tea Spoon (2)", 3.8 * 1.30, 0, 3, "Attacks all enemies 3 times to reduce their Attack Bar by 25% each, and attacks them once more to stun them for 1 turn with a 30% chance. If the enemy's Attack " +

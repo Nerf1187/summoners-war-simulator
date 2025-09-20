@@ -60,7 +60,7 @@ public class Laima extends Monster
         {
             //Attempt to strip each enemy target and decrease their speed
             applyToTeam(game.getOtherTeam(), m -> {
-                if (resistanceCheck(m) && m.strip() > 0)
+                if (resistanceCheck(m) && m.strip(this) > 0)
                 {
                     m.addAppliedDebuff(DebuffEffect.DEC_ATK_SPD, 100, 2, this);
                 }
@@ -71,7 +71,7 @@ public class Laima extends Monster
         return true;
     }
     
-    public void selfAfterHitProtocol(Monster target, int abilityNum, int count)
+    public void attackerAfterHitProtocol(Monster target, int abilityNum, int count)
     {
         //Check if the ability should remove beneficial effects for each enemy and apply the relevant DoT
         if (abilityNum == 1 && target.wasCrit())
@@ -79,6 +79,6 @@ public class Laima extends Monster
             this.increaseAtkBarByPercent(10);
         }
         
-        super.selfAfterHitProtocol(target, abilityNum, count);
+        super.attackerAfterHitProtocol(target, abilityNum, count);
     }
 }

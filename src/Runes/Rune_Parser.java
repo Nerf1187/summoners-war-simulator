@@ -228,6 +228,7 @@ public class Rune_Parser
      * Opens a file chooser and gets a single file from the user
      * @param title The title of the file chooser window
      * @param extension The file extension to look for
+     *
      * @return The file the user chose, or null if none is chosen
      */
     public static File getFileFromUser(String title, String extension)
@@ -258,6 +259,7 @@ public class Rune_Parser
      * Gets the name of the Monster with the corresponding ID
      *
      * @param id The ID to look for
+     *
      * @return The Monster's name
      */
     private String getMonsterName(String id)
@@ -280,6 +282,7 @@ public class Rune_Parser
      * Checks if the given Monster is in the program
      *
      * @param id The ID to check for
+     *
      * @return True if the Monster's name is included in the Monster database, false otherwise
      */
     private boolean monsterIsPartOfProgram(long id)
@@ -291,6 +294,7 @@ public class Rune_Parser
      * Gets the name of the Monster with the corresponding ID number
      *
      * @param id The ID to look for
+     *
      * @return The Monster's name
      */
     private String getMonsterName(long id)
@@ -303,6 +307,7 @@ public class Rune_Parser
      *
      * @param monsterObj The JSONObject containing the Monster information
      * @param runeNum    The rune number to parse
+     *
      * @return The line containing the rune information
      */
     private String createRuneLine(JSONObject monsterObj, int runeNum)
@@ -373,6 +378,7 @@ public class Rune_Parser
      * @param oldNum     The file number to convert
      * @param monsterObj The current Monster JSONObject
      * @param runeNum    The current rune number
+     *
      * @return The converted number for the program
      */
     private int programTypeNum(long oldNum, JSONObject monsterObj, int runeNum)
@@ -411,6 +417,7 @@ public class Rune_Parser
      *
      * @param monsterObj The current Monster JSONObject
      * @param runeNum    The current rune number
+     *
      * @return The new rune set number
      */
     private RuneType getNewRuneNumber(JSONObject monsterObj, int runeNum)
@@ -468,6 +475,7 @@ public class Rune_Parser
      * Converts the JSON file rune stat number to the equivalent number in the program
      *
      * @param oldNum The file number to convert
+     *
      * @return The converted number for the program
      */
     private int programStatNum(long oldNum)
@@ -493,6 +501,7 @@ public class Rune_Parser
      * Converts the JSON file artifact slot number to the equivalent number in the program
      *
      * @param slotNum The file number to convert
+     *
      * @return The converted number for the program
      */
     private int programArtifactTypeNum(long slotNum)
@@ -504,6 +513,7 @@ public class Rune_Parser
      * Converts the JSON file artifact stat number to the equivalent number in the program
      *
      * @param oldNum The file number to convert
+     *
      * @return The converted number for the program
      */
     private int programArtifactStatNum(long oldNum)

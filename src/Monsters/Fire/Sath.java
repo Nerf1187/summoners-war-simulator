@@ -74,7 +74,7 @@ public class Sath extends Monster
         
         if (abilityNum == 2 && abilities.get(1).getTurnsRemaining() == 0 && target.getHpRatio() < 30)
         {
-            setCritRate(10_000);
+            setCritRate(999_999);
         }
         
         boolean b = super.nextTurn(target, abilityNum);

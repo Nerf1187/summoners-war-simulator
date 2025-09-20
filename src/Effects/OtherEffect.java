@@ -9,7 +9,8 @@ public enum OtherEffect
     TOTEM(1),
     MAGIC_SPHERE(2),
     MACARON_SHIELD(3),
-    THUNDERER(4);
+    THUNDERER(4),
+    RIDER(5);
     
     private final int num;
     

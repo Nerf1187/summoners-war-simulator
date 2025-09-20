@@ -1,10 +1,10 @@
 package Game;
 
-import Errors.*;
-import Monsters.*;
 import Effects.Buffs.*;
 import Effects.Debuffs.*;
 import Effects.*;
+import Errors.*;
+import Monsters.*;
 import Util.Util.*;
 import java.util.*;
 
@@ -153,8 +153,8 @@ public class Team implements Iterable<Monster>
     /**
      * Formats the Team into a readable String with elemental relationships included on each Monster
      *
-     * @param element The element number to compare each Monster to
-     * @param enemyTeam  Whether this Team is the enemy Team or friendly Team (1 for true, 0 for false, -1 for no elemental relationships)
+     * @param element   The element number to compare each Monster to
+     * @param enemyTeam Whether this Team is the enemy Team or friendly Team (1 for true, 0 for false, -1 for no elemental relationships)
      * @return The formatted String
      */
     public String print(Element element, int enemyTeam)
@@ -260,12 +260,9 @@ public class Team implements Iterable<Monster>
     {
         int count = monsters.indexOf(mon);
         
-        if (self)
-        {
-            return "%s%s%s%s (%d)%s".formatted(ConsoleColor.GREEN_BACKGROUND, ConsoleColor.BLACK_BOLD, mon.shortToString(false), ConsoleColor.PURPLE, count, ConsoleColor.RESET);
-        }
-        
-        return "%s%s (%d)%s".formatted(mon.shortToString(true), ConsoleColor.PURPLE, count, ConsoleColor.RESET);
+        return (self) ?
+                "%s%s%s%s (%d)%s".formatted(ConsoleColor.GREEN_BACKGROUND, ConsoleColor.BLACK_BOLD, mon.shortToString(false), ConsoleColor.PURPLE, count, ConsoleColor.RESET) :
+                "%s%s (%d)%s".formatted(mon.shortToString(true), ConsoleColor.PURPLE, count, ConsoleColor.RESET);
     }
     
     /**
@@ -460,6 +457,7 @@ public class Team implements Iterable<Monster>
     
     /**
      * Resets every Monster on the team by creating new instances of the same class. Does not set team-based rune effects
+     *
      * @return True if every Monster on the team was successfully reset, false otherwise
      */
     public boolean newInstances()
